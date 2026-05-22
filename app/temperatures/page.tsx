@@ -17,23 +17,24 @@ export default function TemperaturesPage() {
   }, []);
 
   async function fetchData() {
-    // équipements
+
+    // ÉQUIPEMENTS
     const { data: equipmentsData } = await supabase
       .from("equipments")
       .select("*")
-      .order("name");
+      .order("name", { ascending: true });
 
     setEquipments(equipmentsData || []);
 
-    // employés
+    // EMPLOYÉS
     const { data: employeesData } = await supabase
       .from("employees")
       .select("*")
-      .order("full_name");
+      .order("full_name", { ascending: true });
 
     setEmployees(employeesData || []);
 
-    // historique
+    // HISTORIQUE
     const { data: logsData } = await supabase
       .from("temperature_logs")
       .select(`
@@ -57,12 +58,13 @@ export default function TemperaturesPage() {
   }
 
   async function addTemperature() {
+
     if (
       !selectedEquipment ||
       !selectedEmployee ||
       !temperature
     ) {
-      alert("Remplis tous les champs");
+      alert("Veuillez remplir tous les champs");
       return;
     }
 
@@ -78,7 +80,7 @@ export default function TemperaturesPage() {
 
     if (error) {
       console.log(error);
-      alert("Erreur");
+      alert("Erreur lors de l'ajout");
       return;
     }
 
@@ -90,6 +92,7 @@ export default function TemperaturesPage() {
   }
 
   function isAlert(log: any) {
+
     const equipment = log.equipments;
 
     if (!equipment) return false;
@@ -107,10 +110,10 @@ export default function TemperaturesPage() {
         Relevé des températures
       </h1>
 
-      {/* formulaire */}
+      {/* FORMULAIRE */}
       <div className="bg-white/10 p-6 rounded-2xl mb-10">
 
-        {/* équipements */}
+        {/* ÉQUIPEMENTS */}
         <select
           value={selectedEquipment}
           onChange={(e) =>
@@ -132,7 +135,7 @@ export default function TemperaturesPage() {
           ))}
         </select>
 
-        {/* employés */}
+        {/* EMPLOYÉS */}
         <select
           value={selectedEmployee}
           onChange={(e) =>
@@ -154,7 +157,7 @@ export default function TemperaturesPage() {
           ))}
         </select>
 
-        {/* température */}
+        {/* TEMPÉRATURE */}
         <input
           type="number"
           placeholder="Température"
@@ -165,23 +168,27 @@ export default function TemperaturesPage() {
           className="w-full p-4 rounded-xl bg-black/30 mb-4"
         />
 
-        {/* bouton */}
+        {/* BOUTON */}
         <button
           onClick={addTemperature}
           className="w-full bg-blue-600 hover:bg-blue-700 transition p-4 rounded-xl font-bold"
         >
           Ajouter le relevé
         </button>
+
       </div>
 
-      {/* historique */}
+      {/* HISTORIQUE */}
       <div>
+
         <h2 className="text-3xl font-bold mb-6">
-          Historique
+          Historique des relevés
         </h2>
 
         <div className="space-y-4">
+
           {logs.map((log) => {
+
             const alert = isAlert(log);
 
             return (
@@ -193,9 +200,11 @@ export default function TemperaturesPage() {
                     : "bg-white/10 border-white/10"
                 }`}
               >
+
                 <div className="flex justify-between items-start">
 
                   <div>
+
                     <h3 className="text-2xl font-bold">
                       {log.equipments?.name}
                     </h3>
@@ -211,9 +220,11 @@ export default function TemperaturesPage() {
                         log.created_at
                       ).toLocaleString()}
                     </p>
+
                   </div>
 
                   <div className="text-right">
+
                     <p className="text-4xl font-bold">
                       {log.temperature}°C
                     </p>
@@ -223,14 +234,19 @@ export default function TemperaturesPage() {
                         ⚠️ ALERTE HACCP
                       </p>
                     )}
+
                   </div>
 
                 </div>
+
               </div>
             );
           })}
+
         </div>
+
       </div>
+
     </main>
   );
 }
