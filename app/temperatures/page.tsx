@@ -1,5 +1,7 @@
 "use client";
-console.log("TEMPERATURE PAGE V2");
+
+console.log("TEMPERATURE PAGE V3 LOADED");
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -19,26 +21,49 @@ export default function TemperaturesPage() {
 
   async function fetchData() {
 
+    // =========================
     // ÉQUIPEMENTS
-    const { data: equipmentsData } = await supabase
+    // =========================
+
+    const {
+      data: equipmentsData,
+      error: equipmentsError,
+    } = await supabase
       .from("equipments")
       .select("*")
-      .order("name", { ascending: true });
+      .order("name", {
+        ascending: true,
+      });
+
+    console.log("EQUIPMENTS DATA:", equipmentsData);
+    console.log("EQUIPMENTS ERROR:", equipmentsError);
 
     setEquipments(equipmentsData || []);
 
+    // =========================
     // EMPLOYÉS
-    const { data: employeesData } = await supabase
-      .from("employees")
-      .select("*")
-      .order("full_name", { ascending: true });
+    // =========================
 
-    console.log("EMPLOYEES :", employeesData);
+    const {
+      data: employeesData,
+      error: employeesError,
+    } = await supabase
+      .from("employees")
+      .select("*");
+
+    console.log("EMPLOYEES DATA:", employeesData);
+    console.log("EMPLOYEES ERROR:", employeesError);
 
     setEmployees(employeesData || []);
 
+    // =========================
     // LOGS
-    const { data: logsData } = await supabase
+    // =========================
+
+    const {
+      data: logsData,
+      error: logsError,
+    } = await supabase
       .from("temperature_logs")
       .select(`
         *,
@@ -57,7 +82,8 @@ export default function TemperaturesPage() {
         ascending: false,
       });
 
-    console.log("LOGS :", logsData);
+    console.log("LOGS DATA:", logsData);
+    console.log("LOGS ERROR:", logsError);
 
     setLogs(logsData || []);
   }
@@ -118,9 +144,11 @@ export default function TemperaturesPage() {
       </h1>
 
       {/* FORMULAIRE */}
+
       <div className="bg-white/10 p-6 rounded-2xl mb-10">
 
         {/* ÉQUIPEMENTS */}
+
         <select
           value={selectedEquipment}
           onChange={(e) =>
@@ -128,6 +156,7 @@ export default function TemperaturesPage() {
           }
           className="w-full p-4 rounded-xl bg-black/30 mb-4"
         >
+
           <option value="">
             Choisir un équipement
           </option>
@@ -140,9 +169,11 @@ export default function TemperaturesPage() {
               {equipment.name}
             </option>
           ))}
+
         </select>
 
         {/* EMPLOYÉS */}
+
         <select
           value={selectedEmployee}
           onChange={(e) =>
@@ -150,6 +181,7 @@ export default function TemperaturesPage() {
           }
           className="w-full p-4 rounded-xl bg-black/30 mb-4"
         >
+
           <option value="">
             Choisir un employé
           </option>
@@ -162,9 +194,11 @@ export default function TemperaturesPage() {
               {employee.full_name}
             </option>
           ))}
+
         </select>
 
         {/* TEMPÉRATURE */}
+
         <input
           type="number"
           placeholder="Température"
@@ -176,6 +210,7 @@ export default function TemperaturesPage() {
         />
 
         {/* BOUTON */}
+
         <button
           onClick={addTemperature}
           className="w-full bg-blue-600 hover:bg-blue-700 transition p-4 rounded-xl font-bold"
@@ -186,6 +221,7 @@ export default function TemperaturesPage() {
       </div>
 
       {/* HISTORIQUE */}
+
       <div>
 
         <h2 className="text-3xl font-bold mb-6">
