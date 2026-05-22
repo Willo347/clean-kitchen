@@ -15,11 +15,11 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="bg-[#050816] text-white">
-        <div className="flex">
+        <div className="flex min-h-screen">
           
           <Sidebar />
 
-          <main className="flex-1 p-8">
+          <main className="flex-1 p-8 overflow-auto">
             {children}
           </main>
 
