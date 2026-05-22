@@ -1,5 +1,5 @@
 "use client";
-
+console.log("TEMPERATURE PAGE V2");
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
