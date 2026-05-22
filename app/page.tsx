@@ -12,6 +12,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 export default function DashboardPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [equipments, setEquipments] = useState<any[]>([]);
@@ -84,16 +87,63 @@ export default function DashboardPage() {
         )
       : 100;
 
+  function exportPDF() {
+    const doc = new jsPDF();
+
+    doc.setFontSize(22);
+
+    doc.text("Rapport HACCP - Clean Kitchen", 14, 20);
+
+    doc.setFontSize(12);
+
+    doc.text(
+      `Conformité HACCP : ${conformite}%`,
+      14,
+      30
+    );
+
+    autoTable(doc, {
+      startY: 40,
+
+      head: [["Equipement", "Température", "Date"]],
+
+      body: logs.map((log) => [
+        log.equipment || "N/A",
+        `${log.temperature}°C`,
+        new Date(log.created_at).toLocaleString(),
+      ]),
+    });
+
+    doc.save("rapport-haccp.pdf");
+  }
+
   return (
     <main className="min-h-screen bg-[#0f172a] text-white p-8">
 
-      <h1 className="text-5xl font-bold mb-10">
-        Clean Kitchen
-      </h1>
+      <div className="flex items-center justify-between mb-10">
+
+        <div>
+          <h1 className="text-5xl font-bold">
+            Clean Kitchen
+          </h1>
+
+          <p className="text-gray-400 mt-2">
+            Dashboard HACCP Premium
+          </p>
+        </div>
+
+        <button
+          onClick={exportPDF}
+          className="bg-red-500 hover:bg-red-600 transition px-6 py-3 rounded-2xl font-bold shadow-lg"
+        >
+          Export PDF HACCP
+        </button>
+
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
 
-        <div className="bg-[#1e293b] p-6 rounded-2xl">
+        <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg">
           <p className="text-gray-400 mb-2">
             Température moyenne
           </p>
@@ -103,7 +153,7 @@ export default function DashboardPage() {
           </h2>
         </div>
 
-        <div className="bg-[#1e293b] p-6 rounded-2xl">
+        <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg">
           <p className="text-gray-400 mb-2">
             Alertes actives
           </p>
@@ -113,7 +163,7 @@ export default function DashboardPage() {
           </h2>
         </div>
 
-        <div className="bg-[#1e293b] p-6 rounded-2xl">
+        <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg">
           <p className="text-gray-400 mb-2">
             Équipements
           </p>
@@ -123,7 +173,7 @@ export default function DashboardPage() {
           </h2>
         </div>
 
-        <div className="bg-[#1e293b] p-6 rounded-2xl">
+        <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg">
           <p className="text-gray-400 mb-2">
             Conformité HACCP
           </p>
@@ -135,7 +185,7 @@ export default function DashboardPage() {
 
       </div>
 
-      <div className="bg-[#1e293b] p-6 rounded-2xl mb-8">
+      <div className="bg-[#1e293b] p-6 rounded-2xl mb-8 shadow-lg">
 
         <h2 className="text-3xl font-bold mb-6">
           Évolution des températures
@@ -168,16 +218,32 @@ export default function DashboardPage() {
 
       </div>
 
-      <div className="bg-[#1e293b] p-6 rounded-2xl">
+      <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg">
 
-        <h2 className="text-3xl font-bold text-red-400 mb-6">
-          Alertes HACCP
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+
+          <h2 className="text-3xl font-bold text-red-400">
+            Alertes HACCP
+          </h2>
+
+          {alertes.length > 0 && (
+            <div className="bg-red-500 px-4 py-2 rounded-full animate-pulse font-bold">
+              🚨 Danger détecté
+            </div>
+          )}
+
+        </div>
 
         {alertes.length === 0 && (
-          <p className="text-green-400 font-bold">
-            Aucun problème détecté ✅
-          </p>
+          <div className="bg-green-500/10 border border-green-500 p-5 rounded-2xl">
+            <p className="text-green-400 font-bold text-xl">
+              ✅ Aucun problème détecté
+            </p>
+
+            <p className="text-gray-400 mt-2">
+              Tous les équipements sont conformes HACCP.
+            </p>
+          </div>
         )}
 
         <div className="flex flex-col gap-4">
@@ -185,9 +251,11 @@ export default function DashboardPage() {
           {alertes.map((alerte, index) => (
             <div
               key={index}
-              className="bg-red-500/20 border border-red-500 p-4 rounded-xl"
+              className="bg-red-500/20 border border-red-500 p-5 rounded-2xl"
             >
-              {alerte.message}
+              <p className="text-red-400 font-bold text-lg">
+                {alerte.message}
+              </p>
             </div>
           ))}
 
