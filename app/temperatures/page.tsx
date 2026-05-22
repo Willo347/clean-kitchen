@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function TemperaturesPage() {
-
   const [equipments, setEquipments] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
@@ -18,132 +17,84 @@ export default function TemperaturesPage() {
   }, []);
 
   async function fetchData() {
-
-    // =========================
-    // EQUIPMENTS
-    // =========================
-
-    const {
-      data: equipmentsData,
-      error: equipmentsError,
-    } = await supabase
+    // ÉQUIPEMENTS
+    const { data: equipmentsData } = await supabase
       .from("equipments")
       .select("*")
-      .order("name", { ascending: true });
-
-    console.log("EQUIPMENTS:", equipmentsData);
-    console.log("EQUIPMENTS ERROR:", equipmentsError);
+      .order("name");
 
     setEquipments(equipmentsData || []);
 
-    // =========================
-    // EMPLOYEES
-    // =========================
-
-    const {
-      data: employeesData,
-      error: employeesError,
-    } = await supabase
+    // EMPLOYÉS
+    const { data: employeesData, error: employeesError } = await supabase
       .from("employees")
       .select("*")
-      .order("full_name", { ascending: true });
+      .order("full_name");
 
-    console.log("EMPLOYEES:", employeesData);
-    console.log("EMPLOYEES ERROR:", employeesError);
+    console.log("EMPLOYEES =", employeesData);
+    console.log("EMPLOYEES ERROR =", employeesError);
 
     setEmployees(employeesData || []);
 
-    // =========================
-    // TEMPERATURE LOGS
-    // =========================
-
-    const {
-      data: logsData,
-      error: logsError,
-    } = await supabase
+    // LOGS TEMPÉRATURES
+    const { data: logsData } = await supabase
       .from("temperature_logs")
-      .select(`
-        *,
-        employees:employee_id (
-          id,
-          full_name
-        ),
-        equipments:equipement_id (
-          id,
-          name,
-          temp_min,
-          temp_max
-        )
-      `)
+      .select("*")
       .order("created_at", { ascending: false });
-
-    console.log("LOGS:", logsData);
-    console.log("LOGS ERROR:", logsError);
 
     setLogs(logsData || []);
   }
 
   async function addTemperature() {
-
     if (
       !selectedEquipment ||
       !selectedEmployee ||
       !temperature
     ) {
-      alert("Veuillez remplir tous les champs");
+      alert("Remplis tous les champs");
       return;
     }
 
-    const { error } = await supabase
-      .from("temperature_logs")
-      .insert([
-        {
-          equipement_id: Number(selectedEquipment),
-          employee_id: Number(selectedEmployee),
-          temperature: Number(temperature),
-        },
-      ]);
+    const equipment = equipments.find(
+      (e) => String(e.id) === selectedEquipment
+    );
 
-    if (error) {
-      console.log(error);
-      alert("Erreur lors de l'ajout");
-      return;
-    }
+    const employee = employees.find(
+      (e) => String(e.id) === selectedEmployee
+    );
 
-    setSelectedEquipment("");
-    setSelectedEmployee("");
+    const tempValue = Number(temperature);
+
+    await supabase.from("temperature_logs").insert([
+      {
+        equipment: equipment?.name || "",
+        equipment_id: equipment?.id || null,
+
+        employee_id: employee?.id || null,
+        employee_name: employee?.full_name || "",
+
+        temperature: tempValue,
+      },
+    ]);
+
     setTemperature("");
-
     fetchData();
   }
 
   function isAlert(log: any) {
-
-    const equipment = Array.isArray(log.equipments)
-      ? log.equipments[0]
-      : log.equipments;
-
-    if (!equipment) return false;
-
-    return (
-      log.temperature < equipment.temp_min ||
-      log.temperature > equipment.temp_max
-    );
+    return Number(log.temperature) > 7;
   }
 
   return (
     <main className="min-h-screen bg-[#0B1120] text-white p-10">
-
       <h1 className="text-5xl font-bold mb-10">
         Relevé des températures
       </h1>
 
       {/* FORMULAIRE */}
-
       <div className="bg-white/10 p-6 rounded-2xl mb-10">
 
-        {/* EQUIPEMENTS */}
-
+        {/* ÉQUIPEMENTS */}
         <select
           value={selectedEquipment}
           onChange={(e) =>
@@ -151,7 +102,6 @@ export default function TemperaturesPage() {
           }
           className="w-full p-4 rounded-xl bg-black/30 mb-4"
         >
-
           <option value="">
             Choisir un équipement
           </option>
@@ -164,11 +114,9 @@ export default function TemperaturesPage() {
               {equipment.name}
             </option>
           ))}
-
         </select>
 
-        {/* EMPLOYES */}
-
+        {/* EMPLOYÉS */}
         <select
           value={selectedEmployee}
           onChange={(e) =>
@@ -176,7 +124,6 @@ export default function TemperaturesPage() {
           }
           className="w-full p-4 rounded-xl bg-black/30 mb-4"
         >
-
           <option value="">
             Choisir un employé
           </option>
@@ -189,11 +136,9 @@ export default function TemperaturesPage() {
               {employee.full_name}
             </option>
           ))}
-
         </select>
 
-        {/* TEMPERATURE */}
-
+        {/* TEMPÉRATURE */}
         <input
           type="number"
           placeholder="Température"
@@ -204,95 +149,62 @@ export default function TemperaturesPage() {
           className="w-full p-4 rounded-xl bg-black/30 mb-4"
         />
 
-        {/* BUTTON */}
-
+        {/* BOUTON */}
         <button
           onClick={addTemperature}
           className="w-full bg-blue-600 hover:bg-blue-700 transition p-4 rounded-xl font-bold"
         >
           Ajouter le relevé
         </button>
-
       </div>
 
       {/* HISTORIQUE */}
+      <h2 className="text-3xl font-bold mb-6">
+        Historique
+      </h2>
 
-      <div>
+      <div className="space-y-4">
+        {logs.map((log) => (
+          <div
+            key={log.id}
+            className={`p-6 rounded-2xl border ${
+              isAlert(log)
+                ? "bg-red-700 border-red-400"
+                : "bg-green-700 border-green-400"
+            }`}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-2xl font-bold">
+                  {log.equipment}
+                </h3>
 
-        <h2 className="text-3xl font-bold mb-6">
-          Historique
-        </h2>
+                <p className="text-lg opacity-80">
+                  Employé : {log.employee_name || "Inconnu"}
+                </p>
 
-        <div className="space-y-4">
-
-          {logs.map((log) => {
-
-            const equipment = Array.isArray(log.equipments)
-              ? log.equipments[0]
-              : log.equipments;
-
-            const employee = Array.isArray(log.employees)
-              ? log.employees[0]
-              : log.employees;
-
-            const alert = isAlert(log);
-
-            return (
-              <div
-                key={log.id}
-                className={`p-5 rounded-2xl border ${
-                  alert
-                    ? "bg-red-700/70 border-red-400"
-                    : "bg-white/10 border-white/10"
-                }`}
-              >
-
-                <div className="flex justify-between items-start">
-
-                  <div>
-
-                    <h3 className="text-2xl font-bold">
-                      {equipment?.name || "Équipement"}
-                    </h3>
-
-                    <p className="text-gray-300 mt-2">
-                      Employé :
-                      {" "}
-                      {employee?.full_name || "Non renseigné"}
-                    </p>
-
-                    <p className="text-sm text-gray-400 mt-2">
-                      {new Date(
-                        log.created_at
-                      ).toLocaleString()}
-                    </p>
-
-                  </div>
-
-                  <div className="text-right">
-
-                    <p className="text-4xl font-bold">
-                      {log.temperature}°C
-                    </p>
-
-                    {alert && (
-                      <p className="text-yellow-300 font-bold mt-2">
-                        ⚠️ ALERTE HACCP
-                      </p>
-                    )}
-
-                  </div>
-
-                </div>
-
+                <p className="opacity-70">
+                  {new Date(
+                    log.created_at
+                  ).toLocaleString()}
+                </p>
               </div>
-            );
-          })}
 
-        </div>
+              <div className="text-right">
+                <p className="text-4xl font-bold">
+                  {log.temperature}°C
+                </p>
 
+                {isAlert(log) && (
+                  <p className="font-bold mt-2">
+                    ⚠️ ALERTE HACCP
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
-
     </main>
   );
 }
