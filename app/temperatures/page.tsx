@@ -1,7 +1,5 @@
 "use client";
 
-console.log("TEMPERATURE PAGE V3 LOADED");
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -22,7 +20,7 @@ export default function TemperaturesPage() {
   async function fetchData() {
 
     // =========================
-    // ÉQUIPEMENTS
+    // EQUIPMENTS
     // =========================
 
     const {
@@ -31,17 +29,15 @@ export default function TemperaturesPage() {
     } = await supabase
       .from("equipments")
       .select("*")
-      .order("name", {
-        ascending: true,
-      });
+      .order("name", { ascending: true });
 
-    console.log("EQUIPMENTS DATA:", equipmentsData);
+    console.log("EQUIPMENTS:", equipmentsData);
     console.log("EQUIPMENTS ERROR:", equipmentsError);
 
     setEquipments(equipmentsData || []);
 
     // =========================
-    // EMPLOYÉS
+    // EMPLOYEES
     // =========================
 
     const {
@@ -49,15 +45,16 @@ export default function TemperaturesPage() {
       error: employeesError,
     } = await supabase
       .from("employees")
-      .select("*");
+      .select("*")
+      .order("full_name", { ascending: true });
 
-    console.log("EMPLOYEES DATA:", employeesData);
+    console.log("EMPLOYEES:", employeesData);
     console.log("EMPLOYEES ERROR:", employeesError);
 
     setEmployees(employeesData || []);
 
     // =========================
-    // LOGS
+    // TEMPERATURE LOGS
     // =========================
 
     const {
@@ -67,22 +64,20 @@ export default function TemperaturesPage() {
       .from("temperature_logs")
       .select(`
         *,
+        employees:employee_id (
+          id,
+          full_name
+        ),
         equipments:equipement_id (
           id,
           name,
           temp_min,
           temp_max
-        ),
-        employees:employee_id (
-          id,
-          full_name
         )
       `)
-      .order("created_at", {
-        ascending: false,
-      });
+      .order("created_at", { ascending: false });
 
-    console.log("LOGS DATA:", logsData);
+    console.log("LOGS:", logsData);
     console.log("LOGS ERROR:", logsError);
 
     setLogs(logsData || []);
@@ -147,7 +142,7 @@ export default function TemperaturesPage() {
 
       <div className="bg-white/10 p-6 rounded-2xl mb-10">
 
-        {/* ÉQUIPEMENTS */}
+        {/* EQUIPEMENTS */}
 
         <select
           value={selectedEquipment}
@@ -172,7 +167,7 @@ export default function TemperaturesPage() {
 
         </select>
 
-        {/* EMPLOYÉS */}
+        {/* EMPLOYES */}
 
         <select
           value={selectedEmployee}
@@ -197,7 +192,7 @@ export default function TemperaturesPage() {
 
         </select>
 
-        {/* TEMPÉRATURE */}
+        {/* TEMPERATURE */}
 
         <input
           type="number"
@@ -209,7 +204,7 @@ export default function TemperaturesPage() {
           className="w-full p-4 rounded-xl bg-black/30 mb-4"
         />
 
-        {/* BOUTON */}
+        {/* BUTTON */}
 
         <button
           onClick={addTemperature}
@@ -225,7 +220,7 @@ export default function TemperaturesPage() {
       <div>
 
         <h2 className="text-3xl font-bold mb-6">
-          Historique des relevés
+          Historique
         </h2>
 
         <div className="space-y-4">
@@ -257,13 +252,13 @@ export default function TemperaturesPage() {
                   <div>
 
                     <h3 className="text-2xl font-bold">
-                      {equipment?.name}
+                      {equipment?.name || "Équipement"}
                     </h3>
 
                     <p className="text-gray-300 mt-2">
                       Employé :
                       {" "}
-                      {employee?.full_name}
+                      {employee?.full_name || "Non renseigné"}
                     </p>
 
                     <p className="text-sm text-gray-400 mt-2">
