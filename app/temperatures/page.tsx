@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function TemperaturesPage() {
+
   const [equipments, setEquipments] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
@@ -32,9 +33,11 @@ export default function TemperaturesPage() {
       .select("*")
       .order("full_name", { ascending: true });
 
+    console.log("EMPLOYEES :", employeesData);
+
     setEmployees(employeesData || []);
 
-    // HISTORIQUE
+    // LOGS
     const { data: logsData } = await supabase
       .from("temperature_logs")
       .select(`
@@ -53,6 +56,8 @@ export default function TemperaturesPage() {
       .order("created_at", {
         ascending: false,
       });
+
+    console.log("LOGS :", logsData);
 
     setLogs(logsData || []);
   }
@@ -93,7 +98,9 @@ export default function TemperaturesPage() {
 
   function isAlert(log: any) {
 
-    const equipment = log.equipments;
+    const equipment = Array.isArray(log.equipments)
+      ? log.equipments[0]
+      : log.equipments;
 
     if (!equipment) return false;
 
@@ -189,6 +196,14 @@ export default function TemperaturesPage() {
 
           {logs.map((log) => {
 
+            const equipment = Array.isArray(log.equipments)
+              ? log.equipments[0]
+              : log.equipments;
+
+            const employee = Array.isArray(log.employees)
+              ? log.employees[0]
+              : log.employees;
+
             const alert = isAlert(log);
 
             return (
@@ -206,13 +221,13 @@ export default function TemperaturesPage() {
                   <div>
 
                     <h3 className="text-2xl font-bold">
-                      {log.equipments?.name}
+                      {equipment?.name}
                     </h3>
 
                     <p className="text-gray-300 mt-2">
                       Employé :
                       {" "}
-                      {log.employees?.full_name}
+                      {employee?.full_name}
                     </p>
 
                     <p className="text-sm text-gray-400 mt-2">
