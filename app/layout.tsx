@@ -1,11 +1,5 @@
 import "./globals.css";
-import type { Metadata } from "next";
 import Sidebar from "./components/Sidebar";
-
-export const metadata: Metadata = {
-  title: "Clean Kitchen",
-  description: "Dashboard HACCP Premium",
-};
 
 export default function RootLayout({
   children,
@@ -14,15 +8,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className="bg-[#050816] text-white">
-        <div className="flex min-h-screen">
-          
+      <body className="bg-[#0f172a] text-white">
+        <div className="flex">
           <Sidebar />
 
-          <main className="flex-1 p-8 overflow-auto">
+          <main className="flex-1 p-8">
             {children}
           </main>
-
         </div>
       </body>
     </html>
