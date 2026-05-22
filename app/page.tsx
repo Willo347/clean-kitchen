@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -43,7 +42,7 @@ export default function DashboardPage() {
 
     logsData.forEach((log) => {
       const equipement = equipmentsData.find(
-        (e) => e.id === log.equipment_id
+        (e) => e.id === log.equipement_id
       );
 
       if (!equipement) return;
@@ -53,7 +52,7 @@ export default function DashboardPage() {
         log.temperature < equipement.temp_min
       ) {
         nouvellesAlertes.push({
-          message: `⚠️ ${equipement.name} trop froid (${log.temperature}°C)`,
+          message: `❄️ ${equipement.name} trop froid (${log.temperature}°C)`,
         });
       }
 
@@ -86,7 +85,8 @@ export default function DashboardPage() {
       : 100;
 
   return (
-    <main className="min-h-screen text-white bg-[#0f172a] p-8">
+    <main className="min-h-screen bg-[#0f172a] text-white p-8">
+
       <h1 className="text-5xl font-bold mb-10">
         Clean Kitchen
       </h1>
@@ -136,15 +136,21 @@ export default function DashboardPage() {
       </div>
 
       <div className="bg-[#1e293b] p-6 rounded-2xl mb-8">
+
         <h2 className="text-3xl font-bold mb-6">
           Évolution des températures
         </h2>
 
         <div className="h-[400px]">
+
           <ResponsiveContainer width="100%" height="100%">
+
             <LineChart data={logs}>
+
               <XAxis dataKey="created_at" />
+
               <YAxis />
+
               <Tooltip />
 
               <Line
@@ -153,12 +159,17 @@ export default function DashboardPage() {
                 stroke="#3b82f6"
                 strokeWidth={3}
               />
+
             </LineChart>
+
           </ResponsiveContainer>
+
         </div>
+
       </div>
 
       <div className="bg-[#1e293b] p-6 rounded-2xl">
+
         <h2 className="text-3xl font-bold text-red-400 mb-6">
           Alertes HACCP
         </h2>
@@ -170,6 +181,7 @@ export default function DashboardPage() {
         )}
 
         <div className="flex flex-col gap-4">
+
           {alertes.map((alerte, index) => (
             <div
               key={index}
@@ -178,8 +190,11 @@ export default function DashboardPage() {
               {alerte.message}
             </div>
           ))}
+
         </div>
+
       </div>
+
     </main>
   );
 }
