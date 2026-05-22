@@ -33,7 +33,7 @@ export default function TemperaturesPage() {
 
     setEmployees(employeesData || []);
 
-    // logs
+    // historique
     const { data: logsData } = await supabase
       .from("temperature_logs")
       .select(`
@@ -107,7 +107,7 @@ export default function TemperaturesPage() {
         Relevé des températures
       </h1>
 
-      {/* FORMULAIRE */}
+      {/* formulaire */}
       <div className="bg-white/10 p-6 rounded-2xl mb-10">
 
         {/* équipements */}
@@ -174,7 +174,7 @@ export default function TemperaturesPage() {
         </button>
       </div>
 
-      {/* HISTORIQUE */}
+      {/* historique */}
       <div>
         <h2 className="text-3xl font-bold mb-6">
           Historique
