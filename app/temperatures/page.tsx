@@ -17,28 +17,35 @@ export default function TemperaturesPage() {
   }, []);
 
   async function fetchData() {
+    // équipements
     const { data: equipmentsData } = await supabase
       .from("equipments")
-      .select("*");
+      .select("*")
+      .order("name");
 
     setEquipments(equipmentsData || []);
 
+    // employés
     const { data: employeesData } = await supabase
       .from("employees")
-      .select("*");
+      .select("*")
+      .order("full_name");
 
     setEmployees(employeesData || []);
 
+    // logs
     const { data: logsData } = await supabase
       .from("temperature_logs")
       .select(`
         *,
-        equipments:equipment_id (
+        equipments:equipement_id (
+          id,
           name,
           temp_min,
           temp_max
         ),
         employees:employee_id (
+          id,
           full_name
         )
       `)
@@ -59,15 +66,21 @@ export default function TemperaturesPage() {
       return;
     }
 
-    await supabase
+    const { error } = await supabase
       .from("temperature_logs")
       .insert([
         {
-          equipment_id: Number(selectedEquipment),
+          equipement_id: Number(selectedEquipment),
           employee_id: Number(selectedEmployee),
           temperature: Number(temperature),
         },
       ]);
+
+    if (error) {
+      console.log(error);
+      alert("Erreur");
+      return;
+    }
 
     setSelectedEquipment("");
     setSelectedEmployee("");
@@ -77,7 +90,7 @@ export default function TemperaturesPage() {
   }
 
   function isAlert(log: any) {
-    const equipment = log.equipments?.[0];
+    const equipment = log.equipments;
 
     if (!equipment) return false;
 
@@ -89,13 +102,15 @@ export default function TemperaturesPage() {
 
   return (
     <main className="min-h-screen bg-[#0B1120] text-white p-10">
+
       <h1 className="text-5xl font-bold mb-10">
         Relevé des températures
       </h1>
 
+      {/* FORMULAIRE */}
       <div className="bg-white/10 p-6 rounded-2xl mb-10">
 
-        {/* équipement */}
+        {/* équipements */}
         <select
           value={selectedEquipment}
           onChange={(e) =>
@@ -117,7 +132,7 @@ export default function TemperaturesPage() {
           ))}
         </select>
 
-        {/* employé */}
+        {/* employés */}
         <select
           value={selectedEmployee}
           onChange={(e) =>
@@ -150,6 +165,7 @@ export default function TemperaturesPage() {
           className="w-full p-4 rounded-xl bg-black/30 mb-4"
         />
 
+        {/* bouton */}
         <button
           onClick={addTemperature}
           className="w-full bg-blue-600 hover:bg-blue-700 transition p-4 rounded-xl font-bold"
@@ -158,7 +174,7 @@ export default function TemperaturesPage() {
         </button>
       </div>
 
-      {/* historique */}
+      {/* HISTORIQUE */}
       <div>
         <h2 className="text-3xl font-bold mb-6">
           Historique
@@ -166,9 +182,6 @@ export default function TemperaturesPage() {
 
         <div className="space-y-4">
           {logs.map((log) => {
-            const equipment = log.equipments?.[0];
-            const employee = log.employees?.[0];
-
             const alert = isAlert(log);
 
             return (
@@ -180,17 +193,17 @@ export default function TemperaturesPage() {
                     : "bg-white/10 border-white/10"
                 }`}
               >
-                <div className="flex justify-between">
+                <div className="flex justify-between items-start">
 
                   <div>
                     <h3 className="text-2xl font-bold">
-                      {equipment?.name}
+                      {log.equipments?.name}
                     </h3>
 
                     <p className="text-gray-300 mt-2">
                       Employé :
                       {" "}
-                      {employee?.full_name}
+                      {log.employees?.full_name}
                     </p>
 
                     <p className="text-sm text-gray-400 mt-2">
