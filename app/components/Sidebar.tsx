@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+
 import {
   LayoutDashboard,
   Thermometer,
+  ClipboardList,
   Package,
-  Truck,
   ShieldCheck,
   Users,
   Settings,
@@ -25,11 +26,11 @@ const menuItems = [
   {
     name: "Traçabilité",
     href: "/traceability",
-    icon: Truck,
+    icon: ClipboardList,
   },
   {
     name: "Stocks",
-    href: "/stock",
+    href: "/stocks",
     icon: Package,
   },
   {
@@ -51,19 +52,18 @@ const menuItems = [
 
 export default function Sidebar() {
   return (
-    <aside className="w-72 min-h-screen bg-[#0B0F19] border-r border-white/10 p-6 flex flex-col">
-      
+    <aside className="w-72 bg-[#111827] min-h-screen p-6 border-r border-gray-800">
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-white">
           Clean Kitchen
         </h1>
 
-        <p className="text-gray-400 mt-2 text-sm">
+        <p className="text-gray-400 mt-2">
           Dashboard HACCP
         </p>
       </div>
 
-      <nav className="flex flex-col gap-3">
+      <nav className="space-y-3">
         {menuItems.map((item) => {
           const Icon = item.icon;
 
@@ -71,37 +71,23 @@ export default function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
-              className="
-                flex items-center gap-4
-                px-4 py-3
-                rounded-2xl
-                text-gray-300
-                hover:bg-blue-600
-                hover:text-white
-                transition-all duration-200
-                group
-              "
+              className="flex items-center gap-4 bg-[#1f2937] hover:bg-blue-600 transition p-4 rounded-2xl text-white font-medium"
             >
               <Icon size={22} />
-
-              <span className="font-medium">
-                {item.name}
-              </span>
+              {item.name}
             </Link>
           );
         })}
       </nav>
 
-      <div className="mt-auto pt-10">
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-          <p className="text-sm text-gray-400">
-            Version Premium
-          </p>
+      <div className="mt-10 bg-[#1f2937] p-5 rounded-2xl">
+        <p className="text-sm text-gray-400">
+          Version Premium
+        </p>
 
-          <h2 className="text-white font-semibold mt-1">
-            HACCP Pro
-          </h2>
-        </div>
+        <p className="text-xl font-bold text-white mt-1">
+          HACCP Pro
+        </p>
       </div>
     </aside>
   );
