@@ -3,10 +3,36 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
+type Equipment = {
+  id: number;
+  name: string;
+  temp_min: number;
+  temp_max: number;
+};
+
+type Employee = {
+  id: number;
+  full_name: string;
+};
+
+type Log = {
+  id: number;
+  temperature: number;
+  created_at: string;
+  equipments: {
+    name: string;
+    temp_min: number;
+    temp_max: number;
+  };
+  employees: {
+    full_name: string;
+  };
+};
+
 export default function TemperaturesPage() {
-  const [equipments, setEquipments] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [logs, setLogs] = useState<Log[]>([]);
 
   const [equipmentId, setEquipmentId] = useState("");
   const [employeeId, setEmployeeId] = useState("");
@@ -17,140 +43,193 @@ export default function TemperaturesPage() {
   }, []);
 
   async function fetchData() {
+    // EQUIPMENTS
     const { data: equipmentsData } = await supabase
       .from("equipments")
-      .select("*");
+      .select("*")
+      .order("id", { ascending: true });
 
-    const { data: employeesData } = await supabase
+    if (equipmentsData) {
+      setEquipments(equipmentsData);
+    }
+
+    // EMPLOYEES
+    const { data: employeesData, error: employeesError } = await supabase
       .from("employees")
-      .select("*");
+      .select("*")
+      .order("id", { ascending: true });
 
+    console.log("EMPLOYEES :", employeesData);
+    console.log("ERROR :", employeesError);
+
+    if (employeesData) {
+      setEmployees(employeesData);
+    }
+
+    // LOGS
     const { data: logsData } = await supabase
       .from("temperature_logs")
-      .select("*")
+      .select(`
+        *,
+        equipments (
+          name,
+          temp_min,
+          temp_max
+        ),
+        employees (
+          full_name
+        )
+      `)
       .order("created_at", { ascending: false });
 
-    setEquipments(equipmentsData || []);
-    setEmployees(employeesData || []);
-    setLogs(logsData || []);
+    if (logsData) {
+      setLogs(logsData as any);
+    }
   }
 
   async function addTemperature() {
     if (!equipmentId || !employeeId || !temperature) {
-      alert("Veuillez remplir tous les champs");
+      alert("Remplis tous les champs");
       return;
     }
 
-    await supabase.from("temperature_logs").insert([
+    const { error } = await supabase.from("temperature_logs").insert([
       {
-        equipement_id: Number(equipmentId),
+        equipment_id: Number(equipmentId),
         employee_id: Number(employeeId),
         temperature: Number(temperature),
       },
     ]);
 
+    if (error) {
+      console.log(error);
+      alert("Erreur lors de l'ajout");
+      return;
+    }
+
     setTemperature("");
+    setEquipmentId("");
+    setEmployeeId("");
 
     fetchData();
+  }
 
-    alert("Relevé ajouté ✅");
+  function isAlert(log: Log) {
+    if (!log.equipments) return false;
+
+    return (
+      log.temperature < log.equipments.temp_min ||
+      log.temperature > log.equipments.temp_max
+    );
   }
 
   return (
-    <main className="min-h-screen bg-[#0f172a] text-white p-8">
-
+    <main className="min-h-screen bg-[#0f172a] text-white p-10">
       <h1 className="text-5xl font-bold mb-10">
         Relevé des températures
       </h1>
 
-      <div className="bg-[#1e293b] p-6 rounded-2xl mb-10">
+      <div className="bg-white/10 p-6 rounded-2xl mb-10">
+        {/* EQUIPMENT */}
+        <select
+          value={equipmentId}
+          onChange={(e) => setEquipmentId(e.target.value)}
+          className="w-full p-4 rounded-xl bg-white/10 mb-4"
+        >
+          <option value="">Choisir un équipement</option>
 
-        <div className="flex flex-col gap-5">
-
-          <select
-            value={equipmentId}
-            onChange={(e) =>
-              setEquipmentId(e.target.value)
-            }
-            className="bg-[#0f172a] p-4 rounded-xl"
-          >
-            <option value="">
-              Choisir un équipement
+          {equipments.map((equipment) => (
+            <option key={equipment.id} value={equipment.id}>
+              {equipment.name}
             </option>
+          ))}
+        </select>
 
-            {equipments.map((equipment) => (
-              <option
-                key={equipment.id}
-                value={equipment.id}
-              >
-                {equipment.name}
-              </option>
-            ))}
-          </select>
+        {/* EMPLOYEE */}
+        <select
+          value={employeeId}
+          onChange={(e) => setEmployeeId(e.target.value)}
+          className="w-full p-4 rounded-xl bg-white/10 mb-4"
+        >
+          <option value="">Choisir un employé</option>
 
-          <select
-            value={employeeId}
-            onChange={(e) =>
-              setEmployeeId(e.target.value)
-            }
-            className="bg-[#0f172a] p-4 rounded-xl"
-          >
-            <option value="">
-              Choisir un employé
+          {employees.map((employee) => (
+            <option key={employee.id} value={employee.id}>
+              {employee.full_name}
             </option>
+          ))}
+        </select>
 
-            {employees.map((employee) => (
-              <option
-                key={employee.id}
-                value={employee.id}
-              >
-                {employee.full_name}
-              </option>
-            ))}
-          </select>
+        {/* TEMPERATURE */}
+        <input
+          type="number"
+          placeholder="Température"
+          value={temperature}
+          onChange={(e) => setTemperature(e.target.value)}
+          className="w-full p-4 rounded-xl bg-white/10 mb-4"
+        />
 
-          <input
-            type="number"
-            placeholder="Température"
-            value={temperature}
-            onChange={(e) =>
-              setTemperature(e.target.value)
-            }
-            className="bg-[#0f172a] p-4 rounded-xl"
-          />
-
-          <button
-            onClick={addTemperature}
-            className="bg-blue-600 hover:bg-blue-700 transition p-4 rounded-xl font-bold"
-          >
-            Ajouter le relevé
-          </button>
-
-        </div>
-
+        <button
+          onClick={addTemperature}
+          className="w-full bg-blue-600 hover:bg-blue-700 p-4 rounded-xl font-bold"
+        >
+          Ajouter le relevé
+        </button>
       </div>
 
-      <div className="bg-[#1e293b] p-6 rounded-2xl">
-
+      {/* HISTORIQUE */}
+      <div className="bg-white/10 p-6 rounded-2xl">
         <h2 className="text-3xl font-bold mb-6">
-          Historique des relevés
+          Historique
         </h2>
 
-        <div className="flex flex-col gap-4">
-
+        <div className="space-y-4">
           {logs.map((log) => (
             <div
               key={log.id}
-              className="bg-[#0f172a] p-4 rounded-xl border border-gray-700"
+              className={`p-4 rounded-xl ${
+                isAlert(log)
+                  ? "bg-red-500/20 border border-red-500"
+                  : "bg-white/5"
+              }`}
             >
-              🌡 {log.temperature}°C
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-lg">
+                    {log.equipments?.name}
+                  </p>
+
+                  <p className="text-sm text-gray-300">
+                    Employé : {log.employees?.full_name}
+                  </p>
+
+                  <p className="text-sm text-gray-400">
+                    {new Date(log.created_at).toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-3xl font-bold">
+                    {log.temperature}°C
+                  </p>
+
+                  {isAlert(log) && (
+                    <p className="text-red-400 font-bold">
+                      ⚠️ ALERTE HACCP
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
 
+          {logs.length === 0 && (
+            <p className="text-gray-400">
+              Aucun relevé enregistré
+            </p>
+          )}
         </div>
-
       </div>
-
     </main>
   );
 }
