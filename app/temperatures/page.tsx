@@ -17,18 +17,31 @@ export default function TemperaturesPage() {
   }, []);
 
   async function fetchData() {
+    // =========================
     // ÉQUIPEMENTS
-    const { data: equipmentsData } = await supabase
+    // =========================
+    const {
+      data: equipmentsData,
+      error: equipmentsError,
+    } = await supabase
       .from("equipments")
       .select("*")
       .order("name");
 
+    console.log("EQUIPMENTS =", equipmentsData);
+    console.log("EQUIPMENTS ERROR =", equipmentsError);
+
     setEquipments(equipmentsData || []);
 
+    // =========================
     // EMPLOYÉS
-    const { data: employeesData, error: employeesError } = await supabase
+    // =========================
+    const {
+      data: employeesData,
+      error: employeesError,
+    } = await supabase
       .from("employees")
-      .select("*")
+      .select("id, full_name")
       .order("full_name");
 
     console.log("EMPLOYEES =", employeesData);
@@ -36,11 +49,21 @@ export default function TemperaturesPage() {
 
     setEmployees(employeesData || []);
 
+    // =========================
     // LOGS TEMPÉRATURES
-    const { data: logsData } = await supabase
+    // =========================
+    const {
+      data: logsData,
+      error: logsError,
+    } = await supabase
       .from("temperature_logs")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", {
+        ascending: false,
+      });
+
+    console.log("LOGS =", logsData);
+    console.log("LOGS ERROR =", logsError);
 
     setLogs(logsData || []);
   }
@@ -65,19 +88,29 @@ export default function TemperaturesPage() {
 
     const tempValue = Number(temperature);
 
-    await supabase.from("temperature_logs").insert([
-      {
-        equipment: equipment?.name || "",
-        equipment_id: equipment?.id || null,
+    const { error } = await supabase
+      .from("temperature_logs")
+      .insert([
+        {
+          equipment: equipment?.name || "",
+          equipment_id: equipment?.id || null,
 
-        employee_id: employee?.id || null,
-        employee_name: employee?.full_name || "",
+          employee_id: employee?.id || null,
+          employee_name:
+            employee?.full_name || "",
 
-        temperature: tempValue,
-      },
-    ]);
+          temperature: tempValue,
+        },
+      ]);
+
+    if (error) {
+      console.log(error);
+      alert("Erreur insertion");
+      return;
+    }
 
     setTemperature("");
+
     fetchData();
   }
 
@@ -87,6 +120,7 @@ export default function TemperaturesPage() {
 
   return (
     <main className="min-h-screen bg-[#0B1120] text-white p-10">
+      {/* TITRE */}
       <h1 className="text-5xl font-bold mb-10">
         Relevé des températures
       </h1>
@@ -98,7 +132,9 @@ export default function TemperaturesPage() {
         <select
           value={selectedEquipment}
           onChange={(e) =>
-            setSelectedEquipment(e.target.value)
+            setSelectedEquipment(
+              e.target.value
+            )
           }
           className="w-full p-4 rounded-xl bg-black/30 mb-4"
         >
@@ -106,21 +142,27 @@ export default function TemperaturesPage() {
             Choisir un équipement
           </option>
 
-          {equipments.map((equipment) => (
-            <option
-              key={equipment.id}
-              value={equipment.id}
-            >
-              {equipment.name}
-            </option>
-          ))}
+          {equipments &&
+            equipments.length > 0 &&
+            equipments.map(
+              (equipment: any) => (
+                <option
+                  key={equipment.id}
+                  value={equipment.id}
+                >
+                  {equipment.name}
+                </option>
+              )
+            )}
         </select>
 
         {/* EMPLOYÉS */}
         <select
           value={selectedEmployee}
           onChange={(e) =>
-            setSelectedEmployee(e.target.value)
+            setSelectedEmployee(
+              e.target.value
+            )
           }
           className="w-full p-4 rounded-xl bg-black/30 mb-4"
         >
@@ -128,14 +170,18 @@ export default function TemperaturesPage() {
             Choisir un employé
           </option>
 
-          {employees.map((employee) => (
-            <option
-              key={employee.id}
-              value={employee.id}
-            >
-              {employee.full_name}
-            </option>
-          ))}
+          {employees &&
+            employees.length > 0 &&
+            employees.map(
+              (employee: any) => (
+                <option
+                  key={employee.id}
+                  value={employee.id}
+                >
+                  {employee.full_name}
+                </option>
+              )
+            )}
         </select>
 
         {/* TEMPÉRATURE */}
@@ -144,7 +190,9 @@ export default function TemperaturesPage() {
           placeholder="Température"
           value={temperature}
           onChange={(e) =>
-            setTemperature(e.target.value)
+            setTemperature(
+              e.target.value
+            )
           }
           className="w-full p-4 rounded-xl bg-black/30 mb-4"
         />
@@ -164,7 +212,7 @@ export default function TemperaturesPage() {
       </h2>
 
       <div className="space-y-4">
-        {logs.map((log) => (
+        {logs.map((log: any) => (
           <div
             key={log.id}
             className={`p-6 rounded-2xl border ${
@@ -174,13 +222,16 @@ export default function TemperaturesPage() {
             }`}
           >
             <div className="flex justify-between items-center">
+
               <div>
                 <h3 className="text-2xl font-bold">
                   {log.equipment}
                 </h3>
 
                 <p className="text-lg opacity-80">
-                  Employé : {log.employee_name || "Inconnu"}
+                  Employé :{" "}
+                  {log.employee_name ||
+                    "Inconnu"}
                 </p>
 
                 <p className="opacity-70">
@@ -201,6 +252,7 @@ export default function TemperaturesPage() {
                   </p>
                 )}
               </div>
+
             </div>
           </div>
         ))}
