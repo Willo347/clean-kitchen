@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -24,30 +23,34 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  async function fetchData() {
     const { data: logsData } = await supabase
       .from("temperature_logs")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
 
     const { data: equipmentsData } = await supabase
       .from("equipments")
       .select("*");
 
-    if (logsData && equipmentsData) {
-      const formattedLogs = logsData.map((log) => ({
-        ...log,
-        equipment: equipmentsData.find(
-          (eq) => eq.id === log.equipement_id
-        ),
-      }));
+    setLogs(logsData || []);
+    setEquipments(equipmentsData || []);
+  }
 
-      setLogs(formattedLogs);
-      setEquipments(equipmentsData);
-    }
-  };
+  const alerts = logs.filter((log: any) => {
+    const equipment = equipments.find(
+      (eq: any) => eq.id === log.equipment_id
+    );
 
-  const average =
+    if (!equipment) return false;
+
+    return (
+      log.temperature < equipment.temp_min ||
+      log.temperature > equipment.temp_max
+    );
+  });
+
+  const averageTemp =
     logs.length > 0
       ? (
           logs.reduce((acc, log) => acc + log.temperature, 0) /
@@ -55,219 +58,142 @@ export default function DashboardPage() {
         ).toFixed(1)
       : "0";
 
-  const alerts = logs.filter((log) => log.temperature > 4);
-
-  const conformity =
-    logs.length > 0
-      ? Math.round(
-          ((logs.length - alerts.length) / logs.length) * 100
-        )
-      : 100;
-
-  const chartData = logs
-    .slice()
-    .reverse()
-    .map((log) => ({
-      date: new Date(log.created_at).toLocaleDateString(),
-      temperature: log.temperature,
-    }));
-
-  const exportPDF = () => {
+  function exportPDF() {
     const doc = new jsPDF();
 
-    doc.setFontSize(20);
     doc.text("Rapport HACCP - Clean Kitchen", 14, 20);
 
     autoTable(doc, {
       startY: 30,
-      head: [["Équipement", "Température", "Date"]],
+      head: [["Equipement", "Température", "Date"]],
       body: logs.map((log) => [
-        log.equipment?.name || "Équipement",
+        log.equipment || "N/A",
         `${log.temperature}°C`,
         new Date(log.created_at).toLocaleString(),
       ]),
     });
 
     doc.save("rapport-haccp.pdf");
-  };
+  }
 
   return (
-    <main className="min-h-screen bg-black text-white p-8">
-      <div className="flex justify-between items-center mb-10">
+    <main className="flex-1 p-8 overflow-auto">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-5xl font-bold">
-            Clean Kitchen
-          </h1>
-
-          <p className="text-gray-400 mt-2">
-            Dashboard HACCP
-          </p>
+          <h1 className="text-5xl font-bold">Clean Kitchen</h1>
+          <p className="text-gray-400 mt-2">Dashboard HACCP</p>
         </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={exportPDF}
-            className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl"
-          >
-            Export PDF
-          </button>
-
-          <Link
-            href="/temperatures"
-            className="bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded-xl"
-          >
-            Températures
-          </Link>
-
-          <Link
-            href="/equipments"
-            className="bg-gray-700 hover:bg-gray-600 px-5 py-3 rounded-xl"
-          >
-            Équipements
-          </Link>
-        </div>
+        <button
+          onClick={exportPDF}
+          className="bg-red-500 hover:bg-red-600 px-5 py-3 rounded-xl font-semibold"
+        >
+          Export PDF
+        </button>
       </div>
 
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-zinc-900 p-6 rounded-3xl">
-          <p className="text-gray-400">
-            Température moyenne
-          </p>
-
-          <h2 className="text-5xl font-bold text-green-400 mt-2">
-            {average}°C
+      <div className="grid grid-cols-4 gap-6 mb-8">
+        <div className="bg-[#111827] p-6 rounded-2xl">
+          <p className="text-gray-400">Température moyenne</p>
+          <h2 className="text-5xl text-green-400 font-bold mt-2">
+            {averageTemp}°C
           </h2>
         </div>
 
-        <div className="bg-zinc-900 p-6 rounded-3xl">
-          <p className="text-gray-400">
-            Alertes actives
-          </p>
-
-          <h2 className="text-5xl font-bold text-red-400 mt-2">
+        <div className="bg-[#111827] p-6 rounded-2xl">
+          <p className="text-gray-400">Alertes actives</p>
+          <h2 className="text-5xl text-red-400 font-bold mt-2">
             {alerts.length}
           </h2>
         </div>
 
-        <div className="bg-zinc-900 p-6 rounded-3xl">
-          <p className="text-gray-400">
-            Équipements
-          </p>
-
-          <h2 className="text-5xl font-bold text-blue-400 mt-2">
+        <div className="bg-[#111827] p-6 rounded-2xl">
+          <p className="text-gray-400">Équipements</p>
+          <h2 className="text-5xl text-blue-400 font-bold mt-2">
             {equipments.length}
           </h2>
         </div>
 
-        <div className="bg-zinc-900 p-6 rounded-3xl">
-          <p className="text-gray-400">
-            Conformité
-          </p>
-
-          <h2 className="text-5xl font-bold text-green-400 mt-2">
-            {conformity}%
+        <div className="bg-[#111827] p-6 rounded-2xl">
+          <p className="text-gray-400">Conformité</p>
+          <h2 className="text-5xl text-green-400 font-bold mt-2">
+            {logs.length > 0
+              ? Math.round(
+                  ((logs.length - alerts.length) / logs.length) * 100
+                )
+              : 100}
+            %
           </h2>
         </div>
       </div>
 
-      <div className="bg-zinc-900 p-6 rounded-3xl mb-8">
-        <h2 className="text-3xl font-bold mb-6">
+      <div className="bg-[#111827] p-6 rounded-2xl mb-8">
+        <h2 className="text-2xl font-bold mb-6">
           Évolution des températures
         </h2>
 
-        <div className="h-[300px]">
+        <div className="h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <XAxis dataKey="date" stroke="#888" />
+            <LineChart data={logs}>
+              <XAxis
+                dataKey="created_at"
+                tickFormatter={(value) =>
+                  new Date(value).toLocaleDateString()
+                }
+              />
 
-              <YAxis stroke="#888" />
+              <YAxis />
 
-              <Tooltip />
+              <Tooltip
+                labelFormatter={(value) =>
+                  new Date(value).toLocaleString()
+                }
+              />
 
               <Line
                 type="monotone"
                 dataKey="temperature"
                 stroke="#3b82f6"
-                strokeWidth={4}
+                strokeWidth={3}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-zinc-900 p-6 rounded-3xl">
-          <h2 className="text-3xl font-bold mb-6">
-            Derniers relevés
-          </h2>
+      <div className="bg-[#111827] p-6 rounded-2xl">
+        <h2 className="text-2xl font-bold mb-6 text-red-400">
+          Alertes HACCP
+        </h2>
 
-          <div className="space-y-4">
-            {logs.slice(0, 5).map((log) => (
-              <div
-                key={log.id}
-                className="bg-zinc-800 p-4 rounded-2xl flex justify-between items-center"
-              >
-                <div>
-                  <p className="font-bold text-xl">
-                    {log.equipment?.name || "Équipement"}
-                  </p>
+        {alerts.length === 0 && (
+          <p className="text-green-400">
+            Aucun problème détecté ✅
+          </p>
+        )}
 
-                  <p className="text-gray-400 text-sm">
-                    {new Date(
-                      log.created_at
-                    ).toLocaleString()}
-                  </p>
-                </div>
-
-                <div
-                  className={`text-4xl font-bold ${
-                    log.temperature > 4
-                      ? "text-red-400"
-                      : "text-green-400"
-                  }`}
-                >
-                  {log.temperature}°C
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-zinc-900 p-6 rounded-3xl">
-          <h2 className="text-3xl font-bold mb-6 text-red-400">
-            Alertes critiques
-          </h2>
-
-          <div className="space-y-4">
-            {alerts.map((log) => (
-              <div
-                key={log.id}
-                className="border border-red-500 bg-red-950 p-4 rounded-2xl flex justify-between items-center"
-              >
-                <div>
-                  <p className="font-bold text-xl">
-                    {log.equipment?.name || "Équipement"}
-                  </p>
-
-                  <p className="text-gray-400 text-sm">
-                    {new Date(
-                      log.created_at
-                    ).toLocaleString()}
-                  </p>
-                </div>
-
-                <div className="text-4xl font-bold text-red-400">
-                  {log.temperature}°C
-                </div>
-              </div>
-            ))}
-
-            {alerts.length === 0 && (
-              <p className="text-green-400">
-                Aucun problème détecté ✅
+        <div className="space-y-4">
+          {alerts.map((log, index) => (
+            <div
+              key={index}
+              className="bg-[#1f2937] p-4 rounded-xl border border-red-500"
+            >
+              <p className="font-bold text-lg">
+                ⚠️ Température hors norme
               </p>
-            )}
-          </div>
+
+              <p className="text-gray-300 mt-2">
+                Température relevée :
+                <span className="text-red-400 font-bold ml-2">
+                  {log.temperature}°C
+                </span>
+              </p>
+
+              <p className="text-sm text-gray-500 mt-2">
+                {new Date(log.created_at).toLocaleString()}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </main>
