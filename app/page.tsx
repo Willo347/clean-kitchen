@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 import {
@@ -18,7 +18,9 @@ import autoTable from "jspdf-autotable";
 export default function DashboardPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [equipments, setEquipments] = useState<any[]>([]);
-  const [alertes, setAlertes] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [showAlertsOnly, setShowAlertsOnly] =
+    useState(false);
 
   useEffect(() => {
     fetchData();
@@ -28,7 +30,7 @@ export default function DashboardPage() {
     const { data: logsData } = await supabase
       .from("temperature_logs")
       .select("*")
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: false });
 
     const { data: equipmentsData } = await supabase
       .from("equipments")
@@ -36,54 +38,68 @@ export default function DashboardPage() {
 
     setLogs(logsData || []);
     setEquipments(equipmentsData || []);
-
-    checkAlertes(logsData || [], equipmentsData || []);
   }
 
-  function checkAlertes(logsData: any[], equipmentsData: any[]) {
-    const nouvellesAlertes: any[] = [];
-
-    logsData.forEach((log) => {
-      const equipement = equipmentsData.find(
+  const logsWithStatus = useMemo(() => {
+    return logs.map((log) => {
+      const equipement = equipments.find(
         (e) => e.id === log.equipement_id
       );
 
-      if (!equipement) return;
-
-      if (
-        equipement.temp_min !== null &&
-        log.temperature < equipement.temp_min
-      ) {
-        nouvellesAlertes.push({
-          message: `❄️ ${equipement.name} trop froid (${log.temperature}°C)`,
-        });
+      if (!equipement) {
+        return {
+          ...log,
+          status: "unknown",
+        };
       }
 
-      if (
-        equipement.temp_max !== null &&
-        log.temperature > equipement.temp_max
-      ) {
-        nouvellesAlertes.push({
-          message: `🔥 ${equipement.name} trop chaud (${log.temperature}°C)`,
-        });
-      }
+      const isAlert =
+        log.temperature < equipement.temp_min ||
+        log.temperature > equipement.temp_max;
+
+      return {
+        ...log,
+        equipmentName: equipement.name,
+        status: isAlert ? "alert" : "ok",
+      };
     });
+  }, [logs, equipments]);
 
-    setAlertes(nouvellesAlertes);
-  }
+  const filteredLogs = useMemo(() => {
+    return logsWithStatus.filter((log) => {
+      const matchSearch =
+        !search ||
+        log.equipmentName
+          ?.toLowerCase()
+          .includes(search.toLowerCase());
+
+      const matchAlert =
+        !showAlertsOnly || log.status === "alert";
+
+      return matchSearch && matchAlert;
+    });
+  }, [logsWithStatus, search, showAlertsOnly]);
+
+  const alertes = filteredLogs.filter(
+    (log) => log.status === "alert"
+  );
 
   const moyenne =
-    logs.length > 0
+    filteredLogs.length > 0
       ? (
-          logs.reduce((acc, log) => acc + log.temperature, 0) /
-          logs.length
+          filteredLogs.reduce(
+            (acc, log) => acc + log.temperature,
+            0
+          ) / filteredLogs.length
         ).toFixed(1)
       : "0";
 
   const conformite =
-    logs.length > 0
+    filteredLogs.length > 0
       ? Math.round(
-          ((logs.length - alertes.length) / logs.length) * 100
+          ((filteredLogs.length - alertes.length) /
+            filteredLogs.length) *
+            100
         )
       : 100;
 
@@ -105,11 +121,21 @@ export default function DashboardPage() {
     autoTable(doc, {
       startY: 40,
 
-      head: [["Equipement", "Température", "Date"]],
+      head: [
+        [
+          "Equipement",
+          "Température",
+          "Statut",
+          "Date",
+        ],
+      ],
 
-      body: logs.map((log) => [
-        log.equipment || "N/A",
+      body: filteredLogs.map((log) => [
+        log.equipmentName || "N/A",
         `${log.temperature}°C`,
+        log.status === "alert"
+          ? "ALERTE"
+          : "Conforme",
         new Date(log.created_at).toLocaleString(),
       ]),
     });
@@ -134,7 +160,7 @@ export default function DashboardPage() {
 
         <button
           onClick={exportPDF}
-          className="bg-red-500 hover:bg-red-600 transition px-6 py-3 rounded-2xl font-bold shadow-lg"
+          className="bg-red-500 hover:bg-red-600 transition px-6 py-3 rounded-2xl font-bold"
         >
           Export PDF HACCP
         </button>
@@ -143,7 +169,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
 
-        <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg">
+        <div className="bg-[#1e293b] p-6 rounded-2xl">
           <p className="text-gray-400 mb-2">
             Température moyenne
           </p>
@@ -153,7 +179,7 @@ export default function DashboardPage() {
           </h2>
         </div>
 
-        <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg">
+        <div className="bg-[#1e293b] p-6 rounded-2xl">
           <p className="text-gray-400 mb-2">
             Alertes actives
           </p>
@@ -163,7 +189,7 @@ export default function DashboardPage() {
           </h2>
         </div>
 
-        <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg">
+        <div className="bg-[#1e293b] p-6 rounded-2xl">
           <p className="text-gray-400 mb-2">
             Équipements
           </p>
@@ -173,7 +199,7 @@ export default function DashboardPage() {
           </h2>
         </div>
 
-        <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg">
+        <div className="bg-[#1e293b] p-6 rounded-2xl">
           <p className="text-gray-400 mb-2">
             Conformité HACCP
           </p>
@@ -185,7 +211,34 @@ export default function DashboardPage() {
 
       </div>
 
-      <div className="bg-[#1e293b] p-6 rounded-2xl mb-8 shadow-lg">
+      <div className="bg-[#1e293b] p-6 rounded-2xl mb-8">
+
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+
+          <input
+            type="text"
+            placeholder="Rechercher un équipement..."
+            value={search}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
+            className="bg-[#0f172a] border border-gray-700 rounded-2xl px-5 py-3 flex-1"
+          />
+
+          <button
+            onClick={() =>
+              setShowAlertsOnly(!showAlertsOnly)
+            }
+            className={`px-5 py-3 rounded-2xl font-bold transition ${
+              showAlertsOnly
+                ? "bg-red-500"
+                : "bg-[#0f172a] border border-gray-700"
+            }`}
+          >
+            🚨 Alertes uniquement
+          </button>
+
+        </div>
 
         <h2 className="text-3xl font-bold mb-6">
           Évolution des températures
@@ -195,7 +248,7 @@ export default function DashboardPage() {
 
           <ResponsiveContainer width="100%" height="100%">
 
-            <LineChart data={logs}>
+            <LineChart data={filteredLogs}>
 
               <XAxis dataKey="created_at" />
 
@@ -218,44 +271,69 @@ export default function DashboardPage() {
 
       </div>
 
-      <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg">
+      <div className="bg-[#1e293b] p-6 rounded-2xl">
 
-        <div className="flex items-center justify-between mb-6">
+        <h2 className="text-3xl font-bold text-red-400 mb-6">
+          Historique HACCP
+        </h2>
 
-          <h2 className="text-3xl font-bold text-red-400">
-            Alertes HACCP
-          </h2>
+        <div className="space-y-4">
 
-          {alertes.length > 0 && (
-            <div className="bg-red-500 px-4 py-2 rounded-full animate-pulse font-bold">
-              🚨 Danger détecté
-            </div>
-          )}
-
-        </div>
-
-        {alertes.length === 0 && (
-          <div className="bg-green-500/10 border border-green-500 p-5 rounded-2xl">
-            <p className="text-green-400 font-bold text-xl">
-              ✅ Aucun problème détecté
-            </p>
-
-            <p className="text-gray-400 mt-2">
-              Tous les équipements sont conformes HACCP.
-            </p>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-4">
-
-          {alertes.map((alerte, index) => (
+          {filteredLogs.map((log, index) => (
             <div
               key={index}
-              className="bg-red-500/20 border border-red-500 p-5 rounded-2xl"
+              className={`p-5 rounded-2xl border ${
+                log.status === "alert"
+                  ? "bg-red-500/10 border-red-500"
+                  : "bg-green-500/10 border-green-500"
+              }`}
             >
-              <p className="text-red-400 font-bold text-lg">
-                {alerte.message}
-              </p>
+
+              <div className="flex items-center justify-between">
+
+                <div>
+                  <p className="text-xl font-bold">
+                    {log.equipmentName || "Equipement"}
+                  </p>
+
+                  <p className="mt-2 text-gray-300">
+                    Température :
+                    <span
+                      className={`ml-2 font-bold ${
+                        log.status === "alert"
+                          ? "text-red-400"
+                          : "text-green-400"
+                      }`}
+                    >
+                      {log.temperature}°C
+                    </span>
+                  </p>
+                </div>
+
+                <div className="text-right">
+
+                  <div
+                    className={`px-4 py-2 rounded-full font-bold ${
+                      log.status === "alert"
+                        ? "bg-red-500"
+                        : "bg-green-500"
+                    }`}
+                  >
+                    {log.status === "alert"
+                      ? "ALERTE"
+                      : "CONFORME"}
+                  </div>
+
+                  <p className="text-sm text-gray-400 mt-3">
+                    {new Date(
+                      log.created_at
+                    ).toLocaleString()}
+                  </p>
+
+                </div>
+
+              </div>
+
             </div>
           ))}
 
