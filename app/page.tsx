@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
   XAxis,
   Tooltip,
+  Area,
 } from "recharts";
 
 export default function DashboardPage() {
@@ -108,7 +109,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
 
         {/* relevés */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
 
           <div className="flex items-center justify-between mb-5">
 
@@ -132,7 +133,7 @@ export default function DashboardPage() {
         </div>
 
         {/* alertes */}
-        <div className="bg-red-500/10 border border-red-500/20 rounded-3xl p-6">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
 
           <div className="flex items-center justify-between mb-5">
 
@@ -156,7 +157,7 @@ export default function DashboardPage() {
         </div>
 
         {/* équipements */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
 
           <div className="flex items-center justify-between mb-5">
 
@@ -180,7 +181,7 @@ export default function DashboardPage() {
         </div>
 
         {/* conformité */}
-        <div className="bg-green-500/10 border border-green-500/20 rounded-3xl p-6">
+        <div className="bg-green-500/10 border border-green-500/20 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
 
           <div className="flex items-center justify-between mb-5">
 
@@ -206,7 +207,7 @@ export default function DashboardPage() {
       </div>
 
       {/* GRAPH */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-10">
+      <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-xl shadow-2xl overflow-hidden">
 
         <div className="flex items-center justify-between mb-8">
 
@@ -222,33 +223,83 @@ export default function DashboardPage() {
 
           </div>
 
-          <div className="bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-2xl text-blue-300 text-sm">
+          <div className="bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-2xl text-blue-300 text-sm font-semibold">
             LIVE DATA
           </div>
 
         </div>
 
-        <div className="h-[300px]">
+        <div className="h-[350px]">
 
           <ResponsiveContainer width="100%" height="100%">
 
             <LineChart data={chartData}>
 
+              <defs>
+
+                <linearGradient
+                  id="colorTemp"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+
+                  <stop
+                    offset="5%"
+                    stopColor="#3B82F6"
+                    stopOpacity={0.45}
+                  />
+
+                  <stop
+                    offset="95%"
+                    stopColor="#3B82F6"
+                    stopOpacity={0}
+                  />
+
+                </linearGradient>
+
+              </defs>
+
               <XAxis
                 dataKey="date"
                 stroke="#6B7280"
+                tickLine={false}
+                axisLine={false}
               />
 
-              <Tooltip />
+              <Tooltip
+                contentStyle={{
+                  background: "#111827",
+                  border:
+                    "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "18px",
+                  color: "white",
+                  backdropFilter: "blur(20px)",
+                }}
+              />
+
+              <Area
+                type="monotone"
+                dataKey="temperature"
+                stroke="none"
+                fillOpacity={1}
+                fill="url(#colorTemp)"
+              />
 
               <Line
                 type="monotone"
                 dataKey="temperature"
                 stroke="#3B82F6"
-                strokeWidth={4}
+                strokeWidth={5}
                 dot={{
-                  r: 6,
+                  r: 7,
                   fill: "#3B82F6",
+                  strokeWidth: 0,
+                }}
+                activeDot={{
+                  r: 9,
+                  fill: "#60A5FA",
                 }}
               />
 
@@ -257,6 +308,7 @@ export default function DashboardPage() {
           </ResponsiveContainer>
 
         </div>
+
       </div>
 
     </main>
