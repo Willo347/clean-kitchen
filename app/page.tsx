@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+
 import { supabase } from "@/lib/supabase";
 
 import {
@@ -87,7 +89,12 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#070B14] text-white p-8">
+    <motion.main
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7 }}
+      className="min-h-screen bg-[#070B14] text-white p-8"
+    >
 
       {/* HEADER */}
       <div className="mb-12">
@@ -109,7 +116,12 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
 
         {/* relevés */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+          }}
+          className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl"
+        >
 
           <div className="flex items-center justify-between mb-5">
 
@@ -130,10 +142,15 @@ export default function DashboardPage() {
             {logsCount}
           </h2>
 
-        </div>
+        </motion.div>
 
         {/* alertes */}
-        <div className="bg-red-500/10 border border-red-500/20 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+          }}
+          className="bg-red-500/10 border border-red-500/20 rounded-3xl p-6 backdrop-blur-xl shadow-2xl"
+        >
 
           <div className="flex items-center justify-between mb-5">
 
@@ -154,10 +171,15 @@ export default function DashboardPage() {
             {alertsCount}
           </h2>
 
-        </div>
+        </motion.div>
 
         {/* équipements */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+          }}
+          className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl"
+        >
 
           <div className="flex items-center justify-between mb-5">
 
@@ -178,10 +200,15 @@ export default function DashboardPage() {
             {equipmentsCount}
           </h2>
 
-        </div>
+        </motion.div>
 
         {/* conformité */}
-        <div className="bg-green-500/10 border border-green-500/20 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+          }}
+          className="bg-green-500/10 border border-green-500/20 rounded-3xl p-6 backdrop-blur-xl shadow-2xl"
+        >
 
           <div className="flex items-center justify-between mb-5">
 
@@ -202,12 +229,17 @@ export default function DashboardPage() {
             98%
           </h2>
 
-        </div>
+        </motion.div>
 
       </div>
 
       {/* GRAPH */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-xl shadow-2xl overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-xl shadow-2xl overflow-hidden"
+      >
 
         <div className="flex items-center justify-between mb-8">
 
@@ -309,8 +341,8 @@ export default function DashboardPage() {
 
         </div>
 
-      </div>
+      </motion.div>
 
-    </main>
+    </motion.main>
   );
 }
