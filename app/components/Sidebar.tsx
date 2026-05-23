@@ -1,192 +1,434 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-import {
-  LayoutDashboard,
-  Thermometer,
-  Truck,
-  ShieldCheck,
-  Users,
-  Settings,
-} from "lucide-react";
 
 import { motion } from "framer-motion";
 
+import {
+  LayoutDashboard,
+  Refrigerator,
+  ClipboardList,
+  Bell,
+  ShieldCheck,
+  Settings,
+  Activity,
+} from "lucide-react";
+
+const items = [
+  {
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    active: true,
+  },
+  {
+    label: "Équipements",
+    icon: Refrigerator,
+  },
+  {
+    label: "Contrôles",
+    icon: ClipboardList,
+  },
+  {
+    label: "Alertes",
+    icon: Bell,
+  },
+  {
+    label: "HACCP",
+    icon: ShieldCheck,
+  },
+  {
+    label: "Monitoring",
+    icon: Activity,
+  },
+  {
+    label: "Paramètres",
+    icon: Settings,
+  },
+];
+
 export default function Sidebar() {
 
-  const pathname = usePathname();
-
-  const menuItems = [
-    {
-      name: "Dashboard",
-      href: "/",
-      icon: LayoutDashboard,
-    },
-    {
-      name: "Températures",
-      href: "/temperatures",
-      icon: Thermometer,
-    },
-    {
-      name: "Traçabilité",
-      href: "/tracabilite",
-      icon: Truck,
-    },
-    {
-      name: "Nettoyage",
-      href: "/nettoyage",
-      icon: ShieldCheck,
-    },
-    {
-      name: "Employés",
-      href: "/employees",
-      icon: Users,
-    },
-    {
-      name: "Paramètres",
-      href: "/parametres",
-      icon: Settings,
-    },
-  ];
-
   return (
-    <aside className="w-72 min-h-screen bg-[#081120] border-r border-white/5 p-6 relative overflow-hidden">
+    <aside
+      className="
+        relative
 
-      {/* GLOW */}
-      <div className="absolute top-[-120px] left-[-120px] w-[250px] h-[250px] bg-blue-500/20 blur-3xl rounded-full" />
+        w-[320px]
+
+        border-r
+        border-white/10
+
+        bg-black/20
+        backdrop-blur-2xl
+
+        p-6
+
+        overflow-hidden
+      "
+    >
+
+      {/* BACKGROUND GLOW */}
+      <div
+        className="
+          absolute
+          top-[-100px]
+          left-[-100px]
+
+          w-[300px]
+          h-[300px]
+
+          rounded-full
+
+          bg-blue-500/10
+
+          blur-3xl
+        "
+      />
 
       {/* LOGO */}
-      <div className="relative z-10 flex items-center gap-4 mb-14">
+      <div className="relative z-10 mb-10">
 
-        <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-3xl font-black shadow-2xl shadow-blue-500/30">
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+          }}
+          className="
+            relative
+            overflow-hidden
 
-          CK
+            rounded-3xl
 
-        </div>
+            border
+            border-white/10
+
+            bg-white/[0.04]
+
+            p-6
+          "
+        >
+
+          {/* SHINE */}
+          <div
+            className="
+              absolute
+              top-0
+              left-[-100%]
+
+              w-[120%]
+              h-full
+
+              bg-gradient-to-r
+              from-transparent
+              via-white/10
+              to-transparent
+
+              animate-[shine_8s_linear_infinite]
+            "
+          />
+
+          <div className="relative z-10">
+
+            <div className="flex items-center gap-4">
+
+              <div
+                className="
+                  w-16
+                  h-16
+
+                  rounded-3xl
+
+                  bg-gradient-to-br
+                  from-blue-500
+                  to-cyan-400
+
+                  flex
+                  items-center
+                  justify-center
+
+                  text-2xl
+                  font-black
+                "
+              >
+                CK
+              </div>
+
+              <div>
+
+                <h1 className="text-2xl font-black">
+                  Clean Kitchen
+                </h1>
+
+                <p className="text-gray-400 text-sm mt-1">
+                  HACCP Monitoring
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </motion.div>
+
+      </div>
+
+      {/* LIVE STATUS */}
+      <motion.div
+        animate={{
+          opacity: [0.7, 1, 0.7],
+        }}
+        transition={{
+          repeat: Infinity,
+          duration: 2,
+        }}
+        className="
+          relative
+          z-10
+
+          flex
+          items-center
+          gap-4
+
+          rounded-2xl
+
+          border
+          border-green-500/20
+
+          bg-green-500/10
+
+          px-5
+          py-4
+
+          mb-8
+        "
+      >
+
+        <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
 
         <div>
 
-          <h1 className="text-3xl font-black text-white leading-none">
-            Clean Kitchen
-          </h1>
+          <p className="font-semibold text-green-300">
+            SYSTEM ONLINE
+          </p>
 
-          <p className="text-gray-400 mt-1">
-            HACCP Platform
+          <p className="text-green-400/70 text-sm">
+            Monitoring actif
           </p>
 
         </div>
-      </div>
+
+      </motion.div>
 
       {/* MENU */}
-      <nav className="relative z-10 flex flex-col gap-4">
+      <nav className="relative z-10 flex flex-col gap-3">
 
-        {menuItems.map((item) => {
+        {items.map((item, index) => {
 
           const Icon = item.icon;
 
-          const active = pathname === item.href;
-
           return (
-            <motion.div
-              key={item.name}
-              whileHover={{
-                scale: 1.03,
-                x: 5,
-              }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-              }}
+
+            <Link
+              key={index}
+              href="#"
             >
 
-              <Link
-                href={item.href}
+              <motion.div
+                whileHover={{
+                  x: 6,
+                }}
                 className={`
-                  group
                   relative
+                  overflow-hidden
+
                   flex
                   items-center
                   gap-4
+
+                  rounded-2xl
+
                   px-5
-                  py-5
-                  rounded-3xl
-                  transition-all
-                  duration-300
-                  overflow-hidden
+                  py-4
+
                   border
 
+                  transition-all
+                  duration-300
+
                   ${
-                    active
+                    item.active
                       ? `
                         bg-gradient-to-r
-                        from-blue-600
-                        to-cyan-500
-                        text-white
-                        border-blue-400/30
-                        shadow-2xl
-                        shadow-cyan-500/20
+                        from-blue-500/20
+                        to-cyan-500/10
+
+                        border-blue-500/20
+
+                        shadow-lg
+                        shadow-blue-500/10
                       `
                       : `
                         bg-white/[0.03]
                         border-white/5
-                        text-gray-300
+
                         hover:bg-white/[0.06]
-                        hover:border-white/10
                       `
                   }
                 `}
               >
 
-                {/* glow hover */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/5" />
+                {/* ACTIVE GLOW */}
+                {item.active && (
+
+                  <motion.div
+                    animate={{
+                      opacity: [0.4, 1, 0.4],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 2,
+                    }}
+                    className="
+                      absolute
+                      inset-0
+
+                      bg-gradient-to-r
+                      from-blue-500/10
+                      to-cyan-500/10
+                    "
+                  />
+
+                )}
 
                 <div className="relative z-10 flex items-center gap-4">
 
                   <div
                     className={`
-                      p-2 rounded-2xl
+                      p-3
+                      rounded-2xl
+
                       ${
-                        active
-                          ? "bg-white/20"
-                          : "bg-white/[0.04]"
+                        item.active
+                          ? "bg-blue-500/20"
+                          : "bg-white/[0.05]"
                       }
                     `}
                   >
 
-                    <Icon size={22} />
+                    <Icon
+                      className={`
+                        w-5
+                        h-5
+
+                        ${
+                          item.active
+                            ? "text-cyan-300"
+                            : "text-gray-300"
+                        }
+                      `}
+                    />
 
                   </div>
 
-                  <span className="font-semibold text-lg">
-                    {item.name}
+                  <span
+                    className={`
+                      font-semibold
+
+                      ${
+                        item.active
+                          ? "text-white"
+                          : "text-gray-300"
+                      }
+                    `}
+                  >
+                    {item.label}
                   </span>
 
                 </div>
 
-              </Link>
+                {/* LIVE INDICATOR */}
+                {item.active && (
 
-            </motion.div>
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.4, 1],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 2,
+                    }}
+                    className="
+                      ml-auto
+
+                      w-3
+                      h-3
+
+                      rounded-full
+
+                      bg-cyan-400
+                    "
+                  />
+
+                )}
+
+              </motion.div>
+
+            </Link>
           );
         })}
+
       </nav>
 
-      {/* FOOTER STATUS */}
-      <div className="absolute bottom-6 left-6 right-6">
+      {/* FOOTER */}
+      <div
+        className="
+          absolute
+          bottom-6
+          left-6
+          right-6
 
-        <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-5 backdrop-blur-xl">
+          rounded-3xl
 
-          <p className="text-gray-400 text-sm mb-3">
-            Système
-          </p>
+          border
+          border-white/10
 
-          <div className="flex items-center gap-3">
+          bg-white/[0.04]
 
-            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+          p-5
+        "
+      >
 
-            <p className="text-white font-semibold">
-              Tous les services fonctionnent
+        <div className="flex items-center gap-4">
+
+          <div
+            className="
+              w-14
+              h-14
+
+              rounded-2xl
+
+              bg-gradient-to-br
+              from-cyan-500
+              to-blue-500
+
+              flex
+              items-center
+              justify-center
+
+              font-black
+            "
+          >
+            AI
+          </div>
+
+          <div>
+
+            <p className="font-bold">
+              AI Monitoring
+            </p>
+
+            <p className="text-gray-400 text-sm">
+              Analyse intelligente active
             </p>
 
           </div>
