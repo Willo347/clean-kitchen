@@ -24,17 +24,35 @@ export default function RootLayout({
         {/* GLOBAL BACKGROUND */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
 
+          {/* GRID */}
+          <div
+            className="
+              absolute
+              inset-0
+              opacity-[0.03]
+
+              [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)]
+
+              [background-size:60px_60px]
+            "
+          />
+
           {/* BLUE GLOW */}
           <div
             className="
               absolute
-              top-[-200px]
+              top-[-250px]
               left-[-150px]
-              w-[500px]
-              h-[500px]
+
+              w-[600px]
+              h-[600px]
+
               bg-blue-500/20
-              blur-3xl
+
               rounded-full
+              blur-3xl
+
+              animate-pulse
             "
           />
 
@@ -44,11 +62,16 @@ export default function RootLayout({
               absolute
               bottom-[-250px]
               right-[-150px]
-              w-[500px]
-              h-[500px]
+
+              w-[600px]
+              h-[600px]
+
               bg-cyan-500/20
-              blur-3xl
+
               rounded-full
+              blur-3xl
+
+              animate-pulse
             "
           />
 
@@ -58,11 +81,52 @@ export default function RootLayout({
               absolute
               top-[30%]
               left-[40%]
-              w-[350px]
-              h-[350px]
+
+              w-[400px]
+              h-[400px]
+
               bg-white/5
-              blur-3xl
+
               rounded-full
+              blur-3xl
+            "
+          />
+
+          {/* FLOATING BALL 1 */}
+          <div
+            className="
+              absolute
+              top-[20%]
+              left-[15%]
+
+              w-32
+              h-32
+
+              rounded-full
+              bg-blue-400/10
+
+              blur-2xl
+
+              animate-bounce
+            "
+          />
+
+          {/* FLOATING BALL 2 */}
+          <div
+            className="
+              absolute
+              bottom-[15%]
+              right-[20%]
+
+              w-40
+              h-40
+
+              rounded-full
+              bg-cyan-400/10
+
+              blur-2xl
+
+              animate-pulse
             "
           />
 
@@ -94,7 +158,7 @@ export default function RootLayout({
 
         </div>
 
-        {/* TOASTS */}
+        {/* TOASTER */}
         <Toaster
           position="top-right"
           richColors
