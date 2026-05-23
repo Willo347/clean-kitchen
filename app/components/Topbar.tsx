@@ -1,194 +1,317 @@
 "use client";
 
+import { motion } from "framer-motion";
+
 import {
   Bell,
   Search,
+  Activity,
+  ShieldCheck,
 } from "lucide-react";
 
 export default function Topbar() {
 
-  const now = new Date();
-
   return (
-    <header className="mb-10">
+    <div className="mb-10">
 
       <div
         className="
-          flex
-          items-center
-          justify-between
-          gap-6
-
-          bg-white/[0.04]
-          border
-          border-white/10
+          relative
+          overflow-hidden
 
           rounded-3xl
 
-          px-8
-          py-5
+          border
+          border-white/10
+
+          bg-white/[0.04]
 
           backdrop-blur-2xl
+
+          px-8
+          py-5
         "
       >
 
-        {/* SEARCH */}
-        <div className="flex-1 max-w-xl">
+        {/* SHINE */}
+        <div
+          className="
+            absolute
+            top-0
+            left-[-100%]
 
-          <div
-            className="
-              flex
-              items-center
-              gap-4
+            w-[120%]
+            h-full
 
-              bg-black/20
-              border
-              border-white/5
+            bg-gradient-to-r
+            from-transparent
+            via-white/10
+            to-transparent
 
-              rounded-2xl
+            animate-[shine_8s_linear_infinite]
+          "
+        />
 
-              px-5
-              py-4
-            "
-          >
+        <div className="relative z-10 flex items-center justify-between">
 
-            <Search
-              size={20}
-              className="text-gray-500"
-            />
+          {/* LEFT */}
+          <div>
 
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              className="
-                bg-transparent
-                outline-none
-                w-full
-                text-white
-                placeholder:text-gray-500
-              "
-            />
+            <p className="text-gray-400 text-sm mb-2">
+              Monitoring HACCP
+            </p>
+
+            <h2 className="text-3xl font-black tracking-tight">
+              Clean Kitchen
+            </h2>
 
           </div>
 
-        </div>
+          {/* CENTER */}
+          <div className="hidden xl:flex items-center gap-4">
 
-        {/* RIGHT */}
-        <div className="flex items-center gap-5">
+            {/* LIVE */}
+            <motion.div
+              animate={{
+                opacity: [0.5, 1, 0.5],
+              }}
+              transition={{
+                repeat: Infinity,
+                duration: 2,
+              }}
+              className="
+                flex
+                items-center
+                gap-3
 
-          {/* TIME */}
-          <div
-            className="
-              hidden
-              md:flex
-              flex-col
-              items-end
-            "
-          >
+                bg-green-500/10
+                border
+                border-green-500/20
 
-            <p className="text-sm text-gray-400">
-              Heure système
-            </p>
+                px-5
+                py-3
 
-            <p className="font-bold text-lg">
-              {now.toLocaleTimeString()}
-            </p>
+                rounded-2xl
+              "
+            >
+
+              <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+
+              <span className="text-green-300 font-semibold text-sm">
+                SYSTEM LIVE
+              </span>
+
+            </motion.div>
+
+            {/* SECURITY */}
+            <div
+              className="
+                flex
+                items-center
+                gap-3
+
+                bg-blue-500/10
+                border
+                border-blue-500/20
+
+                px-5
+                py-3
+
+                rounded-2xl
+              "
+            >
+
+              <ShieldCheck className="text-blue-400 w-5 h-5" />
+
+              <span className="text-blue-300 font-semibold text-sm">
+                HACCP Secure
+              </span>
+
+            </div>
 
           </div>
 
-          {/* NOTIF */}
-          <button
-            className="
-              relative
+          {/* RIGHT */}
+          <div className="flex items-center gap-4">
 
-              w-14
-              h-14
-
-              rounded-2xl
-
-              bg-blue-500/10
-              border
-              border-blue-500/20
-
-              flex
-              items-center
-              justify-center
-
-              hover:scale-105
-              transition-all
-            "
-          >
-
-            <Bell className="text-blue-400" />
-
-            <div
+            {/* SEARCH */}
+            <button
               className="
-                absolute
-                top-3
-                right-3
+                flex
+                items-center
+                justify-center
 
-                w-2
-                h-2
-
-                rounded-full
-                bg-red-400
-                animate-pulse
-              "
-            />
-
-          </button>
-
-          {/* PROFILE */}
-          <div
-            className="
-              flex
-              items-center
-              gap-4
-
-              bg-white/[0.03]
-              border
-              border-white/10
-
-              rounded-2xl
-
-              px-4
-              py-3
-            "
-          >
-
-            <div
-              className="
-                w-12
-                h-12
+                w-14
+                h-14
 
                 rounded-2xl
 
-                bg-gradient-to-br
-                from-cyan-400
-                to-blue-600
+                border
+                border-white/10
+
+                bg-white/[0.03]
+
+                hover:bg-white/[0.08]
+
+                transition-all
+              "
+            >
+
+              <Search className="w-5 h-5 text-gray-300" />
+
+            </button>
+
+            {/* ACTIVITY */}
+            <button
+              className="
+                relative
 
                 flex
                 items-center
                 justify-center
 
-                font-black
-                text-white
+                w-14
+                h-14
+
+                rounded-2xl
+
+                border
+                border-white/10
+
+                bg-white/[0.03]
+
+                hover:bg-white/[0.08]
+
+                transition-all
               "
             >
 
-              CK
+              <Activity className="w-5 h-5 text-cyan-300" />
 
-            </div>
+              <motion.div
+                animate={{
+                  scale: [1, 1.4, 1],
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 2,
+                }}
+                className="
+                  absolute
+                  top-3
+                  right-3
 
-            <div className="hidden md:block">
+                  w-2
+                  h-2
 
-              <p className="font-bold">
-                Admin
-              </p>
+                  rounded-full
+                  bg-cyan-400
+                "
+              />
 
-              <p className="text-sm text-gray-400">
-                Clean Kitchen
-              </p>
+            </button>
+
+            {/* NOTIFICATIONS */}
+            <button
+              className="
+                relative
+
+                flex
+                items-center
+                justify-center
+
+                w-14
+                h-14
+
+                rounded-2xl
+
+                border
+                border-white/10
+
+                bg-white/[0.03]
+
+                hover:bg-white/[0.08]
+
+                transition-all
+              "
+            >
+
+              <Bell className="w-5 h-5 text-white" />
+
+              <motion.div
+                animate={{
+                  scale: [1, 1.3, 1],
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 2,
+                }}
+                className="
+                  absolute
+                  top-3
+                  right-3
+
+                  w-3
+                  h-3
+
+                  rounded-full
+                  bg-red-400
+                "
+              />
+
+            </button>
+
+            {/* USER */}
+            <div
+              className="
+                flex
+                items-center
+                gap-4
+
+                rounded-2xl
+
+                border
+                border-white/10
+
+                bg-white/[0.03]
+
+                px-5
+                py-3
+              "
+            >
+
+              <div
+                className="
+                  w-12
+                  h-12
+
+                  rounded-2xl
+
+                  bg-gradient-to-br
+                  from-blue-500
+                  to-cyan-400
+
+                  flex
+                  items-center
+                  justify-center
+
+                  font-black
+                "
+              >
+                CK
+              </div>
+
+              <div className="hidden md:block">
+
+                <p className="font-semibold">
+                  Admin
+                </p>
+
+                <p className="text-gray-400 text-sm">
+                  Online
+                </p>
+
+              </div>
 
             </div>
 
@@ -198,6 +321,6 @@ export default function Topbar() {
 
       </div>
 
-    </header>
+    </div>
   );
 }
