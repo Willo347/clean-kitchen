@@ -501,15 +501,31 @@ export default function DashboardPage() {
 
                       </div>
 
-                      <p
-                        className={`text-2xl font-black ${
+                      <motion.div
+                        animate={
                           alert
-                            ? "text-red-400"
-                            : "text-white"
-                        }`}
+                            ? {
+                                scale: [1, 1.08, 1],
+                              }
+                            : {}
+                        }
+                        transition={{
+                          repeat: Infinity,
+                          duration: 1.8,
+                        }}
                       >
-                        {log.temperature}°
-                      </p>
+
+                        <p
+                          className={`text-2xl font-black ${
+                            alert
+                              ? "text-red-400"
+                              : "text-white"
+                          }`}
+                        >
+                          {log.temperature}°
+                        </p>
+
+                      </motion.div>
 
                     </div>
 
