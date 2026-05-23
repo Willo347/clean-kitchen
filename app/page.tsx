@@ -17,6 +17,7 @@ export default function TemperaturesPage() {
   }, []);
 
   async function fetchData() {
+
     // équipements
     const { data: equipmentsData } = await supabase
       .from("equipments")
@@ -37,7 +38,7 @@ export default function TemperaturesPage() {
       setEmployees(employeesData);
     }
 
-    // relevés températures
+    // logs températures
     const { data: logsData } = await supabase
       .from("temperature_logs")
       .select(`
@@ -61,6 +62,7 @@ export default function TemperaturesPage() {
   }
 
   async function addTemperature() {
+
     if (
       !selectedEquipment ||
       !selectedEmployee ||
@@ -105,131 +107,200 @@ export default function TemperaturesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B1120] text-white p-10">
-      <h1 className="text-5xl font-bold mb-10">
-        Relevé des températures
-      </h1>
+    <main className="min-h-screen bg-[#070B14] text-white p-8">
 
-      {/* formulaire */}
-      <div className="bg-white/10 p-6 rounded-2xl max-w-4xl mb-10">
+      {/* HEADER */}
+      <div className="mb-12">
 
-        {/* équipements */}
-        <select
-          value={selectedEquipment}
-          onChange={(e) =>
-            setSelectedEquipment(e.target.value)
-          }
-          className="w-full p-4 rounded-xl bg-black/30 mb-4"
-        >
-          <option value="">
-            Choisir un équipement
-          </option>
+        <p className="text-blue-400 font-semibold mb-3 tracking-widest uppercase">
+          Clean Kitchen
+        </p>
 
-          {equipments.map((equipment) => (
-            <option
-              key={equipment.id}
-              value={equipment.id}
-            >
-              {equipment.name}
-            </option>
-          ))}
-        </select>
+        <h1 className="text-6xl font-black tracking-tight">
+          Relevé des températures
+        </h1>
 
-        {/* employés */}
-        <select
-          value={selectedEmployee}
-          onChange={(e) =>
-            setSelectedEmployee(e.target.value)
-          }
-          className="w-full p-4 rounded-xl bg-black/30 mb-4"
-        >
-          <option value="">
-            Choisir un employé
-          </option>
-
-          {employees.map((employee) => (
-            <option
-              key={employee.id}
-              value={employee.id}
-            >
-              {employee.full_name}
-            </option>
-          ))}
-        </select>
-
-        {/* température */}
-        <input
-          type="number"
-          placeholder="Température"
-          value={temperature}
-          onChange={(e) =>
-            setTemperature(e.target.value)
-          }
-          className="w-full p-4 rounded-xl bg-black/30 mb-4"
-        />
-
-        {/* bouton */}
-        <button
-          onClick={addTemperature}
-          className="w-full bg-blue-600 hover:bg-blue-700 transition p-4 rounded-xl font-bold"
-        >
-          Ajouter le relevé
-        </button>
+        <p className="text-gray-400 mt-4 text-lg">
+          Surveillance HACCP en temps réel
+        </p>
       </div>
 
-      {/* historique */}
-      <div>
-        <h2 className="text-3xl font-bold mb-6">
-          Historique
-        </h2>
+      {/* GRID */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
-        <div className="space-y-4">
-          {logs.map((log) => {
-            const alert = isAlert(log);
+        {/* FORMULAIRE */}
+        <div className="xl:col-span-1">
 
-            return (
-              <div
-                key={log.id}
-                className={`p-5 rounded-2xl border ${
-                  alert
-                    ? "bg-red-700/70 border-red-400"
-                    : "bg-white/10 border-white/10"
-                }`}
+          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
+
+            <h2 className="text-2xl font-bold mb-8">
+              Nouveau relevé
+            </h2>
+
+            {/* équipement */}
+            <div className="mb-5">
+
+              <label className="block mb-2 text-sm text-gray-400">
+                Équipement
+              </label>
+
+              <select
+                value={selectedEquipment}
+                onChange={(e) =>
+                  setSelectedEquipment(e.target.value)
+                }
+                className="w-full p-4 rounded-2xl bg-black/30 border border-white/10 focus:outline-none focus:border-blue-500"
               >
-                <div className="flex justify-between items-start">
+                <option value="">
+                  Choisir un équipement
+                </option>
 
-                  <div>
-                    <h3 className="text-2xl font-bold">
-                      {log.equipments?.name}
-                    </h3>
+                {equipments.map((equipment) => (
+                  <option
+                    key={equipment.id}
+                    value={equipment.id}
+                  >
+                    {equipment.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                    <p className="text-gray-200 mt-1">
-                      Employé :{" "}
-                      {log.employees?.full_name}
-                    </p>
+            {/* employé */}
+            <div className="mb-5">
 
-                    <p className="text-sm text-gray-300 mt-2">
-                      {new Date(
-                        log.created_at
-                      ).toLocaleString()}
-                    </p>
-                  </div>
+              <label className="block mb-2 text-sm text-gray-400">
+                Employé
+              </label>
 
-                  <div className="text-right">
-                    <p className="text-4xl font-bold">
-                      {log.temperature}°C
-                    </p>
+              <select
+                value={selectedEmployee}
+                onChange={(e) =>
+                  setSelectedEmployee(e.target.value)
+                }
+                className="w-full p-4 rounded-2xl bg-black/30 border border-white/10 focus:outline-none focus:border-blue-500"
+              >
+                <option value="">
+                  Choisir un employé
+                </option>
 
-                    {alert && (
-                      <p className="mt-2 text-yellow-300 font-bold">
-                        ⚠️ ALERTE HACCP
+                {employees.map((employee) => (
+                  <option
+                    key={employee.id}
+                    value={employee.id}
+                  >
+                    {employee.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* température */}
+            <div className="mb-6">
+
+              <label className="block mb-2 text-sm text-gray-400">
+                Température
+              </label>
+
+              <input
+                type="number"
+                placeholder="Ex : 4"
+                value={temperature}
+                onChange={(e) =>
+                  setTemperature(e.target.value)
+                }
+                className="w-full p-4 rounded-2xl bg-black/30 border border-white/10 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {/* bouton */}
+            <button
+              onClick={addTemperature}
+              className="w-full bg-blue-600 hover:bg-blue-500 transition-all duration-300 p-4 rounded-2xl font-bold text-lg shadow-lg shadow-blue-900/40"
+            >
+              Ajouter le relevé
+            </button>
+
+          </div>
+        </div>
+
+        {/* HISTORIQUE */}
+        <div className="xl:col-span-2">
+
+          <div className="flex items-center justify-between mb-8">
+
+            <h2 className="text-3xl font-bold">
+              Historique
+            </h2>
+
+            <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-2xl text-sm text-gray-300">
+              {logs.length} relevés
+            </div>
+
+          </div>
+
+          <div className="space-y-5">
+
+            {logs.map((log) => {
+
+              const alert = isAlert(log);
+
+              return (
+                <div
+                  key={log.id}
+                  className={`rounded-3xl border p-6 backdrop-blur-xl transition-all duration-300 hover:scale-[1.01]
+                  ${
+                    alert
+                      ? "bg-red-500/10 border-red-500/30"
+                      : "bg-white/5 border-white/10"
+                  }`}
+                >
+
+                  <div className="flex justify-between items-center">
+
+                    <div>
+
+                      <h3 className="text-2xl font-bold">
+                        {log.equipments?.name}
+                      </h3>
+
+                      <p className="text-gray-400 mt-2">
+                        {log.employees?.full_name}
                       </p>
-                    )}
+
+                      <p className="text-sm text-gray-500 mt-3">
+                        {new Date(
+                          log.created_at
+                        ).toLocaleString()}
+                      </p>
+
+                    </div>
+
+                    <div className="text-right">
+
+                      <p
+                        className={`text-5xl font-black ${
+                          alert
+                            ? "text-red-400"
+                            : "text-white"
+                        }`}
+                      >
+                        {log.temperature}°
+                      </p>
+
+                      {alert && (
+                        <p className="mt-3 text-red-300 font-bold">
+                          ⚠️ ALERTE HACCP
+                        </p>
+                      )}
+
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+
+          </div>
         </div>
       </div>
     </main>
