@@ -184,85 +184,153 @@ export default function DashboardPage() {
       {/* STATS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-7 mb-10">
 
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-2xl">
-          <div className="flex items-center justify-between mb-6">
-            <div className="bg-blue-500/20 p-4 rounded-2xl">
-              <Thermometer className="text-blue-400" />
+        {/* RELEVÉS */}
+        <motion.div
+          whileHover={{
+            scale: 1.04,
+            y: -5,
+          }}
+          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-2xl"
+        >
+
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-blue-500/10 blur-3xl" />
+
+          <div className="relative z-10">
+
+            <div className="flex items-center justify-between mb-6">
+
+              <div className="bg-blue-500/20 p-4 rounded-2xl">
+                <Thermometer className="text-blue-400" />
+              </div>
+
+              <span className="text-green-400 text-sm font-bold">
+                LIVE
+              </span>
+
             </div>
 
-            <span className="text-green-400 text-sm font-bold">
-              LIVE
-            </span>
+            <p className="text-gray-400 text-sm">
+              Relevés enregistrés
+            </p>
+
+            <h2 className="text-6xl font-black mt-4">
+              <CountUp end={logsCount} duration={1} />
+            </h2>
+
           </div>
 
-          <p className="text-gray-400 text-sm">
-            Relevés enregistrés
-          </p>
+        </motion.div>
 
-          <h2 className="text-6xl font-black mt-4">
-            <CountUp end={logsCount} duration={1} />
-          </h2>
-        </div>
+        {/* ALERTES */}
+        <motion.div
+          whileHover={{
+            scale: 1.04,
+            y: -5,
+          }}
+          className="group relative overflow-hidden rounded-3xl border border-red-500/20 bg-red-500/10 p-7 backdrop-blur-2xl"
+        >
 
-        <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-7 backdrop-blur-2xl">
-          <div className="flex items-center justify-between mb-6">
-            <div className="bg-red-500/20 p-4 rounded-2xl">
-              <AlertTriangle className="text-red-400" />
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-red-500/20 blur-3xl" />
+
+          <div className="relative z-10">
+
+            <div className="flex items-center justify-between mb-6">
+
+              <div className="bg-red-500/20 p-4 rounded-2xl">
+                <AlertTriangle className="text-red-400" />
+              </div>
+
+              <span className="text-red-300 text-sm font-bold">
+                HACCP
+              </span>
+
             </div>
 
-            <span className="text-red-300 text-sm font-bold">
-              HACCP
-            </span>
+            <p className="text-gray-400 text-sm">
+              Alertes détectées
+            </p>
+
+            <h2 className="text-6xl font-black mt-4">
+              <CountUp end={alertsCount} duration={1} />
+            </h2>
+
           </div>
 
-          <p className="text-gray-400 text-sm">
-            Alertes détectées
-          </p>
+        </motion.div>
 
-          <h2 className="text-6xl font-black mt-4">
-            <CountUp end={alertsCount} duration={1} />
-          </h2>
-        </div>
+        {/* ÉQUIPEMENTS */}
+        <motion.div
+          whileHover={{
+            scale: 1.04,
+            y: -5,
+          }}
+          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-2xl"
+        >
 
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-2xl">
-          <div className="flex items-center justify-between mb-6">
-            <div className="bg-cyan-500/20 p-4 rounded-2xl">
-              <Refrigerator className="text-cyan-400" />
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-cyan-500/10 blur-3xl" />
+
+          <div className="relative z-10">
+
+            <div className="flex items-center justify-between mb-6">
+
+              <div className="bg-cyan-500/20 p-4 rounded-2xl">
+                <Refrigerator className="text-cyan-400" />
+              </div>
+
+              <span className="text-cyan-300 text-sm font-bold">
+                Actifs
+              </span>
+
             </div>
 
-            <span className="text-cyan-300 text-sm font-bold">
-              Actifs
-            </span>
+            <p className="text-gray-400 text-sm">
+              Équipements
+            </p>
+
+            <h2 className="text-6xl font-black mt-4">
+              <CountUp end={equipmentsCount} duration={1} />
+            </h2>
+
           </div>
 
-          <p className="text-gray-400 text-sm">
-            Équipements
-          </p>
+        </motion.div>
 
-          <h2 className="text-6xl font-black mt-4">
-            <CountUp end={equipmentsCount} duration={1} />
-          </h2>
-        </div>
+        {/* CONFORMITÉ */}
+        <motion.div
+          whileHover={{
+            scale: 1.04,
+            y: -5,
+          }}
+          className="group relative overflow-hidden rounded-3xl border border-green-500/20 bg-green-500/10 p-7 backdrop-blur-2xl"
+        >
 
-        <div className="rounded-3xl border border-green-500/20 bg-green-500/10 p-7 backdrop-blur-2xl">
-          <div className="flex items-center justify-between mb-6">
-            <div className="bg-green-500/20 p-4 rounded-2xl">
-              <ShieldCheck className="text-green-400" />
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-green-500/20 blur-3xl" />
+
+          <div className="relative z-10">
+
+            <div className="flex items-center justify-between mb-6">
+
+              <div className="bg-green-500/20 p-4 rounded-2xl">
+                <ShieldCheck className="text-green-400" />
+              </div>
+
+              <span className="text-green-300 text-sm font-bold">
+                Conforme
+              </span>
+
             </div>
 
-            <span className="text-green-300 text-sm font-bold">
-              Conforme
-            </span>
+            <p className="text-gray-400 text-sm">
+              Score conformité
+            </p>
+
+            <h2 className="text-6xl font-black mt-4">
+              98%
+            </h2>
+
           </div>
 
-          <p className="text-gray-400 text-sm">
-            Score conformité
-          </p>
-
-          <h2 className="text-6xl font-black mt-4">
-            98%
-          </h2>
-        </div>
+        </motion.div>
 
       </div>
 
@@ -358,6 +426,15 @@ export default function DashboardPage() {
                   dataKey="temperature"
                   stroke="#3B82F6"
                   strokeWidth={5}
+                  dot={{
+                    r: 6,
+                    fill: "#3B82F6",
+                    strokeWidth: 0,
+                  }}
+                  activeDot={{
+                    r: 9,
+                    fill: "#60A5FA",
+                  }}
                 />
 
               </LineChart>
@@ -391,12 +468,17 @@ export default function DashboardPage() {
                 const alert = isAlert(log);
 
                 return (
-                  <div
+                  <motion.div
+                    whileHover={{
+                      scale: 1.02,
+                    }}
                     key={log.id}
                     className={`
                       rounded-2xl
                       border
                       p-4
+                      transition-all
+                      duration-300
                       ${
                         alert
                           ? "bg-red-500/10 border-red-500/20"
@@ -431,7 +513,7 @@ export default function DashboardPage() {
 
                     </div>
 
-                  </div>
+                  </motion.div>
                 );
               })}
 
