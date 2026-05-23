@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Settings,
   Activity,
+  Users,
 } from "lucide-react";
 
 const items = [
@@ -41,6 +42,10 @@ const items = [
     icon: Activity,
   },
   {
+    label: "Employés",
+    icon: Users,
+  },
+  {
     label: "Paramètres",
     icon: Settings,
   },
@@ -54,6 +59,9 @@ export default function Sidebar() {
         relative
 
         w-[320px]
+        h-screen
+
+        overflow-y-auto
 
         border-r
         border-white/10
@@ -63,7 +71,9 @@ export default function Sidebar() {
 
         p-6
 
-        overflow-hidden
+        scrollbar-thin
+        scrollbar-thumb-white/10
+        scrollbar-track-transparent
       "
     >
 
@@ -382,10 +392,8 @@ export default function Sidebar() {
       {/* FOOTER */}
       <div
         className="
-          absolute
-          bottom-6
-          left-6
-          right-6
+          relative
+          mt-10
 
           rounded-3xl
 
