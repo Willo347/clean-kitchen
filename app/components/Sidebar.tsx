@@ -12,6 +12,8 @@ import {
   Settings,
 } from "lucide-react";
 
+import { motion } from "framer-motion";
+
 export default function Sidebar() {
 
   const pathname = usePathname();
@@ -50,37 +52,35 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-72 min-h-screen bg-[#060B16] border-r border-white/10 px-6 py-8 flex flex-col">
+    <aside className="w-72 min-h-screen bg-[#081120] border-r border-white/5 p-6 relative overflow-hidden">
+
+      {/* GLOW */}
+      <div className="absolute top-[-120px] left-[-120px] w-[250px] h-[250px] bg-blue-500/20 blur-3xl rounded-full" />
 
       {/* LOGO */}
-      <div className="mb-14">
+      <div className="relative z-10 flex items-center gap-4 mb-14">
 
-        <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-3xl font-black shadow-2xl shadow-blue-500/30">
 
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-900/50">
+          CK
 
-            <span className="text-2xl font-black text-white">
-              CK
-            </span>
+        </div>
 
-          </div>
+        <div>
 
-          <div>
+          <h1 className="text-3xl font-black text-white leading-none">
+            Clean Kitchen
+          </h1>
 
-            <h1 className="text-2xl font-black text-white tracking-tight">
-              Clean Kitchen
-            </h1>
+          <p className="text-gray-400 mt-1">
+            HACCP Platform
+          </p>
 
-            <p className="text-gray-400 text-sm">
-              HACCP Platform
-            </p>
-
-          </div>
         </div>
       </div>
 
       {/* MENU */}
-      <nav className="flex flex-col gap-3">
+      <nav className="relative z-10 flex flex-col gap-4">
 
         {menuItems.map((item) => {
 
@@ -89,59 +89,95 @@ export default function Sidebar() {
           const active = pathname === item.href;
 
           return (
-            <Link
+            <motion.div
               key={item.name}
-              href={item.href}
-              className={`
-                group
-                flex
-                items-center
-                gap-4
-                px-5
-                py-4
-                rounded-2xl
-                transition-all
-                duration-300
-                border
-
-                ${
-                  active
-                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 border-blue-400 text-white shadow-lg shadow-blue-900/40"
-                    : "bg-white/[0.03] border-white/5 text-gray-400 hover:bg-white/[0.06] hover:border-white/10 hover:text-white"
-                }
-              `}
+              whileHover={{
+                scale: 1.03,
+                x: 5,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+              }}
             >
 
-              <div
+              <Link
+                href={item.href}
                 className={`
+                  group
+                  relative
+                  flex
+                  items-center
+                  gap-4
+                  px-5
+                  py-5
+                  rounded-3xl
                   transition-all
                   duration-300
+                  overflow-hidden
+                  border
 
                   ${
                     active
-                      ? "scale-110"
-                      : "group-hover:scale-110"
+                      ? `
+                        bg-gradient-to-r
+                        from-blue-600
+                        to-cyan-500
+                        text-white
+                        border-blue-400/30
+                        shadow-2xl
+                        shadow-cyan-500/20
+                      `
+                      : `
+                        bg-white/[0.03]
+                        border-white/5
+                        text-gray-300
+                        hover:bg-white/[0.06]
+                        hover:border-white/10
+                      `
                   }
                 `}
               >
-                <Icon size={22} />
-              </div>
 
-              <span className="font-semibold text-[15px]">
-                {item.name}
-              </span>
+                {/* glow hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/5" />
 
-            </Link>
+                <div className="relative z-10 flex items-center gap-4">
+
+                  <div
+                    className={`
+                      p-2 rounded-2xl
+                      ${
+                        active
+                          ? "bg-white/20"
+                          : "bg-white/[0.04]"
+                      }
+                    `}
+                  >
+
+                    <Icon size={22} />
+
+                  </div>
+
+                  <span className="font-semibold text-lg">
+                    {item.name}
+                  </span>
+
+                </div>
+
+              </Link>
+
+            </motion.div>
           );
         })}
       </nav>
 
-      {/* FOOTER */}
-      <div className="mt-auto">
+      {/* FOOTER STATUS */}
+      <div className="absolute bottom-6 left-6 right-6">
 
         <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-5 backdrop-blur-xl">
 
-          <p className="text-sm text-gray-400 mb-2">
+          <p className="text-gray-400 text-sm mb-3">
             Système
           </p>
 
@@ -149,13 +185,16 @@ export default function Sidebar() {
 
             <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
 
-            <p className="font-semibold text-white">
+            <p className="text-white font-semibold">
               Tous les services fonctionnent
             </p>
 
           </div>
+
         </div>
+
       </div>
+
     </aside>
   );
 }
