@@ -10,11 +10,21 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import {
+  LineChart,
+  Line,
+  ResponsiveContainer,
+  XAxis,
+  Tooltip,
+} from "recharts";
+
 export default function DashboardPage() {
 
   const [logsCount, setLogsCount] = useState(0);
   const [alertsCount, setAlertsCount] = useState(0);
   const [equipmentsCount, setEquipmentsCount] = useState(0);
+
+  const [chartData, setChartData] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDashboard();
@@ -22,7 +32,7 @@ export default function DashboardPage() {
 
   async function fetchDashboard() {
 
-    // logs
+    // logs températures
     const { data: logsData } = await supabase
       .from("temperature_logs")
       .select(`
@@ -31,7 +41,8 @@ export default function DashboardPage() {
           temp_min,
           temp_max
         )
-      `);
+      `)
+      .order("created_at", { ascending: false });
 
     if (logsData) {
 
@@ -50,6 +61,18 @@ export default function DashboardPage() {
       });
 
       setAlertsCount(alerts.length);
+
+      const formattedChartData = logsData
+        .slice(0, 7)
+        .reverse()
+        .map((log: any) => ({
+          temperature: log.temperature,
+          date: new Date(
+            log.created_at
+          ).toLocaleDateString(),
+        }));
+
+      setChartData(formattedChartData);
     }
 
     // équipements
@@ -179,7 +202,63 @@ export default function DashboardPage() {
           </h2>
 
         </div>
+
       </div>
+
+      {/* GRAPH */}
+      <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-10">
+
+        <div className="flex items-center justify-between mb-8">
+
+          <div>
+
+            <h2 className="text-3xl font-bold">
+              Températures
+            </h2>
+
+            <p className="text-gray-400 mt-2">
+              Historique des relevés HACCP
+            </p>
+
+          </div>
+
+          <div className="bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-2xl text-blue-300 text-sm">
+            LIVE DATA
+          </div>
+
+        </div>
+
+        <div className="h-[300px]">
+
+          <ResponsiveContainer width="100%" height="100%">
+
+            <LineChart data={chartData}>
+
+              <XAxis
+                dataKey="date"
+                stroke="#6B7280"
+              />
+
+              <Tooltip />
+
+              <Line
+                type="monotone"
+                dataKey="temperature"
+                stroke="#3B82F6"
+                strokeWidth={4}
+                dot={{
+                  r: 6,
+                  fill: "#3B82F6",
+                }}
+              />
+
+            </LineChart>
+
+          </ResponsiveContainer>
+
+        </div>
+      </div>
+
     </main>
   );
 }
