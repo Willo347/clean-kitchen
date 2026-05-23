@@ -11,6 +11,9 @@ import {
   AlertTriangle,
   Refrigerator,
   ShieldCheck,
+  Database,
+  Wifi,
+  Clock3,
 } from "lucide-react";
 
 import {
@@ -31,6 +34,8 @@ export default function DashboardPage() {
   const [chartData, setChartData] = useState<any[]>([]);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
 
+  const [lastUpdate, setLastUpdate] = useState("");
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,6 +51,12 @@ export default function DashboardPage() {
   }, []);
 
   async function fetchDashboard() {
+
+    const now = new Date();
+
+    setLastUpdate(
+      now.toLocaleTimeString()
+    );
 
     const { data: logsData } = await supabase
       .from("temperature_logs")
@@ -173,153 +184,85 @@ export default function DashboardPage() {
       {/* STATS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-7 mb-10">
 
-        {/* RELEVÉS */}
-        <motion.div
-          whileHover={{
-            scale: 1.04,
-            y: -5,
-          }}
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-2xl"
-        >
-
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-blue-500/10 blur-3xl" />
-
-          <div className="relative z-10">
-
-            <div className="flex items-center justify-between mb-6">
-
-              <div className="bg-blue-500/20 p-4 rounded-2xl">
-                <Thermometer className="text-blue-400" />
-              </div>
-
-              <span className="text-green-400 text-sm font-bold">
-                LIVE
-              </span>
-
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="bg-blue-500/20 p-4 rounded-2xl">
+              <Thermometer className="text-blue-400" />
             </div>
 
-            <p className="text-gray-400 text-sm">
-              Relevés enregistrés
-            </p>
-
-            <h2 className="text-6xl font-black mt-4">
-              <CountUp end={logsCount} duration={1} />
-            </h2>
-
+            <span className="text-green-400 text-sm font-bold">
+              LIVE
+            </span>
           </div>
 
-        </motion.div>
+          <p className="text-gray-400 text-sm">
+            Relevés enregistrés
+          </p>
 
-        {/* ALERTES */}
-        <motion.div
-          whileHover={{
-            scale: 1.04,
-            y: -5,
-          }}
-          className="group relative overflow-hidden rounded-3xl border border-red-500/20 bg-red-500/10 p-7 backdrop-blur-2xl"
-        >
+          <h2 className="text-6xl font-black mt-4">
+            <CountUp end={logsCount} duration={1} />
+          </h2>
+        </div>
 
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-red-500/20 blur-3xl" />
-
-          <div className="relative z-10">
-
-            <div className="flex items-center justify-between mb-6">
-
-              <div className="bg-red-500/20 p-4 rounded-2xl">
-                <AlertTriangle className="text-red-400" />
-              </div>
-
-              <span className="text-red-300 text-sm font-bold">
-                HACCP
-              </span>
-
+        <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-7 backdrop-blur-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="bg-red-500/20 p-4 rounded-2xl">
+              <AlertTriangle className="text-red-400" />
             </div>
 
-            <p className="text-gray-400 text-sm">
-              Alertes détectées
-            </p>
-
-            <h2 className="text-6xl font-black mt-4">
-              <CountUp end={alertsCount} duration={1} />
-            </h2>
-
+            <span className="text-red-300 text-sm font-bold">
+              HACCP
+            </span>
           </div>
 
-        </motion.div>
+          <p className="text-gray-400 text-sm">
+            Alertes détectées
+          </p>
 
-        {/* ÉQUIPEMENTS */}
-        <motion.div
-          whileHover={{
-            scale: 1.04,
-            y: -5,
-          }}
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-2xl"
-        >
+          <h2 className="text-6xl font-black mt-4">
+            <CountUp end={alertsCount} duration={1} />
+          </h2>
+        </div>
 
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-cyan-500/10 blur-3xl" />
-
-          <div className="relative z-10">
-
-            <div className="flex items-center justify-between mb-6">
-
-              <div className="bg-cyan-500/20 p-4 rounded-2xl">
-                <Refrigerator className="text-cyan-400" />
-              </div>
-
-              <span className="text-cyan-300 text-sm font-bold">
-                Actifs
-              </span>
-
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="bg-cyan-500/20 p-4 rounded-2xl">
+              <Refrigerator className="text-cyan-400" />
             </div>
 
-            <p className="text-gray-400 text-sm">
-              Équipements
-            </p>
-
-            <h2 className="text-6xl font-black mt-4">
-              <CountUp end={equipmentsCount} duration={1} />
-            </h2>
-
+            <span className="text-cyan-300 text-sm font-bold">
+              Actifs
+            </span>
           </div>
 
-        </motion.div>
+          <p className="text-gray-400 text-sm">
+            Équipements
+          </p>
 
-        {/* CONFORMITÉ */}
-        <motion.div
-          whileHover={{
-            scale: 1.04,
-            y: -5,
-          }}
-          className="group relative overflow-hidden rounded-3xl border border-green-500/20 bg-green-500/10 p-7 backdrop-blur-2xl"
-        >
+          <h2 className="text-6xl font-black mt-4">
+            <CountUp end={equipmentsCount} duration={1} />
+          </h2>
+        </div>
 
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-green-500/20 blur-3xl" />
-
-          <div className="relative z-10">
-
-            <div className="flex items-center justify-between mb-6">
-
-              <div className="bg-green-500/20 p-4 rounded-2xl">
-                <ShieldCheck className="text-green-400" />
-              </div>
-
-              <span className="text-green-300 text-sm font-bold">
-                Conforme
-              </span>
-
+        <div className="rounded-3xl border border-green-500/20 bg-green-500/10 p-7 backdrop-blur-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="bg-green-500/20 p-4 rounded-2xl">
+              <ShieldCheck className="text-green-400" />
             </div>
 
-            <p className="text-gray-400 text-sm">
-              Score conformité
-            </p>
-
-            <h2 className="text-6xl font-black mt-4">
-              <CountUp end={98} duration={1} suffix="%" />
-            </h2>
-
+            <span className="text-green-300 text-sm font-bold">
+              Conforme
+            </span>
           </div>
 
-        </motion.div>
+          <p className="text-gray-400 text-sm">
+            Score conformité
+          </p>
+
+          <h2 className="text-6xl font-black mt-4">
+            98%
+          </h2>
+        </div>
 
       </div>
 
@@ -327,12 +270,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
         {/* GRAPH */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="xl:col-span-2 bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl overflow-hidden"
-        >
+        <div className="xl:col-span-2 bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl overflow-hidden">
 
           <div className="flex items-center justify-between mb-8">
 
@@ -404,7 +342,6 @@ export default function DashboardPage() {
                       "1px solid rgba(255,255,255,0.08)",
                     borderRadius: "18px",
                     color: "white",
-                    backdropFilter: "blur(20px)",
                   }}
                 />
 
@@ -421,15 +358,6 @@ export default function DashboardPage() {
                   dataKey="temperature"
                   stroke="#3B82F6"
                   strokeWidth={5}
-                  dot={{
-                    r: 7,
-                    fill: "#3B82F6",
-                    strokeWidth: 0,
-                  }}
-                  activeDot={{
-                    r: 10,
-                    fill: "#60A5FA",
-                  }}
                 />
 
               </LineChart>
@@ -438,62 +366,58 @@ export default function DashboardPage() {
 
           </div>
 
-        </motion.div>
+        </div>
 
-        {/* ACTIVITY */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl"
-        >
+        {/* RIGHT PANEL */}
+        <div className="space-y-8">
 
-          <div className="flex items-center justify-between mb-8">
+          {/* ACTIVITY */}
+          <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl">
 
-            <h2 className="text-3xl font-bold">
-              Activité récente
-            </h2>
+            <div className="flex items-center justify-between mb-8">
 
-            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+              <h2 className="text-3xl font-bold">
+                Activité récente
+              </h2>
 
-          </div>
+              <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
 
-          <div className="space-y-5">
+            </div>
 
-            {recentLogs.map((log) => {
+            <div className="space-y-5">
 
-              const alert = isAlert(log);
+              {recentLogs.map((log) => {
 
-              return (
-                <div
-                  key={log.id}
-                  className={`
-                    rounded-2xl
-                    border
-                    p-4
-                    ${
-                      alert
-                        ? "bg-red-500/10 border-red-500/20"
-                        : "bg-white/[0.03] border-white/5"
-                    }
-                  `}
-                >
+                const alert = isAlert(log);
 
-                  <div className="flex items-center justify-between">
+                return (
+                  <div
+                    key={log.id}
+                    className={`
+                      rounded-2xl
+                      border
+                      p-4
+                      ${
+                        alert
+                          ? "bg-red-500/10 border-red-500/20"
+                          : "bg-white/[0.03] border-white/5"
+                      }
+                    `}
+                  >
 
-                    <div>
+                    <div className="flex items-center justify-between">
 
-                      <p className="font-bold text-lg">
-                        {log.equipments?.name}
-                      </p>
+                      <div>
 
-                      <p className="text-gray-400 text-sm mt-1">
-                        {log.employees?.full_name}
-                      </p>
+                        <p className="font-bold text-lg">
+                          {log.equipments?.name}
+                        </p>
 
-                    </div>
+                        <p className="text-gray-400 text-sm mt-1">
+                          {log.employees?.full_name}
+                        </p>
 
-                    <div className="text-right">
+                      </div>
 
                       <p
                         className={`text-2xl font-black ${
@@ -508,14 +432,103 @@ export default function DashboardPage() {
                     </div>
 
                   </div>
+                );
+              })}
 
-                </div>
-              );
-            })}
+            </div>
 
           </div>
 
-        </motion.div>
+          {/* STATUS */}
+          <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl">
+
+            <h2 className="text-3xl font-bold mb-8">
+              État système
+            </h2>
+
+            <div className="space-y-5">
+
+              <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-2xl p-4">
+
+                <div className="flex items-center gap-4">
+
+                  <div className="bg-green-500/20 p-3 rounded-2xl">
+                    <Database className="text-green-400" />
+                  </div>
+
+                  <div>
+
+                    <p className="font-bold">
+                      Supabase
+                    </p>
+
+                    <p className="text-gray-400 text-sm">
+                      Base connectée
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+
+              </div>
+
+              <div className="flex items-center justify-between bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4">
+
+                <div className="flex items-center gap-4">
+
+                  <div className="bg-blue-500/20 p-3 rounded-2xl">
+                    <Wifi className="text-blue-400" />
+                  </div>
+
+                  <div>
+
+                    <p className="font-bold">
+                      Synchronisation
+                    </p>
+
+                    <p className="text-gray-400 text-sm">
+                      Temps réel actif
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="w-3 h-3 rounded-full bg-blue-400 animate-pulse" />
+
+              </div>
+
+              <div className="flex items-center justify-between bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+
+                <div className="flex items-center gap-4">
+
+                  <div className="bg-white/10 p-3 rounded-2xl">
+                    <Clock3 className="text-white" />
+                  </div>
+
+                  <div>
+
+                    <p className="font-bold">
+                      Dernière MAJ
+                    </p>
+
+                    <p className="text-gray-400 text-sm">
+                      {lastUpdate}
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
 
       </div>
 
