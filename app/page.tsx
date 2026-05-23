@@ -39,8 +39,6 @@ export default function DashboardPage() {
 
   const [lastUpdate, setLastUpdate] = useState("");
 
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
 
     fetchDashboard();
@@ -124,8 +122,6 @@ export default function DashboardPage() {
     if (equipmentsData) {
       setEquipmentsCount(equipmentsData.length);
     }
-
-    setLoading(false);
   }
 
   function isAlert(log: any) {
@@ -140,34 +136,8 @@ export default function DashboardPage() {
     );
   }
 
-  if (loading) {
-
-    return (
-      <main className="min-h-screen bg-[#070B14] flex items-center justify-center">
-
-        <motion.div
-          animate={{
-            rotate: 360,
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 1.2,
-            ease: "linear",
-          }}
-          className="w-24 h-24 rounded-full border-[5px] border-white/10 border-t-cyan-400"
-        />
-
-      </main>
-    );
-  }
-
   return (
-    <motion.main
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-      className="min-h-screen bg-[#070B14] text-white p-8"
-    >
+    <main className="min-h-screen bg-[#070B14] text-white p-8">
 
       <Topbar />
 
@@ -197,140 +167,403 @@ export default function DashboardPage() {
       {/* STATS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-7 mb-10">
 
-        {/* RELEVÉS */}
-        <motion.div
-          whileHover={{
-            scale: 1.04,
-            y: -8,
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 300,
-          }}
-          className="
-            group
-            relative
-            overflow-hidden
-            rounded-3xl
-            border
-            border-white/10
-            bg-white/[0.04]
-            p-7
-            backdrop-blur-2xl
-          "
-        >
+        {[
+          {
+            title: "Relevés enregistrés",
+            value: logsCount,
+            icon: Thermometer,
+            color: "blue",
+            badge: "LIVE",
+          },
+          {
+            title: "Alertes détectées",
+            value: alertsCount,
+            icon: AlertTriangle,
+            color: "red",
+            badge: "HACCP",
+          },
+          {
+            title: "Équipements",
+            value: equipmentsCount,
+            icon: Refrigerator,
+            color: "cyan",
+            badge: "Actifs",
+          },
+          {
+            title: "Score conformité",
+            value: "98%",
+            icon: ShieldCheck,
+            color: "green",
+            badge: "Conforme",
+          },
+        ].map((card, index) => {
 
-          {/* LIVE PULSE */}
-          <motion.div
-            animate={{
-              scale: [1, 1.4, 1.8],
-              opacity: [0.5, 0.2, 0],
-            }}
-            transition={{
-              repeat: Infinity,
-              duration: 2,
-            }}
-            className="
-              absolute
-              top-6
-              right-6
-              w-4
-              h-4
-              rounded-full
-              bg-green-400
-            "
-          />
+          const Icon = card.icon;
 
-          {/* LIGHT EFFECT */}
-          <div
-            className="
-              absolute
-              inset-0
-              opacity-0
-              group-hover:opacity-100
-              transition-all
-              duration-700
-              bg-gradient-to-br
-              from-blue-500/20
-              via-cyan-500/10
-              to-transparent
-            "
-          />
+          return (
+            <motion.div
+              key={index}
+              whileHover={{
+                scale: 1.04,
+                y: -8,
+              }}
+              className="
+                group
+                relative
+                overflow-hidden
+                rounded-3xl
+                border
+                border-white/10
+                bg-white/[0.04]
+                p-7
+                backdrop-blur-2xl
+              "
+            >
 
-          {/* SHINE */}
-          <div
-            className="
-              absolute
-              top-0
-              left-[-100%]
-              w-[120%]
-              h-full
-              bg-gradient-to-r
-              from-transparent
-              via-white/10
-              to-transparent
-              group-hover:left-[120%]
-              transition-all
-              duration-1000
-            "
-          />
-
-          <div className="relative z-10">
-
-            <div className="flex items-center justify-between mb-6">
-
+              {/* LIVE PULSE */}
               <motion.div
-                whileHover={{
-                  rotate: 8,
-                  scale: 1.08,
-                }}
-                className="bg-blue-500/20 p-4 rounded-2xl"
-              >
-                <Thermometer className="text-blue-400" />
-              </motion.div>
-
-              <motion.span
                 animate={{
-                  opacity: [0.6, 1, 0.6],
+                  scale: [1, 1.4, 1.8],
+                  opacity: [0.5, 0.2, 0],
                 }}
                 transition={{
                   repeat: Infinity,
                   duration: 2,
                 }}
-                className="text-green-400 text-sm font-bold"
-              >
-                LIVE
-              </motion.span>
+                className={`
+                  absolute
+                  top-6
+                  right-6
+                  w-4
+                  h-4
+                  rounded-full
+                  ${
+                    card.color === "red"
+                      ? "bg-red-400"
+                      : card.color === "green"
+                      ? "bg-green-400"
+                      : card.color === "cyan"
+                      ? "bg-cyan-400"
+                      : "bg-blue-400"
+                  }
+                `}
+              />
 
-            </div>
+              {/* SHINE */}
+              <div
+                className="
+                  absolute
+                  top-0
+                  left-[-100%]
+                  w-[120%]
+                  h-full
+                  bg-gradient-to-r
+                  from-transparent
+                  via-white/10
+                  to-transparent
+                  group-hover:left-[120%]
+                  transition-all
+                  duration-1000
+                "
+              />
 
-            <p className="text-gray-400 text-sm">
-              Relevés enregistrés
-            </p>
+              <div className="relative z-10">
 
-            <motion.h2
-              animate={{
-                textShadow: [
-                  "0 0 0px #3B82F6",
-                  "0 0 20px #3B82F6",
-                  "0 0 0px #3B82F6",
-                ],
-              }}
-              transition={{
-                repeat: Infinity,
-                duration: 3,
-              }}
-              className="text-6xl font-black mt-4"
-            >
-              <CountUp end={logsCount} duration={1} />
-            </motion.h2>
+                <div className="flex items-center justify-between mb-6">
 
-          </div>
+                  <div className="bg-white/10 p-4 rounded-2xl">
+                    <Icon className="text-white" />
+                  </div>
 
-        </motion.div>
+                  <span className="text-sm font-bold text-white">
+                    {card.badge}
+                  </span>
+
+                </div>
+
+                <p className="text-gray-400 text-sm">
+                  {card.title}
+                </p>
+
+                <motion.h2
+                  animate={{
+                    opacity: [0.8, 1, 0.8],
+                  }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 2,
+                  }}
+                  className="text-6xl font-black mt-4"
+                >
+                  {typeof card.value === "number" ? (
+                    <CountUp end={card.value} duration={1} />
+                  ) : (
+                    card.value
+                  )}
+                </motion.h2>
+
+              </div>
+
+            </motion.div>
+          );
+        })}
 
       </div>
 
-    </motion.main>
+      {/* CONTENT */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+
+        {/* GRAPH */}
+        <div className="xl:col-span-2 bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl">
+
+          <div className="flex items-center justify-between mb-8">
+
+            <div>
+
+              <h2 className="text-3xl font-bold">
+                Températures temps réel
+              </h2>
+
+              <p className="text-gray-400 mt-2">
+                Actualisation automatique toutes les 5 secondes
+              </p>
+
+            </div>
+
+            <div className="bg-green-500/10 border border-green-500/20 px-5 py-2 rounded-2xl text-green-300 text-sm font-semibold">
+              LIVE
+            </div>
+
+          </div>
+
+          <div className="h-[350px]">
+
+            <ResponsiveContainer width="100%" height="100%">
+
+              <LineChart data={chartData}>
+
+                <defs>
+
+                  <linearGradient
+                    id="colorTemp"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+
+                    <stop
+                      offset="5%"
+                      stopColor="#3B82F6"
+                      stopOpacity={0.4}
+                    />
+
+                    <stop
+                      offset="95%"
+                      stopColor="#3B82F6"
+                      stopOpacity={0}
+                    />
+
+                  </linearGradient>
+
+                </defs>
+
+                <XAxis
+                  dataKey="date"
+                  stroke="#6B7280"
+                  tickLine={false}
+                  axisLine={false}
+                />
+
+                <Tooltip />
+
+                <Area
+                  type="monotone"
+                  dataKey="temperature"
+                  stroke="none"
+                  fillOpacity={1}
+                  fill="url(#colorTemp)"
+                />
+
+                <Line
+                  type="monotone"
+                  dataKey="temperature"
+                  stroke="#3B82F6"
+                  strokeWidth={5}
+                />
+
+              </LineChart>
+
+            </ResponsiveContainer>
+
+          </div>
+
+        </div>
+
+        {/* RIGHT PANEL */}
+        <div className="space-y-8">
+
+          {/* ACTIVITY */}
+          <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl">
+
+            <div className="flex items-center justify-between mb-8">
+
+              <h2 className="text-3xl font-bold">
+                Activité récente
+              </h2>
+
+              <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+
+            </div>
+
+            <div className="space-y-5">
+
+              {recentLogs.map((log) => {
+
+                const alert = isAlert(log);
+
+                return (
+                  <div
+                    key={log.id}
+                    className={`
+                      rounded-2xl
+                      border
+                      p-4
+                      ${
+                        alert
+                          ? "bg-red-500/10 border-red-500/20"
+                          : "bg-white/[0.03] border-white/5"
+                      }
+                    `}
+                  >
+
+                    <div className="flex items-center justify-between">
+
+                      <div>
+
+                        <p className="font-bold text-lg">
+                          {log.equipments?.name}
+                        </p>
+
+                        <p className="text-gray-400 text-sm mt-1">
+                          {log.employees?.full_name}
+                        </p>
+
+                      </div>
+
+                      <p
+                        className={`text-2xl font-black ${
+                          alert
+                            ? "text-red-400"
+                            : "text-white"
+                        }`}
+                      >
+                        {log.temperature}°
+                      </p>
+
+                    </div>
+
+                  </div>
+                );
+              })}
+
+            </div>
+
+          </div>
+
+          {/* SYSTEM */}
+          <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl">
+
+            <h2 className="text-3xl font-bold mb-8">
+              État système
+            </h2>
+
+            <div className="space-y-5">
+
+              <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-2xl p-4">
+
+                <div className="flex items-center gap-4">
+
+                  <div className="bg-green-500/20 p-3 rounded-2xl">
+                    <Database className="text-green-400" />
+                  </div>
+
+                  <div>
+
+                    <p className="font-bold">
+                      Supabase
+                    </p>
+
+                    <p className="text-gray-400 text-sm">
+                      Base connectée
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+
+              </div>
+
+              <div className="flex items-center justify-between bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4">
+
+                <div className="flex items-center gap-4">
+
+                  <div className="bg-blue-500/20 p-3 rounded-2xl">
+                    <Wifi className="text-blue-400" />
+                  </div>
+
+                  <div>
+
+                    <p className="font-bold">
+                      Synchronisation
+                    </p>
+
+                    <p className="text-gray-400 text-sm">
+                      Temps réel actif
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="w-3 h-3 rounded-full bg-blue-400 animate-pulse" />
+
+              </div>
+
+              <div className="flex items-center justify-between bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+
+                <div className="flex items-center gap-4">
+
+                  <div className="bg-white/10 p-3 rounded-2xl">
+                    <Clock3 className="text-white" />
+                  </div>
+
+                  <div>
+
+                    <p className="font-bold">
+                      Dernière MAJ
+                    </p>
+
+                    <p className="text-gray-400 text-sm">
+                      {lastUpdate}
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
   );
 }
