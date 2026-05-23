@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import CountUp from "react-countup";
 
 import { supabase } from "@/lib/supabase";
 
@@ -113,7 +114,7 @@ export default function DashboardPage() {
       {/* STATS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-7 mb-10">
 
-        {/* CARD */}
+        {/* RELEVÉS */}
         <motion.div
           whileHover={{
             scale: 1.04,
@@ -146,7 +147,10 @@ export default function DashboardPage() {
             </p>
 
             <h2 className="text-6xl font-black mt-4">
-              {logsCount}
+              <CountUp
+                end={logsCount}
+                duration={2}
+              />
             </h2>
 
           </div>
@@ -185,7 +189,10 @@ export default function DashboardPage() {
             </p>
 
             <h2 className="text-6xl font-black mt-4">
-              {alertsCount}
+              <CountUp
+                end={alertsCount}
+                duration={2}
+              />
             </h2>
 
           </div>
@@ -224,7 +231,10 @@ export default function DashboardPage() {
             </p>
 
             <h2 className="text-6xl font-black mt-4">
-              {equipmentsCount}
+              <CountUp
+                end={equipmentsCount}
+                duration={2}
+              />
             </h2>
 
           </div>
@@ -263,7 +273,11 @@ export default function DashboardPage() {
             </p>
 
             <h2 className="text-6xl font-black mt-4">
-              98%
+              <CountUp
+                end={98}
+                duration={2}
+                suffix="%"
+              />
             </h2>
 
           </div>
