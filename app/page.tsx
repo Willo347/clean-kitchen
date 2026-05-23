@@ -167,6 +167,7 @@ export default function DashboardPage() {
         <p className="text-gray-400 mt-5 text-xl">
           Surveillance intelligente temps réel
         </p>
+
       </div>
 
       {/* STATS */}
@@ -194,6 +195,7 @@ export default function DashboardPage() {
               <span className="text-green-400 text-sm font-bold">
                 LIVE
               </span>
+
             </div>
 
             <p className="text-gray-400 text-sm">
@@ -205,6 +207,7 @@ export default function DashboardPage() {
             </h2>
 
           </div>
+
         </motion.div>
 
         {/* ALERTES */}
@@ -229,6 +232,7 @@ export default function DashboardPage() {
               <span className="text-red-300 text-sm font-bold">
                 HACCP
               </span>
+
             </div>
 
             <p className="text-gray-400 text-sm">
@@ -240,6 +244,7 @@ export default function DashboardPage() {
             </h2>
 
           </div>
+
         </motion.div>
 
         {/* ÉQUIPEMENTS */}
@@ -264,6 +269,7 @@ export default function DashboardPage() {
               <span className="text-cyan-300 text-sm font-bold">
                 Actifs
               </span>
+
             </div>
 
             <p className="text-gray-400 text-sm">
@@ -275,6 +281,7 @@ export default function DashboardPage() {
             </h2>
 
           </div>
+
         </motion.div>
 
         {/* CONFORMITÉ */}
@@ -299,6 +306,7 @@ export default function DashboardPage() {
               <span className="text-green-300 text-sm font-bold">
                 Conforme
               </span>
+
             </div>
 
             <p className="text-gray-400 text-sm">
@@ -310,6 +318,7 @@ export default function DashboardPage() {
             </h2>
 
           </div>
+
         </motion.div>
 
       </div>
@@ -442,7 +451,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-8">
 
             <h2 className="text-3xl font-bold">
-              Activité
+              Activité récente
             </h2>
 
             <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
@@ -511,3 +520,5 @@ export default function DashboardPage() {
       </div>
 
     </motion.main>
+  );
+}
