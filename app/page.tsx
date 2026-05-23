@@ -8,6 +8,8 @@ import Topbar from "./components/Topbar";
 
 import { supabase } from "@/lib/supabase";
 
+import { toast } from "sonner";
+
 import {
   Thermometer,
   AlertTriangle,
@@ -94,6 +96,14 @@ export default function DashboardPage() {
       });
 
       setAlertsCount(alerts.length);
+
+      if (alerts.length > 0) {
+
+        toast.error(
+          `${alerts.length} alerte(s) HACCP détectée(s)`
+        );
+
+      }
 
       const formattedChartData = logsData
         .slice(0, 7)
@@ -441,7 +451,6 @@ export default function DashboardPage() {
           {/* MINI STATS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-8">
 
-            {/* MOYENNE */}
             <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
 
               <p className="text-gray-400 text-sm mb-3">
@@ -454,7 +463,6 @@ export default function DashboardPage() {
 
             </div>
 
-            {/* MIN */}
             <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-5">
 
               <p className="text-green-300 text-sm mb-3">
@@ -467,7 +475,6 @@ export default function DashboardPage() {
 
             </div>
 
-            {/* MAX */}
             <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-5">
 
               <p className="text-red-300 text-sm mb-3">

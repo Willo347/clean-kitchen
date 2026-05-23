@@ -3,6 +3,8 @@ import "./globals.css";
 
 import Sidebar from "./components/Sidebar";
 
+import { Toaster } from "sonner";
+
 export const metadata: Metadata = {
   title: "Clean Kitchen",
   description: "Plateforme HACCP premium",
@@ -91,6 +93,13 @@ export default function RootLayout({
           </main>
 
         </div>
+
+        {/* TOASTS */}
+        <Toaster
+          position="top-right"
+          richColors
+          theme="dark"
+        />
 
       </body>
 
