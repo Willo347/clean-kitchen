@@ -1,110 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import {
+  Thermometer,
+  AlertTriangle,
+  Refrigerator,
+  ShieldCheck,
+} from "lucide-react";
 
-export default function TemperaturesPage() {
-  const [equipments, setEquipments] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
-
-  const [selectedEquipment, setSelectedEquipment] = useState("");
-  const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [temperature, setTemperature] = useState("");
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  async function fetchData() {
-
-    // équipements
-    const { data: equipmentsData } = await supabase
-      .from("equipments")
-      .select("*")
-      .order("name");
-
-    if (equipmentsData) {
-      setEquipments(equipmentsData);
-    }
-
-    // employés
-    const { data: employeesData } = await supabase
-      .from("employees")
-      .select("*")
-      .order("full_name");
-
-    if (employeesData) {
-      setEmployees(employeesData);
-    }
-
-    // logs températures
-    const { data: logsData } = await supabase
-      .from("temperature_logs")
-      .select(`
-        *,
-        equipments (
-          id,
-          name,
-          temp_min,
-          temp_max
-        ),
-        employees (
-          id,
-          full_name
-        )
-      `)
-      .order("created_at", { ascending: false });
-
-    if (logsData) {
-      setLogs(logsData);
-    }
-  }
-
-  async function addTemperature() {
-
-    if (
-      !selectedEquipment ||
-      !selectedEmployee ||
-      !temperature
-    ) {
-      alert("Remplis tous les champs");
-      return;
-    }
-
-    const { error } = await supabase
-      .from("temperature_logs")
-      .insert([
-        {
-          equipement_id: Number(selectedEquipment),
-          employee_id: Number(selectedEmployee),
-          temperature: Number(temperature),
-        },
-      ]);
-
-    if (error) {
-      console.log(error);
-      alert("Erreur");
-      return;
-    }
-
-    setTemperature("");
-    setSelectedEquipment("");
-    setSelectedEmployee("");
-
-    fetchData();
-  }
-
-  function isAlert(log: any) {
-    const equipment = log.equipments;
-
-    if (!equipment) return false;
-
-    return (
-      log.temperature < equipment.temp_min ||
-      log.temperature > equipment.temp_max
-    );
-  }
+export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-[#070B14] text-white p-8">
@@ -112,196 +15,201 @@ export default function TemperaturesPage() {
       {/* HEADER */}
       <div className="mb-12">
 
-        <p className="text-blue-400 font-semibold mb-3 tracking-widest uppercase">
+        <p className="text-blue-400 font-semibold tracking-widest uppercase mb-3">
           Clean Kitchen
         </p>
 
         <h1 className="text-6xl font-black tracking-tight">
-          Relevé des températures
+          Dashboard HACCP
         </h1>
 
         <p className="text-gray-400 mt-4 text-lg">
-          Surveillance HACCP en temps réel
+          Surveillance globale de votre établissement
         </p>
+      </div>
+
+      {/* STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+
+        {/* relevés */}
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+
+          <div className="flex items-center justify-between mb-5">
+            <div className="bg-blue-500/20 p-3 rounded-2xl">
+              <Thermometer className="text-blue-400" />
+            </div>
+
+            <span className="text-green-400 text-sm font-bold">
+              +12%
+            </span>
+          </div>
+
+          <p className="text-gray-400 text-sm">
+            Relevés aujourd’hui
+          </p>
+
+          <h2 className="text-5xl font-black mt-3">
+            42
+          </h2>
+
+        </div>
+
+        {/* alertes */}
+        <div className="bg-red-500/10 border border-red-500/20 rounded-3xl p-6">
+
+          <div className="flex items-center justify-between mb-5">
+
+            <div className="bg-red-500/20 p-3 rounded-2xl">
+              <AlertTriangle className="text-red-400" />
+            </div>
+
+            <span className="text-red-300 text-sm font-bold">
+              Critique
+            </span>
+          </div>
+
+          <p className="text-gray-400 text-sm">
+            Alertes HACCP
+          </p>
+
+          <h2 className="text-5xl font-black mt-3">
+            3
+          </h2>
+
+        </div>
+
+        {/* équipements */}
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+
+          <div className="flex items-center justify-between mb-5">
+
+            <div className="bg-cyan-500/20 p-3 rounded-2xl">
+              <Refrigerator className="text-cyan-400" />
+            </div>
+
+            <span className="text-cyan-300 text-sm font-bold">
+              Actifs
+            </span>
+          </div>
+
+          <p className="text-gray-400 text-sm">
+            Équipements
+          </p>
+
+          <h2 className="text-5xl font-black mt-3">
+            12
+          </h2>
+
+        </div>
+
+        {/* conformité */}
+        <div className="bg-green-500/10 border border-green-500/20 rounded-3xl p-6">
+
+          <div className="flex items-center justify-between mb-5">
+
+            <div className="bg-green-500/20 p-3 rounded-2xl">
+              <ShieldCheck className="text-green-400" />
+            </div>
+
+            <span className="text-green-300 text-sm font-bold">
+              Conforme
+            </span>
+          </div>
+
+          <p className="text-gray-400 text-sm">
+            Score conformité
+          </p>
+
+          <h2 className="text-5xl font-black mt-3">
+            98%
+          </h2>
+
+        </div>
       </div>
 
       {/* GRID */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
-        {/* FORMULAIRE */}
-        <div className="xl:col-span-1">
-
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
-
-            <h2 className="text-2xl font-bold mb-8">
-              Nouveau relevé
-            </h2>
-
-            {/* équipement */}
-            <div className="mb-5">
-
-              <label className="block mb-2 text-sm text-gray-400">
-                Équipement
-              </label>
-
-              <select
-                value={selectedEquipment}
-                onChange={(e) =>
-                  setSelectedEquipment(e.target.value)
-                }
-                className="w-full p-4 rounded-2xl bg-black/30 border border-white/10 focus:outline-none focus:border-blue-500"
-              >
-                <option value="">
-                  Choisir un équipement
-                </option>
-
-                {equipments.map((equipment) => (
-                  <option
-                    key={equipment.id}
-                    value={equipment.id}
-                  >
-                    {equipment.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* employé */}
-            <div className="mb-5">
-
-              <label className="block mb-2 text-sm text-gray-400">
-                Employé
-              </label>
-
-              <select
-                value={selectedEmployee}
-                onChange={(e) =>
-                  setSelectedEmployee(e.target.value)
-                }
-                className="w-full p-4 rounded-2xl bg-black/30 border border-white/10 focus:outline-none focus:border-blue-500"
-              >
-                <option value="">
-                  Choisir un employé
-                </option>
-
-                {employees.map((employee) => (
-                  <option
-                    key={employee.id}
-                    value={employee.id}
-                  >
-                    {employee.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* température */}
-            <div className="mb-6">
-
-              <label className="block mb-2 text-sm text-gray-400">
-                Température
-              </label>
-
-              <input
-                type="number"
-                placeholder="Ex : 4"
-                value={temperature}
-                onChange={(e) =>
-                  setTemperature(e.target.value)
-                }
-                className="w-full p-4 rounded-2xl bg-black/30 border border-white/10 focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            {/* bouton */}
-            <button
-              onClick={addTemperature}
-              className="w-full bg-blue-600 hover:bg-blue-500 transition-all duration-300 p-4 rounded-2xl font-bold text-lg shadow-lg shadow-blue-900/40"
-            >
-              Ajouter le relevé
-            </button>
-
-          </div>
-        </div>
-
-        {/* HISTORIQUE */}
-        <div className="xl:col-span-2">
+        {/* activité récente */}
+        <div className="xl:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8">
 
           <div className="flex items-center justify-between mb-8">
 
             <h2 className="text-3xl font-bold">
-              Historique
+              Activité récente
             </h2>
 
-            <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-2xl text-sm text-gray-300">
-              {logs.length} relevés
-            </div>
+            <button className="bg-blue-600 hover:bg-blue-500 transition px-5 py-2 rounded-2xl font-semibold">
+              Voir tout
+            </button>
 
           </div>
 
           <div className="space-y-5">
 
-            {logs.map((log) => {
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <p className="font-bold text-lg">
+                Température enregistrée
+              </p>
 
-              const alert = isAlert(log);
+              <p className="text-gray-400 mt-1">
+                Frigo réserve — 3°C
+              </p>
+            </div>
 
-              return (
-                <div
-                  key={log.id}
-                  className={`rounded-3xl border p-6 backdrop-blur-xl transition-all duration-300 hover:scale-[1.01]
-                  ${
-                    alert
-                      ? "bg-red-500/10 border-red-500/30"
-                      : "bg-white/5 border-white/10"
-                  }`}
-                >
+            <div className="bg-red-500/10 rounded-2xl p-5 border border-red-500/20">
+              <p className="font-bold text-lg text-red-300">
+                Alerte HACCP détectée
+              </p>
 
-                  <div className="flex justify-between items-center">
+              <p className="text-gray-300 mt-1">
+                Chambre froide — 11°C
+              </p>
+            </div>
 
-                    <div>
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <p className="font-bold text-lg">
+                Nettoyage validé
+              </p>
 
-                      <h3 className="text-2xl font-bold">
-                        {log.equipments?.name}
-                      </h3>
-
-                      <p className="text-gray-400 mt-2">
-                        {log.employees?.full_name}
-                      </p>
-
-                      <p className="text-sm text-gray-500 mt-3">
-                        {new Date(
-                          log.created_at
-                        ).toLocaleString()}
-                      </p>
-
-                    </div>
-
-                    <div className="text-right">
-
-                      <p
-                        className={`text-5xl font-black ${
-                          alert
-                            ? "text-red-400"
-                            : "text-white"
-                        }`}
-                      >
-                        {log.temperature}°
-                      </p>
-
-                      {alert && (
-                        <p className="mt-3 text-red-300 font-bold">
-                          ⚠️ ALERTE HACCP
-                        </p>
-                      )}
-
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+              <p className="text-gray-400 mt-1">
+                Cuisine principale
+              </p>
+            </div>
 
           </div>
         </div>
+
+        {/* état système */}
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-8">
+
+          <h2 className="text-3xl font-bold mb-8">
+            État système
+          </h2>
+
+          <div className="space-y-5">
+
+            <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-5">
+              <p className="font-bold text-green-300">
+                Serveur opérationnel
+              </p>
+            </div>
+
+            <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-5">
+              <p className="font-bold text-green-300">
+                Base de données connectée
+              </p>
+            </div>
+
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-5">
+              <p className="font-bold text-yellow-300">
+                1 maintenance prévue
+              </p>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </main>
   );
