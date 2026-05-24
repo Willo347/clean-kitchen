@@ -1,309 +1,255 @@
 "use client";
 
 import Link from "next/link";
-
 import { usePathname } from "next/navigation";
 
 import {
   LayoutDashboard,
   Thermometer,
-  Boxes,
+  Package,
   Truck,
-  ShieldAlert,
-  ClipboardList,
+  ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 
-import { motion } from "framer-motion";
-
 export default function Sidebar() {
-
-  const pathname =
-    usePathname();
+  const pathname = usePathname();
 
   const links = [
-
     {
-      label:
-        "Dashboard",
-
+      label: "Dashboard",
       href: "/",
-
-      icon:
-        LayoutDashboard,
+      icon: LayoutDashboard,
     },
 
     {
-      label:
-        "Températures",
-
-      href:
-        "/temperatures",
-
-      icon:
-        Thermometer,
+      label: "Températures",
+      href: "/temperatures",
+      icon: Thermometer,
     },
 
     {
-      label:
-        "Stocks",
-
-      href:
-        "/stocks",
-
-      icon:
-        Boxes,
+      label: "Stocks",
+      href: "/stocks",
+      icon: Package,
     },
 
     {
-      label:
-        "Livraisons",
-
-      href:
-        "/deliveries/new",
-
-      icon:
-        Truck,
+      label: "Livraisons",
+      href: "/deliveries/new",
+      icon: Truck,
     },
 
     {
-      label:
-        "Traçabilité",
-
-      href:
-        "/traceability",
-
-      icon:
-        ClipboardList,
+      label: "Traçabilité",
+      href: "/traceability",
+      icon: ShieldCheck,
     },
 
     {
-      label:
-        "Alertes",
-
-      href:
-        "/alerts",
-
-      icon:
-        ShieldAlert,
+      label: "Alertes",
+      href: "/alerts",
+      icon: AlertTriangle,
     },
   ];
 
   return (
-
     <aside
       className="
-        w-full
-        xl:w-[320px]
+        w-[260px]
 
-        h-screen
-        overflow-y-auto
+        min-h-screen
 
         border-r
-        border-white/10
+        border-cyan-500/10
 
-        bg-[#071120]
+        bg-black/20
 
-        p-6
+        backdrop-blur-2xl
+
+        p-5
+
+        overflow-y-auto
+
+        relative
       "
     >
+      {/* GLOW */}
+      <div
+        className="
+          absolute
+
+          top-[-200px]
+          left-[-200px]
+
+          w-[500px]
+          h-[500px]
+
+          rounded-full
+
+          bg-cyan-500/10
+
+          blur-3xl
+
+          pointer-events-none
+        "
+      />
 
       {/* LOGO */}
-      <div className="mb-10">
+      <div className="relative z-10 mb-10">
+        <h1
+          className="
+            text-5xl
 
-        <div className="flex items-center gap-4">
+            font-black
 
-          <div
-            className="
-              w-5
-              h-5
+            leading-[0.9]
 
-              rounded-full
+            tracking-tight
+          "
+        >
+          CLEAN
+          <br />
+          KITCHEN
+        </h1>
 
-              bg-cyan-400
+        <p
+          className="
+            text-cyan-400
 
-              animate-pulse
-            "
-          />
+            text-sm
 
-          <div>
+            tracking-[0.3em]
 
-            <h1 className="text-3xl font-black text-white">
-              CLEAN KITCHEN
-            </h1>
-
-            <p className="text-cyan-400 text-sm tracking-widest uppercase mt-1">
-              HACCP SYSTEM
-            </p>
-
-          </div>
-
-        </div>
-
+            mt-4
+          "
+        >
+          HACCP SYSTEM
+        </p>
       </div>
 
-      {/* NAVIGATION */}
-      <nav className="space-y-4">
+      {/* NAV */}
+      <div className="relative z-10 space-y-4 pb-10">
+        {links.map((item, index) => {
+          const active =
+            pathname === item.href;
 
-        {links.map(
-          (
-            link,
-            index
-          ) => {
+          const Icon =
+            item.icon;
 
-            const isActive =
-              pathname ===
-              link.href;
+          return (
+            <Link
+              href={item.href}
+              key={index}
+            >
+              <div
+                className={`
+                  rounded-[28px]
 
-            const Icon =
-              link.icon;
+                  border
 
-            return (
+                  p-5
 
-              <Link
-                key={index}
-                href={
-                  link.href
-                }
+                  transition-all
+
+                  ${
+                    active
+                      ? `
+                        bg-cyan-500/20
+
+                        border-cyan-400/30
+
+                        shadow-[0_0_30px_rgba(0,255,255,0.12)]
+                      `
+                      : `
+                        bg-white/[0.04]
+
+                        border-white/5
+
+                        hover:bg-white/[0.08]
+                      `
+                  }
+                `}
               >
-
-                <motion.div
-
-                  whileHover={{
-                    scale: 1.02,
-                    x: 4,
-                  }}
-
-                  whileTap={{
-                    scale: 0.98,
-                  }}
-
-                  className={`
-                    flex
-                    items-center
-                    gap-5
-
-                    rounded-3xl
-
-                    px-6
-                    py-6
-
-                    transition-all
-
-                    ${
-                      isActive
-
-                        ? `
-                          bg-cyan-500/20
-                          border
-                          border-cyan-500/20
-                        `
-
-                        : `
-                          bg-white/[0.03]
-                          border
-                          border-white/5
-                        `
-                    }
-                  `}
-                >
-
+                <div className="flex items-center gap-4">
                   <div
-                    className={`
-                      p-4
+                    className="
+                      w-14
+                      h-14
+
                       rounded-2xl
 
-                      ${
-                        isActive
+                      bg-black/20
 
-                          ? `
-                            bg-cyan-500/20
-                            text-cyan-300
-                          `
+                      border
+                      border-white/5
 
-                          : `
-                            bg-white/[0.05]
-                            text-gray-300
-                          `
-                      }
-                    `}
+                      flex
+                      items-center
+                      justify-center
+                    "
                   >
-
                     <Icon className="w-7 h-7" />
-
                   </div>
 
                   <div>
-
-                    <p
-                      className={`
-                        text-xl
-                        font-black
-
-                        ${
-                          isActive
-
-                            ? "text-cyan-300"
-
-                            : "text-white"
-                        }
-                      `}
-                    >
-
-                      {
-                        link.label
-                      }
-
+                    <p className="text-2xl font-bold">
+                      {item.label}
                     </p>
 
-                    <p className="text-gray-500 text-sm mt-1">
-
+                    <p className="text-white/40 text-sm mt-1">
                       Navigation rapide
-
                     </p>
-
                   </div>
-
-                </motion.div>
-
-              </Link>
-            );
-          }
-        )}
-
-      </nav>
-
-      {/* FOOTER */}
-      <div className="mt-10">
-
-        <div
-          className="
-            rounded-3xl
-
-            border
-            border-cyan-500/20
-
-            bg-cyan-500/10
-
-            p-6
-          "
-        >
-
-          <p className="text-cyan-300 text-sm font-semibold uppercase tracking-widest mb-3">
-            SYSTEM STATUS
-          </p>
-
-          <h2 className="text-3xl font-black text-white">
-            HACCP ACTIVE
-          </h2>
-
-          <p className="text-cyan-100/70 mt-3">
-            Tous les systèmes fonctionnent normalement.
-          </p>
-
-        </div>
-
+                </div>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
+      {/* FOOTER */}
+      <div
+        className="
+          relative
+          z-10
+
+          mt-8
+
+          rounded-[30px]
+
+          border
+          border-cyan-500/10
+
+          bg-cyan-500/10
+
+          backdrop-blur-xl
+
+          p-6
+        "
+      >
+        <p
+          className="
+            text-cyan-300
+
+            text-xs
+
+            tracking-[0.3em]
+
+            mb-3
+          "
+        >
+          SYSTEM STATUS
+        </p>
+
+        <h2 className="text-3xl font-black">
+          HACCP OK
+        </h2>
+
+        <p className="text-white/50 text-sm mt-3">
+          Tous les systèmes fonctionnent normalement.
+        </p>
+      </div>
     </aside>
   );
 }

@@ -1,409 +1,546 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-import { motion } from "framer-motion";
-
 import {
   Thermometer,
-  Calendar,
-  FileText,
   Snowflake,
-  Plus,
+  AlertTriangle,
   Minus,
+  Plus,
+  FileText,
 } from "lucide-react";
-
-import jsPDF from "jspdf";
-
-import autoTable from "jspdf-autotable";
-
-import { supabase } from "@/lib/supabase";
 
 export default function TemperaturesPage() {
 
-  const [temperatures, setTemperatures] =
-    useState<any[]>([]);
-
-  const [startDate, setStartDate] =
-    useState("");
-
-  const [endDate, setEndDate] =
-    useState("");
-
-  const [newEquipment, setNewEquipment] =
-    useState("");
-
-  useEffect(() => {
-
-    fetchTemperatures();
-
-  }, []);
-
-  useEffect(() => {
-
-    fetchTemperatures();
-
-  }, [
-    startDate,
-    endDate,
-  ]);
-
-  const fetchTemperatures =
-    async () => {
-
-      let query =
-        supabase
-          .from(
-            "temperature_logs"
-          )
-          .select("*")
-          .order(
-            "created_at",
-            {
-              ascending: false,
-            }
-          );
-
-      if (startDate) {
-
-        query =
-          query.gte(
-            "created_at",
-            startDate
-          );
-      }
-
-      if (endDate) {
-
-        query =
-          query.lte(
-            "created_at",
-            endDate
-          );
-      }
-
-      const {
-        data,
-      } =
-        await query;
-
-      if (data) {
-
-        setTemperatures(
-          data
-        );
-      }
-    };
-
-  const addEquipment =
-    async () => {
-
-      if (!newEquipment) {
-        return;
-      }
-
-      await supabase
-        .from(
-          "temperature_logs"
-        )
-        .insert([
-          {
-            equipment:
-              newEquipment,
-
-            temperature: 0,
-          },
-        ]);
-
-      setNewEquipment("");
-
-      fetchTemperatures();
-    };
-
-  const updateTemperature =
-    async (
-      id: string,
-      currentTemp: number,
-      action: "plus" | "minus"
-    ) => {
-
-      const newTemp =
-        action === "plus"
-
-          ? currentTemp + 1
-
-          : currentTemp - 1;
-
-      await supabase
-        .from(
-          "temperature_logs"
-        )
-        .update({
-          temperature:
-            newTemp,
-        })
-        .eq(
-          "id",
-          id
-        );
-
-      fetchTemperatures();
-    };
-
-  const exportPDF = () => {
-
-    const doc =
-      new jsPDF();
-
-    doc.setFontSize(24);
-
-    doc.text(
-      "Rapport Températures HACCP",
-      14,
-      20
-    );
-
-    autoTable(doc, {
-
-      startY: 40,
-
-      head: [[
-        "Équipement",
-        "Température",
-        "Date",
-      ]],
-
-      body:
-        temperatures.map(
-          (
-            item
-          ) => [
-
-            item.equipment,
-
-            `${item.temperature}°C`,
-
-            new Date(
-              item.created_at
-            ).toLocaleString(),
-          ]
-        ),
-    });
-
-    doc.save(
-      "rapport-temperatures.pdf"
-    );
-  };
-
-  const criticalTemps =
-    temperatures.filter(
-      (t) =>
-        t.temperature >= 8
-    );
-
-  const averageTemp =
-    temperatures.length > 0
-
-      ? (
-          temperatures.reduce(
-            (
-              acc,
-              item
-            ) =>
-              acc +
-              item.temperature,
-            0
-          ) /
-          temperatures.length
-        ).toFixed(1)
-
-      : "0";
-
   return (
 
-    <main className="min-h-screen p-6 md:p-10 text-white">
+    <div
+      className="
+        relative
 
-      {/* HEADER */}
-      <div className="mb-10">
+        min-h-screen
 
-        <div className="flex items-center gap-4 mb-4">
+        overflow-hidden
 
-          <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
+        text-white
+      "
+    >
 
-          <p className="text-cyan-400 font-semibold tracking-widest uppercase">
-            TABLET MODE
-          </p>
-
-        </div>
-
-        <h1 className="text-5xl md:text-7xl font-black">
-          Températures HACCP
-        </h1>
-
-      </div>
-
-      {/* ADD EQUIPMENT */}
+      {/* PAGE GLOW */}
       <div
         className="
-          rounded-3xl
-          border
-          border-white/10
-          bg-white/[0.04]
-          p-6
-          mb-8
+          absolute
+
+          inset-0
+
+          bg-[radial-gradient(circle_at_top_right,rgba(0,255,255,0.10),transparent_40%)]
+
+          pointer-events-none
+        "
+      />
+
+      {/* CONTENT */}
+      <div
+        className="
+          relative
+          z-10
+
+          px-6
+          py-5
         "
       >
 
-        <div className="flex flex-col xl:flex-row gap-5">
+        {/* HERO */}
+        <div
+          className="
+            relative
 
-          <input
-            value={newEquipment}
-            onChange={(e) =>
-              setNewEquipment(
-                e.target.value
-              )
-            }
-            placeholder="Ajouter un équipement..."
+            overflow-hidden
+
+            rounded-[48px]
+
+            border
+            border-white/10
+
+            bg-white/[0.03]
+
+            backdrop-blur-2xl
+
+            px-10
+            py-12
+
+            mb-8
+          "
+        >
+
+          {/* HERO GLOW */}
+          <div
             className="
-              flex-1
+              absolute
 
-              rounded-3xl
+              top-[-120px]
+              right-[-120px]
 
-              bg-black/20
+              w-[500px]
+              h-[500px]
 
-              border
-              border-white/10
+              rounded-full
 
-              px-6
-              py-6
+              bg-cyan-400/10
 
-              text-2xl
-
-              outline-none
+              blur-[140px]
             "
           />
 
-          <button
-            onClick={addEquipment}
-            className="
-              rounded-3xl
+          {/* HERO CONTENT */}
+          <div className="relative z-10">
 
-              bg-cyan-500
-
-              px-10
-              py-6
-
-              text-black
-              text-2xl
-              font-black
-            "
-          >
-
-            Ajouter
-
-          </button>
-
-        </div>
-
-      </div>
-
-      {/* FILTERS */}
-      <div
-        className="
-          rounded-3xl
-          border
-          border-white/10
-          bg-white/[0.04]
-          p-6
-          mb-8
-        "
-      >
-
-        <div className="flex flex-col xl:flex-row gap-5 items-center justify-between">
-
-          <div className="flex flex-col md:flex-row gap-5 w-full">
-
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) =>
-                setStartDate(
-                  e.target.value
-                )
-              }
+            {/* BADGE */}
+            <div
               className="
-                flex-1
+                inline-flex
+                items-center
 
-                rounded-3xl
+                gap-3
 
-                bg-black/20
+                rounded-full
 
                 border
-                border-white/10
+                border-cyan-400/20
 
-                px-6
-                py-5
+                bg-cyan-400/10
 
-                text-xl
+                px-5
+                py-3
+
+                mb-8
               "
-            />
+            >
 
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) =>
-                setEndDate(
-                  e.target.value
-                )
-              }
+              <div className="w-3 h-3 rounded-full bg-cyan-300" />
+
+              <span
+                className="
+                  text-cyan-200
+
+                  text-sm
+
+                  font-semibold
+
+                  tracking-[0.25em]
+                "
+              >
+
+                TABLET MODE
+
+              </span>
+
+            </div>
+
+            {/* TITLE */}
+            <h1
               className="
-                flex-1
+                text-[88px]
+                xl:text-[110px]
 
-                rounded-3xl
+                font-black
 
-                bg-black/20
+                tracking-tight
 
-                border
-                border-white/10
-
-                px-6
-                py-5
-
-                text-xl
+                leading-[0.9]
               "
-            />
+            >
+
+              Températures
+              <br />
+
+              HACCP
+
+            </h1>
+
+            {/* SUBTITLE */}
+            <p
+              className="
+                text-white/50
+
+                text-2xl
+
+                leading-relaxed
+
+                mt-8
+
+                max-w-3xl
+              "
+            >
+
+              Supervision intelligente
+              de la chaîne du froid,
+              contrôle des équipements
+              et surveillance temps réel.
+
+            </p>
 
           </div>
 
-          <button
-            onClick={exportPDF}
+        </div>
+
+        {/* FILTER BAR */}
+        <div
+          className="
+            rounded-[40px]
+
+            border
+            border-white/10
+
+            bg-white/[0.03]
+
+            backdrop-blur-2xl
+
+            p-6
+
+            mb-8
+          "
+        >
+
+          <div className="grid grid-cols-3 gap-6">
+
+            {/* DATE START */}
+            <div
+              className="
+                rounded-[30px]
+
+                bg-black/20
+
+                border
+                border-white/5
+
+                p-6
+              "
+            >
+
+              <p className="text-white/40 text-lg mb-3">
+
+                Date début
+
+              </p>
+
+              <div className="text-2xl font-semibold">
+
+                24/05/2026
+
+              </div>
+
+            </div>
+
+            {/* DATE END */}
+            <div
+              className="
+                rounded-[30px]
+
+                bg-black/20
+
+                border
+                border-white/5
+
+                p-6
+              "
+            >
+
+              <p className="text-white/40 text-lg mb-3">
+
+                Date fin
+
+              </p>
+
+              <div className="text-2xl font-semibold">
+
+                24/05/2026
+
+              </div>
+
+            </div>
+
+            {/* EXPORT */}
+            <button
+              className="
+                rounded-[30px]
+
+                bg-cyan-400
+
+                text-black
+
+                font-black
+
+                text-2xl
+
+                flex
+                items-center
+                justify-center
+
+                gap-4
+
+                transition-all
+
+                hover:scale-[1.02]
+              "
+            >
+
+              <FileText className="w-7 h-7" />
+
+              Export PDF
+
+            </button>
+
+          </div>
+
+        </div>
+
+        {/* STATS */}
+        <div className="grid grid-cols-3 gap-6 mb-8">
+
+          {/* CARD */}
+          <div
             className="
-              flex
-              items-center
-              gap-3
+              rounded-[40px]
 
-              px-8
-              py-5
+              p-8
 
-              rounded-2xl
+              border
+              border-cyan-500/20
 
-              bg-cyan-500
+              bg-gradient-to-br
+              from-cyan-500/10
+              to-blue-500/10
 
-              text-black
-              text-lg
-              font-black
+              backdrop-blur-2xl
             "
           >
 
-            <FileText />
+            <Thermometer className="w-10 h-10 text-cyan-300 mb-8" />
 
-            Export PDF
+            <p className="text-xl text-white/60 mb-4">
 
-          </button>
+              Relevés
+
+            </p>
+
+            <h2 className="text-7xl font-black">
+
+              17
+
+            </h2>
+
+          </div>
+
+          {/* CARD */}
+          <div
+            className="
+              rounded-[40px]
+
+              p-8
+
+              border
+              border-green-500/20
+
+              bg-gradient-to-br
+              from-green-500/10
+              to-cyan-500/10
+
+              backdrop-blur-2xl
+            "
+          >
+
+            <Snowflake className="w-10 h-10 text-green-300 mb-8" />
+
+            <p className="text-xl text-white/60 mb-4">
+
+              Moyenne
+
+            </p>
+
+            <h2 className="text-7xl font-black">
+
+              4.6°C
+
+            </h2>
+
+          </div>
+
+          {/* CARD */}
+          <div
+            className="
+              rounded-[40px]
+
+              p-8
+
+              border
+              border-red-500/20
+
+              bg-gradient-to-br
+              from-red-500/10
+              to-pink-500/10
+
+              backdrop-blur-2xl
+            "
+          >
+
+            <AlertTriangle className="w-10 h-10 text-red-300 mb-8" />
+
+            <p className="text-xl text-white/60 mb-4">
+
+              Critiques
+
+            </p>
+
+            <h2 className="text-7xl font-black">
+
+              3
+
+            </h2>
+
+          </div>
+
+        </div>
+
+        {/* EQUIPMENT */}
+        <div
+          className="
+            rounded-[48px]
+
+            border
+            border-red-500/20
+
+            bg-gradient-to-br
+            from-red-500/10
+            to-pink-500/5
+
+            backdrop-blur-2xl
+
+            p-10
+          "
+        >
+
+          <div className="flex items-center justify-between">
+
+            {/* LEFT */}
+            <div>
+
+              <p
+                className="
+                  text-red-300
+
+                  uppercase
+
+                  tracking-[0.2em]
+
+                  text-sm
+
+                  mb-4
+                "
+              >
+
+                ÉQUIPEMENT
+
+              </p>
+
+              <h2
+                className="
+                  text-6xl
+
+                  font-black
+
+                  mb-5
+                "
+              >
+
+                Chambre froide
+
+              </h2>
+
+              <p className="text-white/40 text-2xl">
+
+                23/05/2026 18:45:28
+
+              </p>
+
+            </div>
+
+            {/* RIGHT */}
+            <div className="flex items-center gap-6">
+
+              <button
+                className="
+                  w-28
+                  h-28
+
+                  rounded-[32px]
+
+                  bg-red-500/20
+
+                  border
+                  border-red-500/20
+
+                  flex
+                  items-center
+                  justify-center
+                "
+              >
+
+                <Minus className="w-12 h-12" />
+
+              </button>
+
+              <div
+                className="
+                  px-14
+                  py-8
+
+                  rounded-[32px]
+
+                  bg-red-400/20
+
+                  border
+                  border-red-500/20
+
+                  text-7xl
+
+                  font-black
+                "
+              >
+
+                15°C
+
+              </div>
+
+              <button
+                className="
+                  w-28
+                  h-28
+
+                  rounded-[32px]
+
+                  bg-green-500/20
+
+                  border
+                  border-green-500/20
+
+                  flex
+                  items-center
+                  justify-center
+                "
+              >
+
+                <Plus className="w-12 h-12" />
+
+              </button>
+
+            </div>
+
+          </div>
 
         </div>
 
       </div>
-    </main>
+
+    </div>
   );
 }

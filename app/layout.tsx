@@ -6,9 +6,7 @@ import Sidebar from "@/app/components/Sidebar";
 
 export const metadata: Metadata = {
   title: "Clean Kitchen",
-
-  description:
-    "Système HACCP premium",
+  description: "Premium HACCP Tablet",
 };
 
 export default function RootLayout({
@@ -24,66 +22,109 @@ export default function RootLayout({
       <body
         className="
           bg-[#020617]
+
           text-white
+
           overflow-hidden
         "
       >
 
-        {/* BACKGROUND */}
+        {/* GLOBAL BACKGROUND */}
         <div
           className="
             fixed
             inset-0
 
-            bg-[radial-gradient(circle_at_top,#0f172a,#020617_65%)]
-
-            pointer-events-none
+            overflow-hidden
           "
-        />
+        >
 
-        {/* CYAN GLOW */}
-        <div
-          className="
-            fixed
+          {/* MAIN */}
+          <div
+            className="
+              absolute
+              inset-0
 
-            top-[-250px]
-            right-[-250px]
+              bg-[#020617]
+            "
+          />
 
-            w-[600px]
-            h-[600px]
+          {/* TOP LIGHT */}
+          <div
+            className="
+              absolute
 
-            rounded-full
+              top-[-300px]
+              left-1/2
 
-            bg-cyan-500/10
+              -translate-x-1/2
 
-            blur-3xl
+              w-[1200px]
+              h-[700px]
 
-            pointer-events-none
-          "
-        />
+              rounded-full
 
-        {/* PURPLE GLOW */}
-        <div
-          className="
-            fixed
+              bg-cyan-400/10
 
-            bottom-[-250px]
-            left-[-250px]
+              blur-[180px]
+            "
+          />
 
-            w-[600px]
-            h-[600px]
+          {/* LEFT GLOW */}
+          <div
+            className="
+              absolute
 
-            rounded-full
+              left-[-300px]
+              top-[20%]
 
-            bg-purple-500/10
+              w-[700px]
+              h-[700px]
 
-            blur-3xl
+              rounded-full
 
-            pointer-events-none
-          "
-        />
+              bg-blue-500/10
 
-        {/* MAIN LAYOUT */}
+              blur-[180px]
+            "
+          />
+
+          {/* RIGHT GLOW */}
+          <div
+            className="
+              absolute
+
+              right-[-300px]
+              bottom-[10%]
+
+              w-[700px]
+              h-[700px]
+
+              rounded-full
+
+              bg-cyan-300/10
+
+              blur-[180px]
+            "
+          />
+
+          {/* GRID */}
+          <div
+            className="
+              absolute
+              inset-0
+
+              opacity-[0.03]
+
+              bg-[linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)]
+
+              bg-[size:80px_80px]
+            "
+          />
+
+        </div>
+
+        {/* APP */}
         <div
           className="
             relative
@@ -92,8 +133,6 @@ export default function RootLayout({
             flex
 
             h-screen
-
-            overflow-hidden
           "
         >
 
@@ -107,8 +146,8 @@ export default function RootLayout({
 
               overflow-y-auto
 
-              p-3
-              md:p-5
+              px-6
+              py-4
             "
           >
 
