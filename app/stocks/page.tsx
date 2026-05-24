@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from "react";
 
-import { motion } from "framer-motion";
-
 import {
   Package,
   Search,
-  Plus,
-  Minus,
   AlertTriangle,
   Boxes,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  X,
 } from "lucide-react";
+
+import { motion } from "framer-motion";
 
 import { supabase } from "@/lib/supabase";
 
@@ -35,6 +36,15 @@ export default function StocksPage() {
 
   const [activeFilter, setActiveFilter] =
     useState("Tous");
+
+  const [selectedProduct, setSelectedProduct] =
+    useState<any>(null);
+
+  const [movementType, setMovementType] =
+    useState("");
+
+  const [quantity, setQuantity] =
+    useState(1);
 
   useEffect(() => {
 
@@ -97,18 +107,54 @@ export default function StocksPage() {
       0
     );
 
-  const updateQuantity =
-    async (
-      item: any,
-      change: number
-    ) => {
+  const openMovementModal = (
+    item: any,
+    type: string
+  ) => {
 
-      const newQuantity =
-        Math.max(
-          0,
-          (item.quantity || 0) +
-            change
-        );
+    setSelectedProduct(item);
+
+    setMovementType(type);
+
+    setQuantity(1);
+  };
+
+  const closeModal = () => {
+
+    setSelectedProduct(null);
+
+    setMovementType("");
+
+    setQuantity(1);
+  };
+
+  const validateMovement =
+    async () => {
+
+      if (!selectedProduct)
+        return;
+
+      let newQuantity =
+        selectedProduct.quantity || 0;
+
+      if (
+        movementType === "entry"
+      ) {
+
+        newQuantity += quantity;
+      }
+
+      if (
+        movementType === "exit"
+      ) {
+
+        newQuantity =
+          Math.max(
+            0,
+            newQuantity -
+              quantity
+          );
+      }
 
       await supabase
         .from(
@@ -118,9 +164,14 @@ export default function StocksPage() {
           quantity:
             newQuantity,
         })
-        .eq("id", item.id);
+        .eq(
+          "id",
+          selectedProduct.id
+        );
 
       fetchProducts();
+
+      closeModal();
     };
 
   return (
@@ -153,15 +204,7 @@ export default function StocksPage() {
       {/* KPI */}
       <div className="grid grid-cols-3 gap-6 mb-10">
 
-        <div
-          className="
-            rounded-3xl
-            border
-            border-white/10
-            bg-white/[0.04]
-            p-8
-          "
-        >
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8">
 
           <div className="flex items-center justify-between mb-6">
 
@@ -179,15 +222,7 @@ export default function StocksPage() {
 
         </div>
 
-        <div
-          className="
-            rounded-3xl
-            border
-            border-white/10
-            bg-white/[0.04]
-            p-8
-          "
-        >
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8">
 
           <div className="flex items-center justify-between mb-6">
 
@@ -205,15 +240,7 @@ export default function StocksPage() {
 
         </div>
 
-        <div
-          className="
-            rounded-3xl
-            border
-            border-red-500/20
-            bg-red-500/10
-            p-8
-          "
-        >
+        <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-8">
 
           <div className="flex items-center justify-between mb-6">
 
@@ -236,23 +263,7 @@ export default function StocksPage() {
       {/* SEARCH */}
       <div className="mb-8">
 
-        <div
-          className="
-            flex
-            items-center
-            gap-4
-
-            rounded-3xl
-
-            border
-            border-white/10
-
-            bg-white/[0.04]
-
-            px-6
-            py-5
-          "
-        >
+        <div className="flex items-center gap-4 rounded-3xl border border-white/10 bg-white/[0.04] px-6 py-5">
 
           <Search className="text-cyan-300" />
 
@@ -265,11 +276,7 @@ export default function StocksPage() {
                 e.target.value
               )
             }
-            className="
-              w-full
-              bg-transparent
-              outline-none
-            "
+            className="w-full bg-transparent outline-none"
           />
 
         </div>
@@ -290,14 +297,10 @@ export default function StocksPage() {
             }
             className={`
               rounded-2xl
-
               px-5
               py-3
-
               border
-
               whitespace-nowrap
-
               transition-all
 
               ${
@@ -320,37 +323,15 @@ export default function StocksPage() {
       </div>
 
       {/* TABLE */}
-      <div
-        className="
-          rounded-3xl
-          border
-          border-white/10
-          bg-white/[0.04]
-          overflow-hidden
-        "
-      >
+      <div className="rounded-3xl border border-white/10 bg-white/[0.04] overflow-hidden">
 
         {/* HEADER */}
-        <div
-          className="
-            grid
-            grid-cols-[2fr_1fr_1fr_320px]
-
-            border-b
-            border-white/10
-
-            px-8
-            py-6
-
-            text-gray-400
-            font-semibold
-          "
-        >
+        <div className="grid grid-cols-[2fr_1fr_1fr_240px] border-b border-white/10 px-8 py-6 text-gray-400 font-semibold">
 
           <div>Produit</div>
           <div>Catégorie</div>
           <div>Stock</div>
-          <div>Mouvements</div>
+          <div>Actions</div>
 
         </div>
 
@@ -367,18 +348,7 @@ export default function StocksPage() {
               opacity: 1,
               y: 0,
             }}
-            className="
-              grid
-              grid-cols-[2fr_1fr_1fr_320px]
-
-              items-center
-
-              px-8
-              py-6
-
-              border-b
-              border-white/5
-            "
+            className="grid grid-cols-[2fr_1fr_1fr_240px] items-center px-8 py-6 border-b border-white/5"
           >
 
             {/* PRODUCT */}
@@ -387,15 +357,8 @@ export default function StocksPage() {
               {item.image_url ? (
 
                 <img
-                  src={
-                    item.image_url
-                  }
-                  className="
-                    w-16
-                    h-16
-                    object-cover
-                    rounded-2xl
-                  "
+                  src={item.image_url}
+                  className="w-16 h-16 object-cover rounded-2xl"
                 />
 
               ) : (
@@ -437,12 +400,9 @@ export default function StocksPage() {
                   inline-flex
                   items-center
                   gap-3
-
                   px-4
                   py-2
-
                   rounded-2xl
-
                   font-bold
 
                   ${
@@ -461,106 +421,40 @@ export default function StocksPage() {
 
             </div>
 
-            {/* MOVEMENTS */}
+            {/* ACTIONS */}
             <div className="flex gap-3">
 
-              {/* -5 */}
+              {/* SORTIE */}
               <button
                 onClick={() =>
-                  updateQuantity(
+                  openMovementModal(
                     item,
-                    -5
+                    "exit"
                   )
                 }
-                className="
-                  px-4
-                  py-3
-
-                  rounded-2xl
-
-                  bg-red-500/10
-
-                  text-red-300
-                  font-bold
-                "
+                className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-red-500/10 text-red-300 font-bold"
               >
 
-                -5
+                <ArrowUpCircle className="w-5 h-5" />
+
+                Sortie
 
               </button>
 
-              {/* -1 */}
+              {/* ENTREE */}
               <button
                 onClick={() =>
-                  updateQuantity(
+                  openMovementModal(
                     item,
-                    -1
+                    "entry"
                   )
                 }
-                className="
-                  px-4
-                  py-3
-
-                  rounded-2xl
-
-                  bg-red-500/10
-
-                  text-red-300
-                  font-bold
-                "
+                className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-green-500/10 text-green-300 font-bold"
               >
 
-                -1
+                <ArrowDownCircle className="w-5 h-5" />
 
-              </button>
-
-              {/* +1 */}
-              <button
-                onClick={() =>
-                  updateQuantity(
-                    item,
-                    1
-                  )
-                }
-                className="
-                  px-4
-                  py-3
-
-                  rounded-2xl
-
-                  bg-green-500/10
-
-                  text-green-300
-                  font-bold
-                "
-              >
-
-                +1
-
-              </button>
-
-              {/* +5 */}
-              <button
-                onClick={() =>
-                  updateQuantity(
-                    item,
-                    5
-                  )
-                }
-                className="
-                  px-4
-                  py-3
-
-                  rounded-2xl
-
-                  bg-green-500/10
-
-                  text-green-300
-                  font-bold
-                "
-              >
-
-                +5
+                Entrée
 
               </button>
 
@@ -571,6 +465,102 @@ export default function StocksPage() {
         ))}
 
       </div>
+
+      {/* MODAL */}
+      {selectedProduct && (
+
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+
+          <div className="w-full max-w-md rounded-3xl bg-[#071120] border border-white/10 p-8">
+
+            <div className="flex items-center justify-between mb-8">
+
+              <h2 className="text-3xl font-black">
+
+                {movementType ===
+                "entry"
+
+                  ? "Entrée stock"
+
+                  : "Sortie stock"}
+
+              </h2>
+
+              <button
+                onClick={closeModal}
+                className="rounded-2xl bg-white/10 p-3"
+              >
+
+                <X />
+
+              </button>
+
+            </div>
+
+            <div className="mb-8">
+
+              <p className="text-xl font-bold mb-2">
+
+                {selectedProduct.product}
+
+              </p>
+
+              <p className="text-gray-400">
+
+                Stock actuel :
+                {" "}
+                {selectedProduct.quantity}
+                {" "}
+                {selectedProduct.unit}
+
+              </p>
+
+            </div>
+
+            <input
+              type="number"
+              value={quantity}
+              min={1}
+              onChange={(e) =>
+                setQuantity(
+                  Number(
+                    e.target.value
+                  )
+                )
+              }
+              className="w-full rounded-2xl bg-white/[0.05] border border-white/10 px-5 py-4 mb-6"
+            />
+
+            <button
+              onClick={
+                validateMovement
+              }
+              className={`
+                w-full
+                rounded-2xl
+                py-4
+                font-bold
+
+                ${
+                  movementType ===
+                  "entry"
+
+                    ? "bg-green-500 text-black"
+
+                    : "bg-red-500 text-white"
+                }
+              `}
+            >
+
+              Valider
+
+            </button>
+
+          </div>
+
+        </div>
+
+      )}
 
     </main>
   );
