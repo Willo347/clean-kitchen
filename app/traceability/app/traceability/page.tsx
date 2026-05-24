@@ -52,6 +52,7 @@ const traceabilityItems = [
 export default function TraceabilityPage() {
 
   return (
+
     <main className="min-h-screen p-10 text-white">
 
       {/* HEADER */}
@@ -87,14 +88,10 @@ export default function TraceabilityPage() {
           }}
           className="
             rounded-3xl
-
             border
             border-white/10
-
             bg-white/[0.04]
-
             backdrop-blur-2xl
-
             p-7
           "
         >
@@ -104,9 +101,7 @@ export default function TraceabilityPage() {
             <div
               className="
                 bg-cyan-500/20
-
                 p-4
-
                 rounded-2xl
               "
             >
@@ -138,14 +133,10 @@ export default function TraceabilityPage() {
           }}
           className="
             rounded-3xl
-
             border
             border-orange-500/20
-
             bg-orange-500/10
-
             backdrop-blur-2xl
-
             p-7
           "
         >
@@ -155,9 +146,7 @@ export default function TraceabilityPage() {
             <div
               className="
                 bg-orange-500/20
-
                 p-4
-
                 rounded-2xl
               "
             >
@@ -189,14 +178,10 @@ export default function TraceabilityPage() {
           }}
           className="
             rounded-3xl
-
             border
             border-green-500/20
-
             bg-green-500/10
-
             backdrop-blur-2xl
-
             p-7
           "
         >
@@ -206,9 +191,7 @@ export default function TraceabilityPage() {
             <div
               className="
                 bg-green-500/20
-
                 p-4
-
                 rounded-2xl
               "
             >
@@ -240,14 +223,10 @@ export default function TraceabilityPage() {
           }}
           className="
             rounded-3xl
-
             border
             border-red-500/20
-
             bg-red-500/10
-
             backdrop-blur-2xl
-
             p-7
           "
         >
@@ -257,9 +236,7 @@ export default function TraceabilityPage() {
             <div
               className="
                 bg-red-500/20
-
                 p-4
-
                 rounded-2xl
               "
             >
@@ -290,14 +267,10 @@ export default function TraceabilityPage() {
       <div
         className="
           rounded-3xl
-
           border
           border-white/10
-
           bg-white/[0.04]
-
           backdrop-blur-2xl
-
           overflow-hidden
         "
       >
@@ -307,13 +280,10 @@ export default function TraceabilityPage() {
           className="
             grid
             grid-cols-6
-
             border-b
             border-white/10
-
             px-8
             py-6
-
             text-gray-400
             font-semibold
           "
@@ -347,15 +317,11 @@ export default function TraceabilityPage() {
             className="
               grid
               grid-cols-6
-
               items-center
-
               px-8
               py-6
-
               border-b
               border-white/5
-
               transition-all
             "
           >
@@ -366,9 +332,7 @@ export default function TraceabilityPage() {
               <div
                 className="
                   bg-cyan-500/20
-
                   p-3
-
                   rounded-2xl
                 "
               >
@@ -437,3 +401,84 @@ export default function TraceabilityPage() {
               {item.status === "ok" && (
 
                 <div
+                  className="
+                    inline-flex
+                    items-center
+                    gap-2
+                    bg-green-500/20
+                    px-4
+                    py-2
+                    rounded-full
+                    text-green-300
+                    font-semibold
+                  "
+                >
+
+                  <CheckCircle2 className="w-4 h-4" />
+
+                  Conforme
+
+                </div>
+
+              )}
+
+              {item.status === "warning" && (
+
+                <div
+                  className="
+                    inline-flex
+                    items-center
+                    gap-2
+                    bg-orange-500/20
+                    px-4
+                    py-2
+                    rounded-full
+                    text-orange-300
+                    font-semibold
+                  "
+                >
+
+                  <AlertTriangle className="w-4 h-4" />
+
+                  Surveillance
+
+                </div>
+
+              )}
+
+              {item.status === "critical" && (
+
+                <div
+                  className="
+                    inline-flex
+                    items-center
+                    gap-2
+                    bg-red-500/20
+                    px-4
+                    py-2
+                    rounded-full
+                    text-red-300
+                    font-semibold
+                  "
+                >
+
+                  <AlertTriangle className="w-4 h-4" />
+
+                  Critique
+
+                </div>
+
+              )}
+
+            </div>
+
+          </motion.div>
+
+        ))}
+
+      </div>
+
+    </main>
+
+  );
+}
