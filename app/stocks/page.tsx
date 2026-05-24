@@ -265,79 +265,103 @@ export default function StocksPage() {
         </Link>
 
         {/* STOCK */}
-        <div
-          className="
-            rounded-3xl
-            border
-            border-white/10
-            bg-white/[0.04]
-            p-7
-          "
-        >
+        <a href="#stock-section">
 
-          <p className="text-5xl mb-5">
-            📦
-          </p>
+          <div
+            className="
+              rounded-3xl
+              border
+              border-white/10
+              bg-white/[0.04]
+              p-7
+              hover:scale-[1.02]
+              transition-all
+              cursor-pointer
+              h-full
+            "
+          >
 
-          <h2 className="text-2xl font-black mb-3">
-            Stock actuel
-          </h2>
+            <p className="text-5xl mb-5">
+              📦
+            </p>
 
-          <p className="text-gray-400">
-            Consulter les stocks
-          </p>
+            <h2 className="text-2xl font-black mb-3">
+              Stock actuel
+            </h2>
 
-        </div>
+            <p className="text-gray-400">
+              Consulter les stocks
+            </p>
+
+          </div>
+
+        </a>
 
         {/* TRACEABILITY */}
-        <div
-          className="
-            rounded-3xl
-            border
-            border-white/10
-            bg-white/[0.04]
-            p-7
-          "
-        >
+        <Link href="/traceability">
 
-          <p className="text-5xl mb-5">
-            🧾
-          </p>
+          <div
+            className="
+              rounded-3xl
+              border
+              border-white/10
+              bg-white/[0.04]
+              p-7
+              hover:scale-[1.02]
+              transition-all
+              cursor-pointer
+              h-full
+            "
+          >
 
-          <h2 className="text-2xl font-black mb-3">
-            Traçabilité
-          </h2>
+            <p className="text-5xl mb-5">
+              🧾
+            </p>
 
-          <p className="text-gray-400">
-            DLC, lots, fournisseurs
-          </p>
+            <h2 className="text-2xl font-black mb-3">
+              Traçabilité
+            </h2>
 
-        </div>
+            <p className="text-gray-400">
+              DLC, lots, fournisseurs
+            </p>
+
+          </div>
+
+        </Link>
 
         {/* HISTORY */}
-        <div
-          className="
-            rounded-3xl
-            border
-            border-white/10
-            bg-white/[0.04]
-            p-7
-          "
-        >
+        <Link href="/history">
 
-          <p className="text-5xl mb-5">
-            📜
-          </p>
+          <div
+            className="
+              rounded-3xl
+              border
+              border-white/10
+              bg-white/[0.04]
+              p-7
+              hover:scale-[1.02]
+              transition-all
+              cursor-pointer
+              h-full
+            "
+          >
 
-          <h2 className="text-2xl font-black mb-3">
-            Historique
-          </h2>
+            <p className="text-5xl mb-5">
+              📜
+            </p>
 
-          <p className="text-gray-400">
-            Mouvements et activités
-          </p>
+            <h2 className="text-2xl font-black mb-3">
+              Historique
+            </h2>
 
-        </div>
+            <p className="text-gray-400">
+              Mouvements et activités
+            </p>
+
+          </div>
+
+        </Link>
 
       </div>
 
@@ -461,6 +485,9 @@ export default function StocksPage() {
         ))}
 
       </div>
+
+      {/* STOCK SECTION */}
+      <div id="stock-section" />
 
       {/* TABLE */}
       <div className="rounded-3xl border border-white/10 bg-white/[0.04] overflow-hidden">
