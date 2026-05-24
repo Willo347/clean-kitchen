@@ -5,7 +5,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 import {
-  Refrigerator,
   Plus,
   Snowflake,
   Thermometer,
@@ -52,10 +51,39 @@ export default function EquipmentsPage() {
   const [selectedType, setSelectedType] =
     useState<keyof typeof equipmentTypes | "">("");
 
+  const [equipmentName, setEquipmentName] =
+    useState("");
+
+  const [equipments, setEquipments] =
+    useState([
+      {
+        name: "Chambre froide",
+        temp: "4°C",
+        type: "chambre_froide",
+      },
+    ]);
+
   const currentType =
     selectedType
       ? equipmentTypes[selectedType]
       : null;
+
+  const addEquipment = () => {
+
+    if (!equipmentName || !currentType) return;
+
+    setEquipments((prev) => [
+      ...prev,
+      {
+        name: equipmentName,
+        temp: `${currentType.max}°C`,
+        type: selectedType,
+      },
+    ]);
+
+    setEquipmentName("");
+    setSelectedType("");
+  };
 
   return (
     <main className="min-h-screen p-10 text-white">
@@ -85,7 +113,7 @@ export default function EquipmentsPage() {
 
         </div>
 
-        {/* ADD BUTTON */}
+        {/* MODAL */}
         <Dialog>
 
           <DialogTrigger asChild>
@@ -155,6 +183,10 @@ export default function EquipmentsPage() {
                 </label>
 
                 <input
+                  value={equipmentName}
+                  onChange={(e) =>
+                    setEquipmentName(e.target.value)
+                  }
                   placeholder="Ex: Frigo réserve"
                   className="
                     w-full
@@ -185,6 +217,7 @@ export default function EquipmentsPage() {
                 </label>
 
                 <Select
+                  value={selectedType}
                   onValueChange={(value) =>
                     setSelectedType(
                       value as keyof typeof equipmentTypes
@@ -195,11 +228,8 @@ export default function EquipmentsPage() {
                   <SelectTrigger
                     className="
                       rounded-2xl
-
                       border-white/10
-
                       bg-white/[0.04]
-
                       h-14
                     "
                   >
@@ -234,7 +264,7 @@ export default function EquipmentsPage() {
 
               </div>
 
-              {/* AUTO TEMPS */}
+              {/* TEMPS */}
               {currentType && (
 
                 <motion.div
@@ -248,12 +278,9 @@ export default function EquipmentsPage() {
                   }}
                   className="
                     rounded-2xl
-
                     border
                     border-cyan-500/20
-
                     bg-cyan-500/10
-
                     p-5
                   "
                 >
@@ -269,23 +296,23 @@ export default function EquipmentsPage() {
                     <div>
 
                       <p className="font-bold text-cyan-300">
-                        Configuration automatique HACCP
+                        Configuration HACCP
                       </p>
 
                       <p className="text-cyan-200/70 text-sm">
-                        Températures recommandées
+                        Températures automatiques
                       </p>
 
                     </div>
 
                   </div>
 
-                  <div className="flex items-center gap-8">
+                  <div className="flex gap-10">
 
                     <div>
 
                       <p className="text-gray-400 text-sm">
-                        Température minimum
+                        Min
                       </p>
 
                       <h3 className="text-3xl font-black mt-2">
@@ -297,7 +324,7 @@ export default function EquipmentsPage() {
                     <div>
 
                       <p className="text-gray-400 text-sm">
-                        Température maximum
+                        Max
                       </p>
 
                       <h3 className="text-3xl font-black mt-2">
@@ -312,8 +339,9 @@ export default function EquipmentsPage() {
 
               )}
 
-              {/* SAVE */}
+              {/* BUTTON */}
               <button
+                onClick={addEquipment}
                 className="
                   w-full
 
@@ -343,70 +371,86 @@ export default function EquipmentsPage() {
 
       </div>
 
-      {/* EQUIPMENT CARD */}
-      <motion.div
-        whileHover={{
-          scale: 1.01,
-        }}
-        className="
-          rounded-3xl
+      {/* EQUIPMENT LIST */}
+      <div className="grid gap-6">
 
-          border
-          border-white/10
+        {equipments.map((equipment, index) => (
 
-          bg-white/[0.04]
+          <motion.div
+            key={index}
+            initial={{
+              opacity: 0,
+              y: 20,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            whileHover={{
+              scale: 1.01,
+            }}
+            className="
+              rounded-3xl
 
-          backdrop-blur-2xl
+              border
+              border-white/10
 
-          p-8
-        "
-      >
+              bg-white/[0.04]
 
-        <div className="flex items-center justify-between">
+              backdrop-blur-2xl
 
-          <div className="flex items-center gap-5">
+              p-8
+            "
+          >
 
-            <div
-              className="
-                bg-cyan-500/20
-                p-5
-                rounded-3xl
-              "
-            >
+            <div className="flex items-center justify-between">
 
-              <Snowflake className="text-cyan-300 w-8 h-8" />
+              <div className="flex items-center gap-5">
+
+                <div
+                  className="
+                    bg-cyan-500/20
+                    p-5
+                    rounded-3xl
+                  "
+                >
+
+                  <Snowflake className="text-cyan-300 w-8 h-8" />
+
+                </div>
+
+                <div>
+
+                  <h2 className="text-3xl font-black">
+                    {equipment.name}
+                  </h2>
+
+                  <p className="text-gray-400 mt-2">
+                    Surveillance HACCP active
+                  </p>
+
+                </div>
+
+              </div>
+
+              <div className="text-right">
+
+                <p className="text-gray-400 mb-2">
+                  Température actuelle
+                </p>
+
+                <h2 className="text-5xl font-black">
+                  {equipment.temp}
+                </h2>
+
+              </div>
 
             </div>
 
-            <div>
+          </motion.div>
+        ))}
 
-              <h2 className="text-3xl font-black">
-                Chambre froide
-              </h2>
-
-              <p className="text-gray-400 mt-2">
-                Surveillance HACCP active
-              </p>
-
-            </div>
-
-          </div>
-
-          <div className="text-right">
-
-            <p className="text-gray-400 mb-2">
-              Température actuelle
-            </p>
-
-            <h2 className="text-5xl font-black">
-              4°C
-            </h2>
-
-          </div>
-
-        </div>
-
-      </motion.div>
+      </div>
 
     </main>
   );
