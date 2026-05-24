@@ -12,6 +12,7 @@ import {
   Plus,
   X,
   Camera,
+  Trash2,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -161,12 +162,36 @@ export default function TraceabilityPage() {
       setDlc("");
 
       setImagePreview("");
-
       setImageFile(null);
 
       setSelectedCategory("");
 
       setOpen(false);
+    }
+  };
+
+  const deleteProduct = async (
+    id: string
+  ) => {
+
+    const confirmDelete =
+      confirm(
+        "Supprimer ce produit ?"
+      );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    const { error } =
+      await supabase
+        .from("traceability_products")
+        .delete()
+        .eq("id", id);
+
+    if (!error) {
+
+      fetchProducts();
     }
   };
 
@@ -243,7 +268,7 @@ export default function TraceabilityPage() {
         <div
           className="
             grid
-            grid-cols-6
+            grid-cols-7
             border-b
             border-white/10
             px-8
@@ -259,6 +284,7 @@ export default function TraceabilityPage() {
           <div>Température</div>
           <div>DLC</div>
           <div>Statut</div>
+          <div>Action</div>
 
         </div>
 
@@ -277,7 +303,7 @@ export default function TraceabilityPage() {
             }}
             className="
               grid
-              grid-cols-6
+              grid-cols-7
               items-center
               px-8
               py-6
@@ -386,6 +412,37 @@ export default function TraceabilityPage() {
                 Conforme
 
               </div>
+
+            </div>
+
+            {/* DELETE */}
+            <div>
+
+              <button
+                onClick={() =>
+                  deleteProduct(item.id)
+                }
+                className="
+                  flex
+                  items-center
+                  justify-center
+
+                  w-12
+                  h-12
+
+                  rounded-2xl
+
+                  bg-red-500/10
+
+                  hover:bg-red-500/20
+
+                  transition-all
+                "
+              >
+
+                <Trash2 className="w-5 h-5 text-red-400" />
+
+              </button>
 
             </div>
 
