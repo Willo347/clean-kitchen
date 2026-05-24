@@ -9,6 +9,10 @@ import {
   ClipboardList,
   Bell,
   ShieldCheck,
+  Users,
+  Settings,
+  Truck,
+  Sparkles,
 } from "lucide-react";
 
 const menuItems = [
@@ -25,15 +29,33 @@ const menuItems = [
   },
 
   {
+    name: "Traçabilité",
+    href: "/traceability",
+    icon: Truck,
+  },
+
+  {
     name: "Équipements",
     href: "/equipments",
     icon: Refrigerator,
   },
 
   {
+    name: "PMS / Nettoyage",
+    href: "/cleaning",
+    icon: Sparkles,
+  },
+
+  {
     name: "Contrôles",
     href: "/controls",
     icon: ClipboardList,
+  },
+
+  {
+    name: "Employés",
+    href: "/employees",
+    icon: Users,
   },
 
   {
@@ -46,6 +68,12 @@ const menuItems = [
     name: "HACCP",
     href: "/haccp",
     icon: ShieldCheck,
+  },
+
+  {
+    name: "Paramètres",
+    href: "/settings",
+    icon: Settings,
   },
 ];
 
