@@ -8,6 +8,9 @@ import {
   Plus,
   Snowflake,
   Thermometer,
+  Wifi,
+  AlertTriangle,
+  CheckCircle2,
 } from "lucide-react";
 
 import {
@@ -59,7 +62,37 @@ export default function EquipmentsPage() {
       {
         name: "Chambre froide",
         temp: "4°C",
+        status: "Stable",
         type: "chambre_froide",
+        online: true,
+        critical: false,
+      },
+
+      {
+        name: "Frigo réserve",
+        temp: "3°C",
+        status: "Optimal",
+        type: "frigo",
+        online: true,
+        critical: false,
+      },
+
+      {
+        name: "Congélateur viande",
+        temp: "-20°C",
+        status: "Stable",
+        type: "congelateur",
+        online: true,
+        critical: false,
+      },
+
+      {
+        name: "Frigo desserts",
+        temp: "8°C",
+        status: "Critique",
+        type: "frigo",
+        online: true,
+        critical: true,
       },
     ]);
 
@@ -77,7 +110,10 @@ export default function EquipmentsPage() {
       {
         name: equipmentName,
         temp: `${currentType.max}°C`,
+        status: "Nouveau",
         type: selectedType,
+        online: true,
+        critical: false,
       },
     ]);
 
@@ -113,7 +149,7 @@ export default function EquipmentsPage() {
 
         </div>
 
-        {/* MODAL */}
+        {/* ADD BUTTON */}
         <Dialog>
 
           <DialogTrigger asChild>
@@ -264,7 +300,7 @@ export default function EquipmentsPage() {
 
               </div>
 
-              {/* TEMPS */}
+              {/* AUTO TEMP */}
               {currentType && (
 
                 <motion.div
@@ -278,9 +314,12 @@ export default function EquipmentsPage() {
                   }}
                   className="
                     rounded-2xl
+
                     border
                     border-cyan-500/20
+
                     bg-cyan-500/10
+
                     p-5
                   "
                 >
@@ -339,7 +378,7 @@ export default function EquipmentsPage() {
 
               )}
 
-              {/* BUTTON */}
+              {/* SAVE */}
               <button
                 onClick={addEquipment}
                 className="
@@ -372,7 +411,7 @@ export default function EquipmentsPage() {
       </div>
 
       {/* EQUIPMENT LIST */}
-      <div className="grid gap-6">
+      <div className="space-y-6">
 
         {equipments.map((equipment, index) => (
 
@@ -389,57 +428,171 @@ export default function EquipmentsPage() {
             whileHover={{
               scale: 1.01,
             }}
-            className="
+            className={`
               rounded-3xl
 
               border
-              border-white/10
-
-              bg-white/[0.04]
 
               backdrop-blur-2xl
 
               p-8
-            "
+
+              ${
+                equipment.critical
+                  ? `
+                    border-red-500/20
+                    bg-red-500/5
+                  `
+                  : `
+                    border-white/10
+                    bg-white/[0.04]
+                  `
+              }
+            `}
           >
 
             <div className="flex items-center justify-between">
 
+              {/* LEFT */}
               <div className="flex items-center gap-5">
 
                 <div
-                  className="
-                    bg-cyan-500/20
+                  className={`
                     p-5
                     rounded-3xl
-                  "
+
+                    ${
+                      equipment.critical
+                        ? "bg-red-500/20"
+                        : "bg-cyan-500/20"
+                    }
+                  `}
                 >
 
-                  <Snowflake className="text-cyan-300 w-8 h-8" />
+                  <Snowflake
+                    className={`
+                      w-8
+                      h-8
+
+                      ${
+                        equipment.critical
+                          ? "text-red-300"
+                          : "text-cyan-300"
+                      }
+                    `}
+                  />
 
                 </div>
 
                 <div>
 
-                  <h2 className="text-3xl font-black">
-                    {equipment.name}
-                  </h2>
+                  <div className="flex items-center gap-3">
 
-                  <p className="text-gray-400 mt-2">
+                    <h2 className="text-3xl font-black">
+                      {equipment.name}
+                    </h2>
+
+                    {equipment.critical ? (
+
+                      <div
+                        className="
+                          flex
+                          items-center
+                          gap-2
+
+                          bg-red-500/20
+
+                          px-3
+                          py-1
+
+                          rounded-full
+
+                          text-red-300
+                          text-sm
+                          font-semibold
+                        "
+                      >
+
+                        <AlertTriangle className="w-4 h-4" />
+
+                        Critique
+
+                      </div>
+
+                    ) : (
+
+                      <div
+                        className="
+                          flex
+                          items-center
+                          gap-2
+
+                          bg-green-500/20
+
+                          px-3
+                          py-1
+
+                          rounded-full
+
+                          text-green-300
+                          text-sm
+                          font-semibold
+                        "
+                      >
+
+                        <CheckCircle2 className="w-4 h-4" />
+
+                        Stable
+
+                      </div>
+
+                    )}
+
+                  </div>
+
+                  <p className="text-gray-400 mt-3">
                     Surveillance HACCP active
                   </p>
+
+                  <div className="flex items-center gap-6 mt-4">
+
+                    <div className="flex items-center gap-2 text-cyan-300">
+
+                      <Wifi className="w-4 h-4" />
+
+                      Online
+
+                    </div>
+
+                    <div className="text-gray-500 text-sm">
+                      Mise à jour il y a 12 sec
+                    </div>
+
+                  </div>
 
                 </div>
 
               </div>
 
+              {/* RIGHT */}
               <div className="text-right">
 
-                <p className="text-gray-400 mb-2">
+                <p className="text-gray-400 mb-3">
                   Température actuelle
                 </p>
 
-                <h2 className="text-5xl font-black">
+                <h2
+                  className={`
+                    text-6xl
+                    font-black
+
+                    ${
+                      equipment.critical
+                        ? "text-red-300"
+                        : "text-white"
+                    }
+                  `}
+                >
                   {equipment.temp}
                 </h2>
 
