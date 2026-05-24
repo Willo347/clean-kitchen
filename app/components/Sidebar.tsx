@@ -8,20 +8,8 @@ import {
 } from "react";
 
 import {
-  DndContext,
-  closestCenter,
-} from "@dnd-kit/core";
-
-import {
-  arrayMove,
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
-
-import { CSS } from "@dnd-kit/utilities";
-
-import {
+  ChevronLeft,
+  ChevronRight,
   LayoutDashboard,
   Thermometer,
   Refrigerator,
@@ -34,6 +22,20 @@ import {
   Sparkles,
   GripVertical,
 } from "lucide-react";
+
+import {
+  DndContext,
+  closestCenter,
+} from "@dnd-kit/core";
+
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+
+import { CSS } from "@dnd-kit/utilities";
 
 const defaultItems = [
   {
@@ -107,7 +109,10 @@ const defaultItems = [
   },
 ];
 
-function SortableItem({ item }: any) {
+function SortableItem({
+  item,
+  collapsed,
+}: any) {
 
   const {
     attributes,
@@ -141,7 +146,6 @@ function SortableItem({ item }: any) {
 
           flex
           items-center
-          gap-5
 
           rounded-3xl
 
@@ -150,8 +154,8 @@ function SortableItem({ item }: any) {
 
           bg-white/[0.03]
 
-          px-6
-          py-6
+          px-5
+          py-5
 
           hover:border-cyan-500/30
           hover:bg-cyan-500/10
@@ -161,23 +165,29 @@ function SortableItem({ item }: any) {
       >
 
         {/* DRAG */}
-        <div
-          {...listeners}
-          className="
-            cursor-grab
-            active:cursor-grabbing
+        {!collapsed && (
 
-            opacity-40
+          <div
+            {...listeners}
+            className="
+              cursor-grab
+              active:cursor-grabbing
 
-            group-hover:opacity-100
+              opacity-40
 
-            transition-all
-          "
-        >
+              group-hover:opacity-100
 
-          <GripVertical className="w-5 h-5 text-gray-500" />
+              transition-all
 
-        </div>
+              mr-4
+            "
+          >
+
+            <GripVertical className="w-5 h-5 text-gray-500" />
+
+          </div>
+
+        )}
 
         {/* ICON */}
         <div
@@ -208,20 +218,26 @@ function SortableItem({ item }: any) {
         </div>
 
         {/* TEXT */}
-        <span
-          className="
-            text-2xl
-            font-bold
+        {!collapsed && (
 
-            text-white/90
+          <span
+            className="
+              text-2xl
+              font-bold
 
-            group-hover:text-cyan-300
+              text-white/90
 
-            transition-all
-          "
-        >
-          {item.name}
-        </span>
+              group-hover:text-cyan-300
+
+              transition-all
+
+              ml-5
+            "
+          >
+            {item.name}
+          </span>
+
+        )}
 
       </Link>
 
@@ -234,7 +250,10 @@ export default function Sidebar() {
   const [items, setItems] =
     useState(defaultItems);
 
-  /* LOAD SAVED ORDER */
+  const [collapsed, setCollapsed] =
+    useState(false);
+
+  /* LOAD ORDER */
   useEffect(() => {
 
     const saved =
@@ -288,8 +307,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="
-        w-[320px]
+      className={`
         min-h-screen
 
         border-r
@@ -303,104 +321,133 @@ export default function Sidebar() {
         flex-col
 
         overflow-y-auto
-      "
+
+        transition-all
+
+        ${
+          collapsed
+            ? "w-[120px]"
+            : "w-[320px]"
+        }
+      `}
     >
 
-      {/* LOGO */}
-      <div
-        className="
-          rounded-3xl
+      {/* TOP */}
+      <div className="flex items-center justify-between mb-10">
 
-          border
-          border-white/10
+        {!collapsed && (
 
-          bg-white/[0.04]
+          <div className="flex items-center gap-4">
 
-          p-7
+            <div
+              className="
+                w-14
+                h-14
 
-          mb-10
-        "
-      >
+                rounded-2xl
 
-        <div className="flex items-center gap-5">
+                bg-gradient-to-br
+                from-cyan-400
+                to-blue-500
 
-          <div
-            className="
-              w-16
-              h-16
+                flex
+                items-center
+                justify-center
 
-              rounded-2xl
+                text-2xl
+                font-black
+              "
+            >
+              CK
+            </div>
 
-              bg-gradient-to-br
-              from-cyan-400
-              to-blue-500
+            <div>
 
-              flex
-              items-center
-              justify-center
+              <h1 className="text-3xl font-black">
+                Clean Kitchen
+              </h1>
 
-              text-3xl
-              font-black
-            "
-          >
-            CK
-          </div>
+              <p className="text-gray-400 text-sm">
+                HACCP Monitoring
+              </p>
 
-          <div>
-
-            <h1 className="text-4xl font-black leading-none">
-              Clean
-              <br />
-              Kitchen
-            </h1>
-
-            <p className="text-gray-400 mt-2">
-              HACCP Monitoring
-            </p>
+            </div>
 
           </div>
 
-        </div>
+        )}
+
+        <button
+          onClick={() =>
+            setCollapsed(!collapsed)
+          }
+          className="
+            rounded-2xl
+
+            border
+            border-white/10
+
+            bg-white/[0.04]
+
+            p-3
+
+            hover:bg-cyan-500/10
+
+            transition-all
+          "
+        >
+
+          {collapsed ? (
+            <ChevronRight />
+          ) : (
+            <ChevronLeft />
+          )}
+
+        </button>
 
       </div>
 
       {/* STATUS */}
-      <div
-        className="
-          rounded-3xl
+      {!collapsed && (
 
-          border
-          border-green-500/20
+        <div
+          className="
+            rounded-3xl
 
-          bg-green-500/10
+            border
+            border-green-500/20
 
-          p-6
+            bg-green-500/10
 
-          mb-8
-        "
-      >
+            p-6
 
-        <div className="flex items-center gap-3">
+            mb-8
+          "
+        >
 
-          <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+          <div className="flex items-center gap-3">
 
-          <div>
+            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
 
-            <p className="text-green-300 font-bold">
-              SYSTEM ONLINE
-            </p>
+            <div>
 
-            <p className="text-green-200/70 text-sm">
-              Monitoring actif
-            </p>
+              <p className="text-green-300 font-bold">
+                SYSTEM ONLINE
+              </p>
+
+              <p className="text-green-200/70 text-sm">
+                Monitoring actif
+              </p>
+
+            </div>
 
           </div>
 
         </div>
 
-      </div>
+      )}
 
-      {/* DRAG AREA */}
+      {/* MENU */}
       <DndContext
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
@@ -418,6 +465,7 @@ export default function Sidebar() {
               <SortableItem
                 key={item.id}
                 item={item}
+                collapsed={collapsed}
               />
 
             ))}
@@ -429,32 +477,36 @@ export default function Sidebar() {
       </DndContext>
 
       {/* FOOTER */}
-      <div className="mt-auto pt-8">
+      {!collapsed && (
 
-        <div
-          className="
-            rounded-3xl
+        <div className="mt-auto pt-8">
 
-            border
-            border-cyan-500/20
+          <div
+            className="
+              rounded-3xl
 
-            bg-cyan-500/10
+              border
+              border-cyan-500/20
 
-            p-5
-          "
-        >
+              bg-cyan-500/10
 
-          <p className="text-cyan-300 font-bold">
-            Clean Kitchen AI
-          </p>
+              p-5
+            "
+          >
 
-          <p className="text-cyan-200/70 text-sm mt-1">
-            Surveillance intelligente HACCP active
-          </p>
+            <p className="text-cyan-300 font-bold">
+              Clean Kitchen AI
+            </p>
+
+            <p className="text-cyan-200/70 text-sm mt-1">
+              Surveillance intelligente HACCP active
+            </p>
+
+          </div>
 
         </div>
 
-      </div>
+      )}
 
     </aside>
   );
