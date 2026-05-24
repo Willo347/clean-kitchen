@@ -14,6 +14,7 @@ import {
   Camera,
   Trash2,
   Pencil,
+  AlertTriangle,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -87,6 +88,76 @@ export default function TraceabilityPage() {
 
       setProducts(data);
     }
+  };
+
+  const getStatus = (
+    dlc: string
+  ) => {
+
+    if (!dlc) {
+
+      return {
+        label: "Sans DLC",
+        color:
+          "bg-gray-500/20 text-gray-300",
+      };
+    }
+
+    const parts =
+      dlc.split("/");
+
+    if (parts.length !== 3) {
+
+      return {
+        label: "Invalide",
+        color:
+          "bg-gray-500/20 text-gray-300",
+      };
+    }
+
+    const date =
+      new Date(
+        Number(parts[2]),
+        Number(parts[1]) - 1,
+        Number(parts[0])
+      );
+
+    const today =
+      new Date();
+
+    const diffTime =
+      date.getTime() -
+      today.getTime();
+
+    const diffDays =
+      Math.ceil(
+        diffTime /
+        (1000 * 60 * 60 * 24)
+      );
+
+    if (diffDays < 0) {
+
+      return {
+        label: "Expiré",
+        color:
+          "bg-red-500/20 text-red-300",
+      };
+    }
+
+    if (diffDays <= 3) {
+
+      return {
+        label: "Attention",
+        color:
+          "bg-orange-500/20 text-orange-300",
+      };
+    }
+
+    return {
+      label: "Conforme",
+      color:
+        "bg-green-500/20 text-green-300",
+    };
   };
 
   const addProduct = async () => {
@@ -417,29 +488,38 @@ export default function TraceabilityPage() {
             {/* STATUS */}
             <div>
 
-              <div
-                className="
-                  inline-flex
-                  items-center
-                  gap-2
+              {(() => {
 
-                  bg-green-500/20
+                const status =
+                  getStatus(item.dlc);
 
-                  px-4
-                  py-2
+                return (
 
-                  rounded-full
+                  <div
+                    className={`
+                      inline-flex
+                      items-center
+                      gap-2
 
-                  text-green-300
-                  font-semibold
-                "
-              >
+                      px-4
+                      py-2
 
-                <CheckCircle2 className="w-4 h-4" />
+                      rounded-full
 
-                Conforme
+                      font-semibold
 
-              </div>
+                      ${status.color}
+                    `}
+                  >
+
+                    <AlertTriangle className="w-4 h-4" />
+
+                    {status.label}
+
+                  </div>
+
+                );
+              })()}
 
             </div>
 
@@ -507,6 +587,262 @@ export default function TraceabilityPage() {
         ))}
 
       </div>
+
+      {/* ADD MODAL */}
+      {open && (
+
+        <div
+          className="
+            fixed
+            inset-0
+
+            bg-black/70
+            backdrop-blur-sm
+
+            flex
+            items-center
+            justify-center
+
+            z-50
+            p-4
+          "
+        >
+
+          <div
+            className="
+              w-full
+              max-w-2xl
+
+              rounded-3xl
+
+              border
+              border-white/10
+
+              bg-[#071120]
+
+              p-8
+            "
+          >
+
+            <div className="flex items-center justify-between mb-8">
+
+              <h2 className="text-4xl font-black">
+                Ajouter produit
+              </h2>
+
+              <button
+                onClick={() =>
+                  setOpen(false)
+                }
+                className="
+                  rounded-2xl
+                  bg-white/10
+                  p-3
+                "
+              >
+
+                <X />
+
+              </button>
+
+            </div>
+
+            {/* PHOTO */}
+            <label
+              className="
+                flex
+                flex-col
+                items-center
+                justify-center
+
+                border-2
+                border-dashed
+                border-white/10
+
+                rounded-3xl
+
+                p-10
+
+                cursor-pointer
+
+                hover:border-cyan-400
+
+                transition-all
+
+                mb-8
+              "
+            >
+
+              <Camera className="w-12 h-12 text-cyan-300 mb-4" />
+
+              <p className="text-lg font-bold">
+                Importer une photo
+              </p>
+
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+
+                  const file =
+                    e.target.files?.[0];
+
+                  if (file) {
+
+                    setImageFile(file);
+
+                    setImagePreview(
+                      URL.createObjectURL(file)
+                    );
+                  }
+                }}
+              />
+
+            </label>
+
+            {imagePreview && (
+
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="
+                  w-full
+                  h-60
+                  object-cover
+                  rounded-3xl
+                  mb-8
+                "
+              />
+
+            )}
+
+            {/* FORM */}
+            <div className="space-y-5">
+
+              <input
+                type="text"
+                placeholder="Nom produit"
+                value={productName}
+                onChange={(e) =>
+                  setProductName(e.target.value)
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                  outline-none
+                "
+              />
+
+              <input
+                type="text"
+                placeholder="Lot"
+                value={lot}
+                onChange={(e) =>
+                  setLot(e.target.value)
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                  outline-none
+                "
+              />
+
+              <input
+                type="text"
+                placeholder="Fournisseur"
+                value={supplier}
+                onChange={(e) =>
+                  setSupplier(e.target.value)
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                  outline-none
+                "
+              />
+
+              <input
+                type="text"
+                placeholder="Température"
+                value={temperature}
+                onChange={(e) =>
+                  setTemperature(e.target.value)
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                  outline-none
+                "
+              />
+
+              <input
+                type="text"
+                placeholder="DLC (jj/mm/aaaa)"
+                value={dlc}
+                onChange={(e) =>
+                  setDlc(e.target.value)
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                  outline-none
+                "
+              />
+
+              <button
+                onClick={addProduct}
+                className="
+                  w-full
+
+                  rounded-2xl
+
+                  bg-cyan-500
+
+                  py-4
+
+                  text-black
+                  font-bold
+                  text-lg
+                "
+              >
+
+                Ajouter produit
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
 
       {/* EDIT MODAL */}
       {editOpen && (
