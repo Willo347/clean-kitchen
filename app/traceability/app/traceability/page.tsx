@@ -320,15 +320,10 @@ export default function TraceabilityPage() {
         >
 
           <div>Produit</div>
-
           <div>Lot</div>
-
           <div>Fournisseur</div>
-
           <div>Température</div>
-
           <div>DLC</div>
-
           <div>Statut</div>
 
         </div>
@@ -442,95 +437,3 @@ export default function TraceabilityPage() {
               {item.status === "ok" && (
 
                 <div
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-
-                    bg-green-500/20
-
-                    px-4
-                    py-2
-
-                    rounded-full
-
-                    text-green-300
-                    font-semibold
-                  "
-                >
-
-                  <CheckCircle2 className="w-4 h-4" />
-
-                  Conforme
-
-                </div>
-
-              )}
-
-              {item.status === "warning" && (
-
-                <div
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-
-                    bg-orange-500/20
-
-                    px-4
-                    py-2
-
-                    rounded-full
-
-                    text-orange-300
-                    font-semibold
-                  "
-                >
-
-                  <AlertTriangle className="w-4 h-4" />
-
-                  Surveillance
-
-                </div>
-
-              )}
-
-              {item.status === "critical" && (
-
-                <div
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-
-                    bg-red-500/20
-
-                    px-4
-                    py-2
-
-                    rounded-full
-
-                    text-red-300
-                    font-semibold
-                  "
-                >
-
-                  <AlertTriangle className="w-4 h-4" />
-
-                  Critique
-
-                </div>
-
-              )}
-
-            </div>
-
-          </motion.div>
-
-        ))}
-
-      </div>
-
-    </main>
-  );
-}
