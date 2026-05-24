@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   Users,
   Settings,
-  Truck,
   Sparkles,
   Boxes,
 } from "lucide-react";
@@ -24,21 +23,15 @@ const menuItems = [
   },
 
   {
+    name: "Marchandises",
+    href: "/stocks",
+    icon: Boxes,
+  },
+
+  {
     name: "Relevés",
     href: "/temperatures",
     icon: Thermometer,
-  },
-
-  {
-    name: "Traçabilité",
-    href: "/traceability",
-    icon: Truck,
-  },
-
-  {
-    name: "Stocks",
-    href: "/stocks",
-    icon: Boxes,
   },
 
   {
