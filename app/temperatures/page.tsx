@@ -4,362 +4,637 @@ import { useEffect, useState } from "react";
 
 import { motion } from "framer-motion";
 
-import toast, { Toaster } from "react-hot-toast";
+import {
+  Thermometer,
+  Calendar,
+  FileText,
+  Snowflake,
+} from "lucide-react";
+
+import jsPDF from "jspdf";
+
+import autoTable from "jspdf-autotable";
 
 import { supabase } from "@/lib/supabase";
 
 export default function TemperaturesPage() {
 
-  const [equipments, setEquipments] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [temperatures, setTemperatures] =
+    useState<any[]>([]);
 
-  const [selectedEquipment, setSelectedEquipment] = useState("");
-  const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [temperature, setTemperature] = useState("");
+  const [startDate, setStartDate] =
+    useState("");
+
+  const [endDate, setEndDate] =
+    useState("");
 
   useEffect(() => {
-    fetchData();
+
+    fetchTemperatures();
+
   }, []);
 
-  async function fetchData() {
+  const fetchTemperatures =
+    async () => {
 
-    // équipements
-    const { data: equipmentsData } = await supabase
-      .from("equipments")
-      .select("*")
-      .order("name");
+      let query =
+        supabase
+          .from(
+            "temperature_logs"
+          )
+          .select("*")
+          .order(
+            "created_at",
+            {
+              ascending: false,
+            }
+          );
 
-    if (equipmentsData) {
-      setEquipments(equipmentsData);
-    }
+      if (startDate) {
 
-    // employés
-    const { data: employeesData } = await supabase
-      .from("employees")
-      .select("*")
-      .order("full_name");
+        query =
+          query.gte(
+            "created_at",
+            startDate
+          );
+      }
 
-    if (employeesData) {
-      setEmployees(employeesData);
-    }
+      if (endDate) {
 
-    // logs
-    const { data: logsData } = await supabase
-      .from("temperature_logs")
-      .select(`
-        *,
-        equipments (
-          id,
-          name,
-          temp_min,
-          temp_max
+        query =
+          query.lte(
+            "created_at",
+            endDate
+          );
+      }
+
+      const {
+        data,
+      } =
+        await query;
+
+      if (data) {
+
+        setTemperatures(
+          data
+        );
+      }
+    };
+
+  useEffect(() => {
+
+    fetchTemperatures();
+
+  }, [
+    startDate,
+    endDate,
+  ]);
+
+  const exportPDF = () => {
+
+    const doc =
+      new jsPDF();
+
+    doc.setFontSize(24);
+
+    doc.text(
+      "Rapport Températures HACCP",
+      14,
+      20
+    );
+
+    doc.setFontSize(12);
+
+    doc.text(
+      `Période : ${
+        startDate || "Début"
+      } → ${
+        endDate || "Aujourd'hui"
+      }`,
+      14,
+      32
+    );
+
+    autoTable(doc, {
+
+      startY: 45,
+
+      head: [[
+        "Équipement",
+        "Température",
+        "Date",
+      ]],
+
+      body:
+        temperatures.map(
+          (
+            item
+          ) => [
+
+            item.equipment ||
+
+              "Équipement",
+
+            `${item.temperature}°C`,
+
+            new Date(
+              item.created_at
+            ).toLocaleString(),
+          ]
         ),
-        employees (
-          id,
-          full_name
-        )
-      `)
-      .order("created_at", { ascending: false });
+    });
 
-    if (logsData) {
-      setLogs(logsData);
-    }
-  }
+    doc.save(
+      "rapport-temperatures-haccp.pdf"
+    );
+  };
 
-  async function addTemperature() {
-
-    if (
-      !selectedEquipment ||
-      !selectedEmployee ||
-      !temperature
-    ) {
-
-      toast.error(
-        "Remplis tous les champs"
-      );
-
-      return;
-    }
-
-    const { error } = await supabase
-      .from("temperature_logs")
-      .insert([
-        {
-          equipement_id: Number(selectedEquipment),
-          employee_id: Number(selectedEmployee),
-          temperature: Number(temperature),
-        },
-      ]);
-
-    if (error) {
-
-      console.log(error);
-
-      toast.error(
-        "Erreur lors de l’enregistrement"
-      );
-
-      return;
-    }
-
-    toast.success(
-      "Relevé enregistré"
+  const criticalTemps =
+    temperatures.filter(
+      (t) =>
+        t.temperature >= 8
     );
 
-    setTemperature("");
-    setSelectedEquipment("");
-    setSelectedEmployee("");
+  const averageTemp =
+    temperatures.length > 0
 
-    fetchData();
-  }
+      ? (
+          temperatures.reduce(
+            (
+              acc,
+              item
+            ) =>
+              acc +
+              item.temperature,
+            0
+          ) /
+          temperatures.length
+        ).toFixed(1)
 
-  function isAlert(log: any) {
-
-    const equipment = log.equipments;
-
-    if (!equipment) return false;
-
-    return (
-      log.temperature < equipment.temp_min ||
-      log.temperature > equipment.temp_max
-    );
-  }
+      : "0";
 
   return (
-    <motion.main
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-      className="min-h-screen bg-[#070B14] text-white p-8"
-    >
 
-      {/* TOAST */}
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: "#111827",
-            color: "white",
-            border:
-              "1px solid rgba(255,255,255,0.08)",
-            borderRadius: "20px",
-            padding: "16px",
-          },
-        }}
-      />
+    <main className="min-h-screen p-10 text-white">
 
       {/* HEADER */}
       <div className="mb-12">
 
-        <p className="text-blue-400 font-semibold mb-3 tracking-widest uppercase">
-          Clean Kitchen
-        </p>
+        <div className="flex items-center gap-4 mb-4">
 
-        <h1 className="text-6xl font-black tracking-tight">
-          Relevé des températures
+          <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
+
+          <p className="text-cyan-400 font-semibold tracking-widest uppercase">
+            TEMPERATURE MONITORING
+          </p>
+
+        </div>
+
+        <h1 className="text-7xl font-black">
+          Températures HACCP
         </h1>
 
-        <p className="text-gray-400 mt-4 text-lg">
-          Surveillance HACCP en temps réel
+        <p className="text-gray-400 mt-5 text-xl">
+          Surveillance chaîne du froid
         </p>
+
       </div>
 
-      {/* GRID */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      {/* FILTERS */}
+      <div
+        className="
+          rounded-3xl
+          border
+          border-white/10
+          bg-white/[0.04]
+          p-7
+          mb-10
+        "
+      >
 
-        {/* FORMULAIRE */}
-        <motion.div
-          whileHover={{
-            scale: 1.01,
-          }}
-          className="xl:col-span-1"
-        >
+        <div className="flex flex-col xl:flex-row gap-5 items-center justify-between">
 
-          <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl shadow-2xl">
+          <div className="flex flex-col md:flex-row gap-5 w-full">
 
-            <h2 className="text-2xl font-bold mb-8">
-              Nouveau relevé
-            </h2>
+            {/* START DATE */}
+            <div className="flex-1">
 
-            {/* équipement */}
-            <div className="mb-5">
-
-              <label className="block mb-2 text-sm text-gray-400">
-                Équipement
+              <label className="text-sm text-gray-400 mb-2 block">
+                Date début
               </label>
 
-              <select
-                value={selectedEquipment}
-                onChange={(e) =>
-                  setSelectedEquipment(
-                    e.target.value
-                  )
-                }
-                className="w-full p-4 rounded-2xl bg-black/30 border border-white/10 focus:outline-none focus:border-blue-500"
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-3
+
+                  rounded-2xl
+
+                  border
+                  border-white/10
+
+                  bg-black/20
+
+                  px-5
+                  py-4
+                "
               >
-                <option value="">
-                  Choisir un équipement
-                </option>
 
-                {equipments.map((equipment) => (
-                  <option
-                    key={equipment.id}
-                    value={equipment.id}
-                  >
-                    {equipment.name}
-                  </option>
-                ))}
-              </select>
+                <Calendar className="text-cyan-300 w-5 h-5" />
+
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) =>
+                    setStartDate(
+                      e.target.value
+                    )
+                  }
+                  className="
+                    bg-transparent
+                    outline-none
+                    w-full
+                  "
+                />
+
+              </div>
+
             </div>
 
-            {/* employé */}
-            <div className="mb-5">
+            {/* END DATE */}
+            <div className="flex-1">
 
-              <label className="block mb-2 text-sm text-gray-400">
-                Employé
+              <label className="text-sm text-gray-400 mb-2 block">
+                Date fin
               </label>
 
-              <select
-                value={selectedEmployee}
-                onChange={(e) =>
-                  setSelectedEmployee(
-                    e.target.value
-                  )
-                }
-                className="w-full p-4 rounded-2xl bg-black/30 border border-white/10 focus:outline-none focus:border-blue-500"
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-3
+
+                  rounded-2xl
+
+                  border
+                  border-white/10
+
+                  bg-black/20
+
+                  px-5
+                  py-4
+                "
               >
-                <option value="">
-                  Choisir un employé
-                </option>
 
-                {employees.map((employee) => (
-                  <option
-                    key={employee.id}
-                    value={employee.id}
-                  >
-                    {employee.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <Calendar className="text-cyan-300 w-5 h-5" />
 
-            {/* température */}
-            <div className="mb-6">
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) =>
+                    setEndDate(
+                      e.target.value
+                    )
+                  }
+                  className="
+                    bg-transparent
+                    outline-none
+                    w-full
+                  "
+                />
 
-              <label className="block mb-2 text-sm text-gray-400">
-                Température
-              </label>
+              </div>
 
-              <input
-                type="number"
-                placeholder="Ex : 4"
-                value={temperature}
-                onChange={(e) =>
-                  setTemperature(
-                    e.target.value
-                  )
-                }
-                className="w-full p-4 rounded-2xl bg-black/30 border border-white/10 focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            {/* bouton */}
-            <button
-              onClick={addTemperature}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 transition-all duration-300 p-4 rounded-2xl font-bold text-lg shadow-lg shadow-blue-900/40"
-            >
-              Ajouter le relevé
-            </button>
-
-          </div>
-        </motion.div>
-
-        {/* HISTORIQUE */}
-        <div className="xl:col-span-2">
-
-          <div className="flex items-center justify-between mb-8">
-
-            <h2 className="text-3xl font-bold">
-              Historique
-            </h2>
-
-            <div className="bg-white/[0.04] border border-white/10 px-4 py-2 rounded-2xl text-sm text-gray-300">
-              {logs.length} relevés
             </div>
 
           </div>
 
-          <div className="space-y-5">
+          {/* EXPORT */}
+          <button
+            onClick={exportPDF}
+            className="
+              flex
+              items-center
+              gap-3
 
-            {logs.map((log) => {
+              px-7
+              py-4
 
-              const alert = isAlert(log);
+              rounded-2xl
 
-              return (
-                <motion.div
-                  key={log.id}
-                  whileHover={{
-                    scale: 1.01,
-                  }}
-                  className={`rounded-3xl border p-6 backdrop-blur-2xl transition-all duration-300
-                  ${
-                    alert
-                      ? "bg-red-500/10 border-red-500/30"
-                      : "bg-white/[0.04] border-white/10"
-                  }`}
-                >
+              bg-cyan-500
 
-                  <div className="flex justify-between items-center">
+              text-black
+              font-black
 
-                    <div>
+              hover:scale-105
 
-                      <h3 className="text-2xl font-bold">
-                        {log.equipments?.name}
-                      </h3>
+              transition-all
+            "
+          >
 
-                      <p className="text-gray-400 mt-2">
-                        {log.employees?.full_name}
-                      </p>
+            <FileText className="w-5 h-5" />
 
-                      <p className="text-sm text-gray-500 mt-3">
-                        {new Date(
-                          log.created_at
-                        ).toLocaleString()}
-                      </p>
+            Export PDF
 
-                    </div>
+          </button>
 
-                    <div className="text-right">
-
-                      <p
-                        className={`text-5xl font-black ${
-                          alert
-                            ? "text-red-400"
-                            : "text-white"
-                        }`}
-                      >
-                        {log.temperature}°
-                      </p>
-
-                      {alert && (
-                        <p className="mt-3 text-red-300 font-bold">
-                          ⚠️ ALERTE HACCP
-                        </p>
-                      )}
-
-                    </div>
-
-                  </div>
-                </motion.div>
-              );
-            })}
-
-          </div>
         </div>
 
       </div>
 
-    </motion.main>
+      {/* STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-7 mb-10">
+
+        {/* TOTAL */}
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+            y: -5,
+          }}
+          className="
+            rounded-3xl
+            border
+            border-cyan-500/20
+            bg-cyan-500/10
+            p-7
+          "
+        >
+
+          <div className="flex items-center justify-between mb-8">
+
+            <Thermometer className="text-cyan-300" />
+
+            <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
+
+          </div>
+
+          <p className="text-cyan-200">
+            Relevés
+          </p>
+
+          <h2 className="text-6xl font-black mt-4">
+
+            {temperatures.length}
+
+          </h2>
+
+        </motion.div>
+
+        {/* AVERAGE */}
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+            y: -5,
+          }}
+          className="
+            rounded-3xl
+            border
+            border-green-500/20
+            bg-green-500/10
+            p-7
+          "
+        >
+
+          <div className="flex items-center justify-between mb-8">
+
+            <Snowflake className="text-green-300" />
+
+            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+
+          </div>
+
+          <p className="text-green-200">
+            Température moyenne
+          </p>
+
+          <h2 className="text-6xl font-black mt-4">
+
+            {averageTemp}°C
+
+          </h2>
+
+        </motion.div>
+
+        {/* CRITICAL */}
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+            y: -5,
+          }}
+          className="
+            rounded-3xl
+            border
+            border-red-500/20
+            bg-red-500/10
+            p-7
+          "
+        >
+
+          <div className="flex items-center justify-between mb-8">
+
+            <Thermometer className="text-red-300" />
+
+            <div className="w-3 h-3 rounded-full bg-red-400 animate-pulse" />
+
+          </div>
+
+          <p className="text-red-200">
+            Températures critiques
+          </p>
+
+          <h2 className="text-6xl font-black mt-4">
+
+            {criticalTemps.length}
+
+          </h2>
+
+        </motion.div>
+
+      </div>
+
+      {/* TABLE */}
+      <div
+        className="
+          rounded-3xl
+          border
+          border-white/10
+          bg-white/[0.04]
+          p-8
+        "
+      >
+
+        <div className="flex items-center justify-between mb-8">
+
+          <h2 className="text-3xl font-black">
+            Historique températures
+          </h2>
+
+          <div
+            className="
+              bg-cyan-500/10
+              border
+              border-cyan-500/20
+              px-5
+              py-2
+              rounded-2xl
+              text-cyan-300
+              text-sm
+              font-semibold
+            "
+          >
+            LIVE MONITORING
+          </div>
+
+        </div>
+
+        <div className="space-y-5">
+
+          {temperatures.map(
+            (
+              item,
+              index
+            ) => (
+
+              <motion.div
+                key={index}
+                whileHover={{
+                  scale: 1.01,
+                }}
+                className={`
+                  flex
+                  items-center
+                  justify-between
+
+                  rounded-2xl
+                  border
+                  p-5
+
+                  ${
+                    item.temperature >= 8
+
+                      ? "border-red-500/10 bg-red-500/5"
+
+                      : "border-white/10 bg-white/[0.03]"
+                  }
+                `}
+              >
+
+                <div className="flex items-center gap-5">
+
+                  <div
+                    className={`
+                      p-4
+                      rounded-2xl
+
+                      ${
+                        item.temperature >= 8
+
+                          ? "bg-red-500/20"
+
+                          : "bg-cyan-500/20"
+                      }
+                    `}
+                  >
+
+                    <Thermometer
+                      className={`
+                        ${
+                          item.temperature >= 8
+
+                            ? "text-red-300"
+
+                            : "text-cyan-300"
+                        }
+                      `}
+                    />
+
+                  </div>
+
+                  <div>
+
+                    <h3 className="text-xl font-bold">
+
+                      {
+                        item.equipment ||
+                        "Équipement"
+                      }
+
+                    </h3>
+
+                    <p className="text-gray-400 mt-1">
+
+                      {
+                        new Date(
+                          item.created_at
+                        ).toLocaleString()
+                      }
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div
+                  className={`
+                    px-5
+                    py-3
+
+                    rounded-2xl
+
+                    text-2xl
+                    font-black
+
+                    ${
+                      item.temperature >= 8
+
+                        ? "bg-red-500/20 text-red-300"
+
+                        : "bg-cyan-500/20 text-cyan-300"
+                    }
+                  `}
+                >
+
+                  {item.temperature}°C
+
+                </div>
+
+              </motion.div>
+            )
+          )}
+
+          {temperatures.length === 0 && (
+
+            <div
+              className="
+                flex
+                flex-col
+                items-center
+                justify-center
+                py-20
+              "
+            >
+
+              <Thermometer className="w-16 h-16 text-cyan-300 mb-6" />
+
+              <h3 className="text-3xl font-black mb-3">
+                Aucun relevé
+              </h3>
+
+              <p className="text-gray-400">
+                Aucun historique disponible
+              </p>
+
+            </div>
+
+          )}
+
+        </div>
+
+      </div>
+
+    </main>
   );
 }
