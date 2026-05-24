@@ -53,6 +53,9 @@ export default function TraceabilityPage() {
   const [imagePreview, setImagePreview] =
     useState("");
 
+  const [imageFile, setImageFile] =
+    useState<File | null>(null);
+
   const [products, setProducts] =
     useState<any[]>([]);
 
@@ -87,6 +90,30 @@ export default function TraceabilityPage() {
       return;
     }
 
+    let imageUrl = "";
+
+    if (imageFile) {
+
+      const fileName =
+        `${Date.now()}-${imageFile.name}`;
+
+      const { error: uploadError } =
+        await supabase.storage
+          .from("traceability-images")
+          .upload(fileName, imageFile);
+
+      if (!uploadError) {
+
+        const { data } =
+          supabase.storage
+            .from("traceability-images")
+            .getPublicUrl(fileName);
+
+        imageUrl =
+          data.publicUrl;
+      }
+    }
+
     const newProduct = {
 
       product: productName,
@@ -115,7 +142,7 @@ export default function TraceabilityPage() {
           ? "--"
           : dlc,
 
-      image_url: imagePreview,
+      image_url: imageUrl,
     };
 
     const { error } =
@@ -134,6 +161,8 @@ export default function TraceabilityPage() {
       setDlc("");
 
       setImagePreview("");
+
+      setImageFile(null);
 
       setSelectedCategory("");
 
@@ -490,6 +519,8 @@ export default function TraceabilityPage() {
                     e.target.files?.[0];
 
                   if (file) {
+
+                    setImageFile(file);
 
                     setImagePreview(
                       URL.createObjectURL(file)
