@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Clock3,
   Thermometer,
+  Bell,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -159,9 +160,9 @@ export default function DashboardPage() {
             product:
               item.product,
 
-            message:
-              "Stock faible",
-          });
+              message:
+                "Stock faible",
+            });
         }
       });
 
@@ -208,13 +209,71 @@ export default function DashboardPage() {
 
         </div>
 
-        <h1 className="text-7xl font-black">
-          Dashboard HACCP
-        </h1>
+        <div className="flex items-start justify-between">
 
-        <p className="text-gray-400 mt-5 text-xl">
-          Monitoring intelligent restauration
-        </p>
+          <div>
+
+            <h1 className="text-7xl font-black">
+              Dashboard HACCP
+            </h1>
+
+            <p className="text-gray-400 mt-5 text-xl">
+              Monitoring intelligent restauration
+            </p>
+
+          </div>
+
+          {/* ALERT BELL */}
+          <div
+            className="
+              relative
+
+              rounded-2xl
+
+              border
+              border-red-500/20
+
+              bg-red-500/10
+
+              p-4
+            "
+          >
+
+            <Bell className="text-red-300" />
+
+            {alerts.length > 0 && (
+
+              <div
+                className="
+                  absolute
+                  -top-2
+                  -right-2
+
+                  w-7
+                  h-7
+
+                  rounded-full
+
+                  bg-red-500
+
+                  flex
+                  items-center
+                  justify-center
+
+                  text-xs
+                  font-black
+                "
+              >
+
+                {alerts.length}
+
+              </div>
+
+            )}
+
+          </div>
+
+        </div>
 
       </div>
 
