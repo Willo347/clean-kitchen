@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+import Link from "next/link";
+
 import {
   Package,
   Search,
@@ -156,7 +158,6 @@ export default function StocksPage() {
           );
       }
 
-      /* UPDATE STOCK */
       await supabase
         .from(
           "traceability_products"
@@ -170,7 +171,6 @@ export default function StocksPage() {
           selectedProduct.id
         );
 
-      /* SAVE HISTORY */
       await supabase
         .from(
           "stock_movements"
@@ -232,32 +232,37 @@ export default function StocksPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
 
         {/* NEW DELIVERY */}
-        <div
-          className="
-            rounded-3xl
-            border
-            border-cyan-500/20
-            bg-cyan-500/10
-            p-7
-            hover:scale-[1.02]
-            transition-all
-            cursor-pointer
-          "
-        >
+        <Link href="/deliveries/new">
 
-          <p className="text-5xl mb-5">
-            🚚
-          </p>
+          <div
+            className="
+              rounded-3xl
+              border
+              border-cyan-500/20
+              bg-cyan-500/10
+              p-7
+              hover:scale-[1.02]
+              transition-all
+              cursor-pointer
+              h-full
+            "
+          >
 
-          <h2 className="text-2xl font-black mb-3">
-            Nouvelle livraison
-          </h2>
+            <p className="text-5xl mb-5">
+              🚚
+            </p>
 
-          <p className="text-cyan-100/70">
-            Ajouter réception fournisseur
-          </p>
+            <h2 className="text-2xl font-black mb-3">
+              Nouvelle livraison
+            </h2>
 
-        </div>
+            <p className="text-cyan-100/70">
+              Ajouter réception fournisseur
+            </p>
+
+          </div>
+
+        </Link>
 
         {/* STOCK */}
         <div
@@ -267,9 +272,6 @@ export default function StocksPage() {
             border-white/10
             bg-white/[0.04]
             p-7
-            hover:scale-[1.02]
-            transition-all
-            cursor-pointer
           "
         >
 
@@ -295,9 +297,6 @@ export default function StocksPage() {
             border-white/10
             bg-white/[0.04]
             p-7
-            hover:scale-[1.02]
-            transition-all
-            cursor-pointer
           "
         >
 
@@ -323,9 +322,6 @@ export default function StocksPage() {
             border-white/10
             bg-white/[0.04]
             p-7
-            hover:scale-[1.02]
-            transition-all
-            cursor-pointer
           "
         >
 
@@ -348,7 +344,6 @@ export default function StocksPage() {
       {/* KPI */}
       <div className="grid grid-cols-3 gap-6 mb-10">
 
-        {/* TOTAL PRODUCTS */}
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8">
 
           <div className="flex items-center justify-between mb-6">
@@ -367,7 +362,6 @@ export default function StocksPage() {
 
         </div>
 
-        {/* TOTAL QUANTITY */}
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8">
 
           <div className="flex items-center justify-between mb-6">
@@ -386,7 +380,6 @@ export default function StocksPage() {
 
         </div>
 
-        {/* LOW STOCK */}
         <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-8">
 
           <div className="flex items-center justify-between mb-6">
@@ -472,7 +465,6 @@ export default function StocksPage() {
       {/* TABLE */}
       <div className="rounded-3xl border border-white/10 bg-white/[0.04] overflow-hidden">
 
-        {/* HEADER */}
         <div className="grid grid-cols-[2fr_1fr_1fr_240px] border-b border-white/10 px-8 py-6 text-gray-400 font-semibold">
 
           <div>Produit</div>
@@ -482,7 +474,6 @@ export default function StocksPage() {
 
         </div>
 
-        {/* PRODUCTS */}
         {filteredProducts.map((item, index) => (
 
           <motion.div
@@ -498,25 +489,13 @@ export default function StocksPage() {
             className="grid grid-cols-[2fr_1fr_1fr_240px] items-center px-8 py-6 border-b border-white/5"
           >
 
-            {/* PRODUCT */}
             <div className="flex items-center gap-4">
 
-              {item.image_url ? (
+              <div className="bg-cyan-500/20 p-3 rounded-2xl">
 
-                <img
-                  src={item.image_url}
-                  className="w-16 h-16 object-cover rounded-2xl"
-                />
+                <Package className="text-cyan-300" />
 
-              ) : (
-
-                <div className="bg-cyan-500/20 p-3 rounded-2xl">
-
-                  <Package className="text-cyan-300" />
-
-                </div>
-
-              )}
+              </div>
 
               <div>
 
@@ -532,14 +511,10 @@ export default function StocksPage() {
 
             </div>
 
-            {/* CATEGORY */}
             <div>
-
               {item.category}
-
             </div>
 
-            {/* STOCK */}
             <div>
 
               <div
@@ -568,10 +543,8 @@ export default function StocksPage() {
 
             </div>
 
-            {/* ACTIONS */}
             <div className="flex gap-3">
 
-              {/* SORTIE */}
               <button
                 onClick={() =>
                   openMovementModal(
@@ -588,7 +561,6 @@ export default function StocksPage() {
 
               </button>
 
-              {/* ENTREE */}
               <button
                 onClick={() =>
                   openMovementModal(
