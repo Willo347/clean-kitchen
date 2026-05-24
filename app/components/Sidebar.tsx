@@ -263,7 +263,28 @@ export default function Sidebar() {
 
     if (saved) {
 
-      setItems(JSON.parse(saved));
+      try {
+
+        const parsed =
+          JSON.parse(saved);
+
+        if (Array.isArray(parsed)) {
+
+          setItems(parsed);
+
+        }
+
+      } catch (error) {
+
+        console.log(
+          "Sidebar reset"
+        );
+
+        localStorage.removeItem(
+          "sidebar-order"
+        );
+
+      }
 
     }
 
