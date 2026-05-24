@@ -1,375 +1,276 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-import { motion } from "framer-motion";
 
 import {
   LayoutDashboard,
+  Thermometer,
   Refrigerator,
   ClipboardList,
   Bell,
   ShieldCheck,
-  Settings,
-  Activity,
-  Users,
 } from "lucide-react";
 
-const items = [
+const menuItems = [
   {
-    label: "Dashboard",
-    icon: LayoutDashboard,
+    name: "Dashboard",
     href: "/",
+    icon: LayoutDashboard,
   },
+
   {
-    label: "Équipements",
-    icon: Refrigerator,
+    name: "Relevés",
+    href: "/temperatures",
+    icon: Thermometer,
+  },
+
+  {
+    name: "Équipements",
     href: "/equipments",
+    icon: Refrigerator,
   },
+
   {
-    label: "Contrôles",
-    icon: ClipboardList,
+    name: "Contrôles",
     href: "/controls",
+    icon: ClipboardList,
   },
+
   {
-    label: "Alertes",
-    icon: Bell,
+    name: "Alertes",
     href: "/alerts",
+    icon: Bell,
   },
+
   {
-    label: "HACCP",
-    icon: ShieldCheck,
+    name: "HACCP",
     href: "/haccp",
-  },
-  {
-    label: "Monitoring",
-    icon: Activity,
-    href: "/monitoring",
-  },
-  {
-    label: "Employés",
-    icon: Users,
-    href: "/employees",
-  },
-  {
-    label: "Paramètres",
-    icon: Settings,
-    href: "/settings",
+    icon: ShieldCheck,
   },
 ];
 
 export default function Sidebar() {
 
-  const pathname = usePathname();
-
   return (
     <aside
       className="
-        relative
         w-[320px]
-        h-screen
-        overflow-y-auto
+        min-h-screen
+
         border-r
         border-white/10
-        bg-black/20
-        backdrop-blur-2xl
+
+        bg-[#071120]
+
         p-6
-        scrollbar-thin
-        scrollbar-thumb-white/10
-        scrollbar-track-transparent
+
+        flex
+        flex-col
+
+        overflow-y-auto
       "
     >
 
-      {/* GLOW */}
+      {/* LOGO */}
       <div
         className="
-          absolute
-          top-[-100px]
-          left-[-100px]
-          w-[300px]
-          h-[300px]
-          rounded-full
-          bg-blue-500/10
-          blur-3xl
+          rounded-3xl
+
+          border
+          border-white/10
+
+          bg-white/[0.04]
+
+          p-7
+
+          mb-10
         "
-      />
+      >
 
-      {/* LOGO */}
-      <div className="relative z-10 mb-10">
-
-        <motion.div
-          whileHover={{ scale: 1.03 }}
-          className="
-            relative
-            overflow-hidden
-            rounded-3xl
-            border
-            border-white/10
-            bg-white/[0.04]
-            p-6
-          "
-        >
+        <div className="flex items-center gap-5">
 
           <div
             className="
-              absolute
-              top-0
-              left-[-100%]
-              w-[120%]
-              h-full
-              bg-gradient-to-r
-              from-transparent
-              via-white/10
-              to-transparent
-              animate-[shine_8s_linear_infinite]
+              w-16
+              h-16
+
+              rounded-2xl
+
+              bg-gradient-to-br
+              from-cyan-400
+              to-blue-500
+
+              flex
+              items-center
+              justify-center
+
+              text-3xl
+              font-black
             "
-          />
+          >
+            CK
+          </div>
 
-          <div className="relative z-10 flex items-center gap-4">
+          <div>
 
-            <div
-              className="
-                w-16
-                h-16
-                rounded-3xl
-                bg-gradient-to-br
-                from-blue-500
-                to-cyan-400
-                flex
-                items-center
-                justify-center
-                text-2xl
-                font-black
-              "
-            >
-              CK
-            </div>
+            <h1 className="text-4xl font-black leading-none">
+              Clean
+              <br />
+              Kitchen
+            </h1>
 
-            <div>
-
-              <h1 className="text-2xl font-black">
-                Clean Kitchen
-              </h1>
-
-              <p className="text-gray-400 text-sm mt-1">
-                HACCP Monitoring
-              </p>
-
-            </div>
+            <p className="text-gray-400 mt-2">
+              HACCP Monitoring
+            </p>
 
           </div>
 
-        </motion.div>
+        </div>
 
       </div>
 
-      {/* LIVE */}
-      <motion.div
-        animate={{
-          opacity: [0.7, 1, 0.7],
-        }}
-        transition={{
-          repeat: Infinity,
-          duration: 2,
-        }}
+      {/* STATUS */}
+      <div
         className="
-          relative
-          z-10
-          flex
-          items-center
-          gap-4
-          rounded-2xl
+          rounded-3xl
+
           border
           border-green-500/20
+
           bg-green-500/10
-          px-5
-          py-4
+
+          p-6
+
           mb-8
         "
       >
 
-        <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+        <div className="flex items-center gap-3">
 
-        <div>
+          <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
 
-          <p className="font-semibold text-green-300">
-            SYSTEM ONLINE
-          </p>
+          <div>
 
-          <p className="text-green-400/70 text-sm">
-            Monitoring actif
-          </p>
+            <p className="text-green-300 font-bold">
+              SYSTEM ONLINE
+            </p>
+
+            <p className="text-green-200/70 text-sm">
+              Monitoring actif
+            </p>
+
+          </div>
 
         </div>
 
-      </motion.div>
+      </div>
 
-      {/* NAV */}
-      <nav className="relative z-10 flex flex-col gap-3">
+      {/* MENU */}
+      <div className="space-y-4">
 
-        {items.map((item, index) => {
+        {menuItems.map((item, index) => {
 
           const Icon = item.icon;
 
-          const active = pathname === item.href;
-
           return (
-
             <Link
               key={index}
               href={item.href}
+              className="
+                group
+
+                flex
+                items-center
+                gap-5
+
+                rounded-3xl
+
+                border
+                border-white/10
+
+                bg-white/[0.03]
+
+                px-6
+                py-6
+
+                hover:border-cyan-500/30
+                hover:bg-cyan-500/10
+
+                transition-all
+              "
             >
 
-              <motion.div
-                whileHover={{ x: 6 }}
-                className={`
-                  relative
-                  overflow-hidden
-                  flex
-                  items-center
-                  gap-4
+              <div
+                className="
                   rounded-2xl
-                  px-5
-                  py-4
-                  border
-                  transition-all
-                  duration-300
 
-                  ${
-                    active
-                      ? `
-                        bg-gradient-to-r
-                        from-blue-500/20
-                        to-cyan-500/10
-                        border-blue-500/20
-                        shadow-lg
-                        shadow-blue-500/10
-                      `
-                      : `
-                        bg-white/[0.03]
-                        border-white/5
-                        hover:bg-white/[0.06]
-                      `
-                  }
-                `}
+                  bg-white/[0.05]
+
+                  p-4
+
+                  group-hover:bg-cyan-500/20
+
+                  transition-all
+                "
               >
 
-                {active && (
+                <Icon
+                  className="
+                    w-6
+                    h-6
 
-                  <motion.div
-                    animate={{
-                      opacity: [0.4, 1, 0.4],
-                    }}
-                    transition={{
-                      repeat: Infinity,
-                      duration: 2,
-                    }}
-                    className="
-                      absolute
-                      inset-0
-                      bg-gradient-to-r
-                      from-blue-500/10
-                      to-cyan-500/10
-                    "
-                  />
+                    text-white/80
 
-                )}
+                    group-hover:text-cyan-300
+                  "
+                />
 
-                <div className="relative z-10 flex items-center gap-4">
+              </div>
 
-                  <div
-                    className={`
-                      p-3
-                      rounded-2xl
-                      ${
-                        active
-                          ? "bg-blue-500/20"
-                          : "bg-white/[0.05]"
-                      }
-                    `}
-                  >
+              <span
+                className="
+                  text-2xl
+                  font-bold
 
-                    <Icon
-                      className={`
-                        w-5
-                        h-5
-                        ${
-                          active
-                            ? "text-cyan-300"
-                            : "text-gray-300"
-                        }
-                      `}
-                    />
+                  text-white/90
 
-                  </div>
+                  group-hover:text-cyan-300
 
-                  <span
-                    className={`
-                      font-semibold
-                      ${
-                        active
-                          ? "text-white"
-                          : "text-gray-300"
-                      }
-                    `}
-                  >
-                    {item.label}
-                  </span>
-
-                </div>
-
-              </motion.div>
+                  transition-all
+                "
+              >
+                {item.name}
+              </span>
 
             </Link>
           );
         })}
 
-      </nav>
+      </div>
 
-      {/* AI FOOTER */}
-      <div
-        className="
-          relative
-          mt-10
-          rounded-3xl
-          border
-          border-white/10
-          bg-white/[0.04]
-          p-5
-        "
-      >
+      {/* FOOTER */}
+      <div className="mt-auto pt-8">
 
-        <div className="flex items-center gap-4">
+        <div
+          className="
+            rounded-3xl
 
-          <div
-            className="
-              w-14
-              h-14
-              rounded-2xl
-              bg-gradient-to-br
-              from-cyan-500
-              to-blue-500
-              flex
-              items-center
-              justify-center
-              font-black
-            "
-          >
-            AI
-          </div>
+            border
+            border-cyan-500/20
 
-          <div>
+            bg-cyan-500/10
 
-            <p className="font-bold">
-              AI Monitoring
-            </p>
+            p-5
+          "
+        >
 
-            <p className="text-gray-400 text-sm">
-              Analyse intelligente active
-            </p>
+          <p className="text-cyan-300 font-bold">
+            Clean Kitchen AI
+          </p>
 
-          </div>
+          <p className="text-cyan-200/70 text-sm mt-1">
+            Surveillance intelligente HACCP active
+          </p>
 
         </div>
 
