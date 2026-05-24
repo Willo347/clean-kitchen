@@ -228,25 +228,12 @@ export default function StocksPage() {
 
       </div>
 
-      {/* HUB CARDS */}
+      {/* HUB */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
 
-        {/* NEW DELIVERY */}
         <Link href="/deliveries/new">
 
-          <div
-            className="
-              rounded-3xl
-              border
-              border-cyan-500/20
-              bg-cyan-500/10
-              p-7
-              hover:scale-[1.02]
-              transition-all
-              cursor-pointer
-              h-full
-            "
-          >
+          <div className="rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-7 hover:scale-[1.02] transition-all cursor-pointer h-full">
 
             <p className="text-5xl mb-5">
               🚚
@@ -264,22 +251,9 @@ export default function StocksPage() {
 
         </Link>
 
-        {/* STOCK */}
         <a href="#stock-section">
 
-          <div
-            className="
-              rounded-3xl
-              border
-              border-white/10
-              bg-white/[0.04]
-              p-7
-              hover:scale-[1.02]
-              transition-all
-              cursor-pointer
-              h-full
-            "
-          >
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 hover:scale-[1.02] transition-all cursor-pointer h-full">
 
             <p className="text-5xl mb-5">
               📦
@@ -297,22 +271,9 @@ export default function StocksPage() {
 
         </a>
 
-        {/* TRACEABILITY */}
         <Link href="/traceability">
 
-          <div
-            className="
-              rounded-3xl
-              border
-              border-white/10
-              bg-white/[0.04]
-              p-7
-              hover:scale-[1.02]
-              transition-all
-              cursor-pointer
-              h-full
-            "
-          >
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 hover:scale-[1.02] transition-all cursor-pointer h-full">
 
             <p className="text-5xl mb-5">
               🧾
@@ -330,22 +291,9 @@ export default function StocksPage() {
 
         </Link>
 
-        {/* HISTORY */}
         <Link href="/history">
 
-          <div
-            className="
-              rounded-3xl
-              border
-              border-white/10
-              bg-white/[0.04]
-              p-7
-              hover:scale-[1.02]
-              transition-all
-              cursor-pointer
-              h-full
-            "
-          >
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 hover:scale-[1.02] transition-all cursor-pointer h-full">
 
             <p className="text-5xl mb-5">
               📜
@@ -543,17 +491,29 @@ export default function StocksPage() {
 
               )}
 
-              <div>
+              <Link
+                href={`/products/${item.id}`}
+              >
 
-                <p className="font-bold text-lg">
-                  {item.product}
-                </p>
+                <div
+                  className="
+                    hover:opacity-80
+                    transition-all
+                    cursor-pointer
+                  "
+                >
 
-                <p className="text-gray-500 text-sm">
-                  {item.supplier}
-                </p>
+                  <p className="font-bold text-lg">
+                    {item.product}
+                  </p>
 
-              </div>
+                  <p className="text-gray-500 text-sm">
+                    {item.supplier}
+                  </p>
+
+                </div>
+
+              </Link>
 
             </div>
 
