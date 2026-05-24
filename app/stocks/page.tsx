@@ -156,6 +156,7 @@ export default function StocksPage() {
           );
       }
 
+      /* UPDATE STOCK */
       await supabase
         .from(
           "traceability_products"
@@ -168,6 +169,32 @@ export default function StocksPage() {
           "id",
           selectedProduct.id
         );
+
+      /* SAVE HISTORY */
+      await supabase
+        .from(
+          "stock_movements"
+        )
+        .insert([
+          {
+            product:
+              selectedProduct.product,
+
+            movement_type:
+              movementType ===
+              "entry"
+
+                ? "Entrée"
+
+                : "Sortie",
+
+            quantity:
+              quantity,
+
+            unit:
+              selectedProduct.unit,
+          },
+        ]);
 
       fetchProducts();
 
@@ -204,6 +231,7 @@ export default function StocksPage() {
       {/* KPI */}
       <div className="grid grid-cols-3 gap-6 mb-10">
 
+        {/* TOTAL PRODUCTS */}
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8">
 
           <div className="flex items-center justify-between mb-6">
@@ -222,6 +250,7 @@ export default function StocksPage() {
 
         </div>
 
+        {/* TOTAL QUANTITY */}
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8">
 
           <div className="flex items-center justify-between mb-6">
@@ -240,6 +269,7 @@ export default function StocksPage() {
 
         </div>
 
+        {/* LOW STOCK */}
         <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-8">
 
           <div className="flex items-center justify-between mb-6">
