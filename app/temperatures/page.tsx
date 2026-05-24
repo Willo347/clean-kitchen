@@ -132,7 +132,6 @@ export default function TemperaturesPage() {
           ) => [
 
             item.equipment ||
-
               "Équipement",
 
             `${item.temperature}°C`,
