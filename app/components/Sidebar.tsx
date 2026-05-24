@@ -5,6 +5,20 @@ import Link from "next/link";
 import { useState } from "react";
 
 import {
+  DndContext,
+  closestCenter,
+} from "@dnd-kit/core";
+
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+
+import { CSS } from "@dnd-kit/utilities";
+
+import {
   LayoutDashboard,
   Thermometer,
   Refrigerator,
@@ -18,7 +32,7 @@ import {
   GripVertical,
 } from "lucide-react";
 
-const menuItems = [
+const initialItems = [
   {
     id: "dashboard",
     name: "Dashboard",
@@ -90,10 +104,158 @@ const menuItems = [
   },
 ];
 
+function SortableItem({ item }: any) {
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({
+    id: item.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const Icon = item.icon;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className="touch-none"
+    >
+
+      <Link
+        href={item.href}
+        className="
+          group
+
+          flex
+          items-center
+          gap-5
+
+          rounded-3xl
+
+          border
+          border-white/10
+
+          bg-white/[0.03]
+
+          px-6
+          py-6
+
+          hover:border-cyan-500/30
+          hover:bg-cyan-500/10
+
+          transition-all
+        "
+      >
+
+        {/* DRAG */}
+        <div
+          {...listeners}
+          className="
+            cursor-grab
+            active:cursor-grabbing
+
+            opacity-40
+
+            group-hover:opacity-100
+
+            transition-all
+          "
+        >
+
+          <GripVertical className="w-5 h-5 text-gray-500" />
+
+        </div>
+
+        {/* ICON */}
+        <div
+          className="
+            rounded-2xl
+
+            bg-white/[0.05]
+
+            p-4
+
+            group-hover:bg-cyan-500/20
+
+            transition-all
+          "
+        >
+
+          <Icon
+            className="
+              w-6
+              h-6
+
+              text-white/80
+
+              group-hover:text-cyan-300
+            "
+          />
+
+        </div>
+
+        {/* TEXT */}
+        <span
+          className="
+            text-2xl
+            font-bold
+
+            text-white/90
+
+            group-hover:text-cyan-300
+
+            transition-all
+          "
+        >
+          {item.name}
+        </span>
+
+      </Link>
+
+    </div>
+  );
+}
+
 export default function Sidebar() {
 
-  /* DYNAMIC SIDEBAR */
-  const [items, setItems] = useState(menuItems);
+  const [items, setItems] =
+    useState(initialItems);
+
+  function handleDragEnd(event: any) {
+
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    setItems((items) => {
+
+      const oldIndex =
+        items.findIndex(
+          (item) => item.id === active.id
+        );
+
+      const newIndex =
+        items.findIndex(
+          (item) => item.id === over.id
+        );
+
+      return arrayMove(
+        items,
+        oldIndex,
+        newIndex
+      );
+    });
+  }
 
   return (
     <aside
@@ -209,105 +371,33 @@ export default function Sidebar() {
 
       </div>
 
-      {/* MENU */}
-      <div className="space-y-4">
+      {/* DRAG AREA */}
+      <DndContext
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
 
-        {items.map((item, index) => {
+        <SortableContext
+          items={items}
+          strategy={verticalListSortingStrategy}
+        >
 
-          const Icon = item.icon;
+          <div className="space-y-4">
 
-          return (
-            <Link
-              key={item.id}
-              href={item.href}
-              className="
-                group
+            {items.map((item) => (
 
-                flex
-                items-center
-                gap-5
+              <SortableItem
+                key={item.id}
+                item={item}
+              />
 
-                rounded-3xl
+            ))}
 
-                border
-                border-white/10
+          </div>
 
-                bg-white/[0.03]
+        </SortableContext>
 
-                px-6
-                py-6
-
-                hover:border-cyan-500/30
-                hover:bg-cyan-500/10
-
-                transition-all
-              "
-            >
-
-              {/* DRAG ICON */}
-              <div
-                className="
-                  opacity-40
-
-                  group-hover:opacity-100
-
-                  transition-all
-                "
-              >
-
-                <GripVertical className="w-5 h-5 text-gray-500" />
-
-              </div>
-
-              {/* ICON */}
-              <div
-                className="
-                  rounded-2xl
-
-                  bg-white/[0.05]
-
-                  p-4
-
-                  group-hover:bg-cyan-500/20
-
-                  transition-all
-                "
-              >
-
-                <Icon
-                  className="
-                    w-6
-                    h-6
-
-                    text-white/80
-
-                    group-hover:text-cyan-300
-                  "
-                />
-
-              </div>
-
-              {/* TEXT */}
-              <span
-                className="
-                  text-2xl
-                  font-bold
-
-                  text-white/90
-
-                  group-hover:text-cyan-300
-
-                  transition-all
-                "
-              >
-                {item.name}
-              </span>
-
-            </Link>
-          );
-        })}
-
-      </div>
+      </DndContext>
 
       {/* FOOTER */}
       <div className="mt-auto pt-8">
