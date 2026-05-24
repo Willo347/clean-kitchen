@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 import {
-  CheckCircle2,
   Package,
   Thermometer,
   Truck,
@@ -190,6 +189,143 @@ export default function TraceabilityPage() {
     };
   };
 
+  const addProduct = async () => {
+
+    if (productName.trim() === "") {
+
+      alert("Veuillez entrer un nom produit.");
+
+      return;
+    }
+
+    let imageUrl = "";
+
+    if (imageFile) {
+
+      const fileName =
+        `${Date.now()}-${imageFile.name}`;
+
+      const { error: uploadError } =
+        await supabase.storage
+          .from("traceability-images")
+          .upload(fileName, imageFile);
+
+      if (!uploadError) {
+
+        const { data } =
+          supabase.storage
+            .from("traceability-images")
+            .getPublicUrl(fileName);
+
+        imageUrl =
+          data.publicUrl;
+      }
+    }
+
+    const newProduct = {
+
+      product: productName,
+
+      category: selectedCategory,
+
+      lot,
+
+      supplier,
+
+      temperature,
+
+      dlc,
+
+      image_url: imageUrl,
+    };
+
+    const { error } =
+      await supabase
+        .from("traceability_products")
+        .insert([newProduct]);
+
+    if (!error) {
+
+      fetchProducts();
+
+      resetForm();
+    }
+  };
+
+  const updateProduct = async () => {
+
+    if (!editingProduct) return;
+
+    await supabase
+      .from("traceability_products")
+      .update({
+        product: productName,
+        lot,
+        supplier,
+        temperature,
+        dlc,
+        category: selectedCategory,
+      })
+      .eq("id", editingProduct.id);
+
+    fetchProducts();
+
+    setEditOpen(false);
+  };
+
+  const deleteProduct = async (
+    id: string
+  ) => {
+
+    const confirmDelete =
+      confirm(
+        "Supprimer ce produit ?"
+      );
+
+    if (!confirmDelete) return;
+
+    await supabase
+      .from("traceability_products")
+      .delete()
+      .eq("id", id);
+
+    fetchProducts();
+  };
+
+  const resetForm = () => {
+
+    setProductName("");
+    setLot("");
+    setSupplier("");
+    setTemperature("");
+    setDlc("");
+
+    setImagePreview("");
+    setImageFile(null);
+
+    setSelectedCategory("");
+
+    setOpen(false);
+  };
+
+  const openEditModal = (
+    product: any
+  ) => {
+
+    setEditingProduct(product);
+
+    setProductName(product.product || "");
+    setLot(product.lot || "");
+    setSupplier(product.supplier || "");
+    setTemperature(product.temperature || "");
+    setDlc(product.dlc || "");
+    setSelectedCategory(
+      product.category || ""
+    );
+
+    setEditOpen(true);
+  };
+
   return (
 
     <main className="min-h-screen p-10 text-white">
@@ -218,6 +354,28 @@ export default function TraceabilityPage() {
           </p>
 
         </div>
+
+        <button
+          onClick={() => setOpen(true)}
+          className="
+            flex
+            items-center
+            gap-3
+            rounded-2xl
+            bg-cyan-500
+            px-6
+            py-4
+            text-black
+            font-bold
+            text-lg
+          "
+        >
+
+          <Plus className="w-6 h-6" />
+
+          Ajouter produit
+
+        </button>
 
       </div>
 
@@ -264,7 +422,7 @@ export default function TraceabilityPage() {
       </div>
 
       {/* FILTERS */}
-      <div className="flex gap-4 overflow-x-auto mb-10 pb-2">
+      <div className="flex gap-4 overflow-x-auto mb-8 pb-2">
 
         {categories.map((category) => (
 
@@ -335,10 +493,11 @@ export default function TraceabilityPage() {
         "
       >
 
+        {/* HEADER */}
         <div
           className="
             grid
-            grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr]
+            grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_140px]
 
             border-b
             border-white/10
@@ -357,9 +516,11 @@ export default function TraceabilityPage() {
           <div>Température</div>
           <div>DLC</div>
           <div>Statut</div>
+          <div>Actions</div>
 
         </div>
 
+        {/* PRODUCTS */}
         {filteredProducts.map((item, index) => (
 
           <motion.div
@@ -374,7 +535,7 @@ export default function TraceabilityPage() {
             }}
             className="
               grid
-              grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr]
+              grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_140px]
 
               items-center
 
@@ -488,6 +649,63 @@ export default function TraceabilityPage() {
 
                 );
               })()}
+
+            </div>
+
+            {/* ACTIONS */}
+            <div className="flex items-center gap-3">
+
+              <button
+                onClick={() =>
+                  openEditModal(item)
+                }
+                className="
+                  flex
+                  items-center
+                  justify-center
+
+                  w-12
+                  h-12
+
+                  rounded-2xl
+
+                  bg-cyan-500/10
+
+                  hover:bg-cyan-500/20
+
+                  transition-all
+                "
+              >
+
+                <Pencil className="w-5 h-5 text-cyan-300" />
+
+              </button>
+
+              <button
+                onClick={() =>
+                  deleteProduct(item.id)
+                }
+                className="
+                  flex
+                  items-center
+                  justify-center
+
+                  w-12
+                  h-12
+
+                  rounded-2xl
+
+                  bg-red-500/10
+
+                  hover:bg-red-500/20
+
+                  transition-all
+                "
+              >
+
+                <Trash2 className="w-5 h-5 text-red-400" />
+
+              </button>
 
             </div>
 
