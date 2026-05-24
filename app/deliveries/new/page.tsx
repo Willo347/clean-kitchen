@@ -8,6 +8,7 @@ import {
   Calendar,
   Thermometer,
   Save,
+  Camera,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -16,6 +17,12 @@ export default function NewDeliveryPage() {
 
   const [loading, setLoading] =
     useState(false);
+
+  const [imageFile, setImageFile] =
+    useState<any>(null);
+
+  const [preview, setPreview] =
+    useState("");
 
   const [form, setForm] =
     useState({
@@ -49,12 +56,64 @@ export default function NewDeliveryPage() {
     });
   };
 
+  const handleImage = (
+    e: any
+  ) => {
+
+    const file =
+      e.target.files?.[0];
+
+    if (!file)
+      return;
+
+    setImageFile(file);
+
+    setPreview(
+      URL.createObjectURL(file)
+    );
+  };
+
   const handleSubmit =
     async () => {
 
       try {
 
         setLoading(true);
+
+        let imageUrl = "";
+
+        /* IMAGE UPLOAD */
+        if (imageFile) {
+
+          const fileName =
+            `${Date.now()}-${imageFile.name}`;
+
+          const {
+            error: uploadError,
+          } =
+            await supabase
+              .storage
+              .from("products")
+              .upload(
+                fileName,
+                imageFile
+              );
+
+          if (!uploadError) {
+
+            const {
+              data,
+            } = supabase
+              .storage
+              .from("products")
+              .getPublicUrl(
+                fileName
+              );
+
+            imageUrl =
+              data.publicUrl;
+          }
+        }
 
         /* INSERT PRODUCT */
         await supabase
@@ -83,6 +142,9 @@ export default function NewDeliveryPage() {
 
               temperature:
                 form.temperature,
+
+              image_url:
+                imageUrl,
             },
           ]);
 
@@ -107,8 +169,12 @@ export default function NewDeliveryPage() {
           ]);
 
         alert(
-          "Livraison ajoutée avec succès 🚚"
+          "Livraison ajoutée 🚚"
         );
+
+        setPreview("");
+
+        setImageFile(null);
 
         setForm({
           product: "",
@@ -126,7 +192,7 @@ export default function NewDeliveryPage() {
         console.error(error);
 
         alert(
-          "Erreur lors de l'ajout"
+          "Erreur ajout livraison"
         );
 
       } finally {
@@ -166,17 +232,77 @@ export default function NewDeliveryPage() {
       <div
         className="
           max-w-5xl
-
           rounded-3xl
-
           border
           border-white/10
-
           bg-white/[0.04]
-
           p-10
         "
       >
+
+        {/* PHOTO */}
+        <div className="mb-10">
+
+          <label className="text-gray-400 mb-4 block">
+            Photo produit
+          </label>
+
+          <label
+            className="
+              flex
+              flex-col
+              items-center
+              justify-center
+              gap-4
+
+              border-2
+              border-dashed
+              border-cyan-500/30
+
+              rounded-3xl
+
+              p-10
+
+              bg-cyan-500/5
+
+              cursor-pointer
+            "
+          >
+
+            {preview ? (
+
+              <img
+                src={preview}
+                className="w-64 h-64 object-cover rounded-3xl"
+              />
+
+            ) : (
+
+              <>
+
+                <Camera className="w-16 h-16 text-cyan-300" />
+
+                <p className="text-cyan-200">
+                  Ajouter une photo
+                </p>
+
+              </>
+
+            )}
+
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={
+                handleImage
+              }
+              className="hidden"
+            />
+
+          </label>
+
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
@@ -472,11 +598,13 @@ export default function NewDeliveryPage() {
 
           <Save />
 
-          {loading
+          {
+            loading
 
-            ? "Ajout..."
+              ? "Ajout..."
 
-            : "Valider la livraison"}
+              : "Valider la livraison"
+          }
 
         </button>
 
