@@ -537,6 +537,8 @@ export default function TraceabilityPage() {
             justify-center
 
             z-50
+
+            p-4
           "
         >
 
@@ -552,6 +554,9 @@ export default function TraceabilityPage() {
             className="
               w-full
               max-w-3xl
+
+              max-h-[90vh]
+              overflow-y-auto
 
               rounded-3xl
 
