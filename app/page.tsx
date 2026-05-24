@@ -18,6 +18,18 @@ import Link from "next/link";
 
 import { supabase } from "@/lib/supabase";
 
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  BarChart,
+  Bar,
+} from "recharts";
+
 export default function DashboardPage() {
 
   const [products, setProducts] =
@@ -43,7 +55,6 @@ export default function DashboardPage() {
   const fetchDashboard =
     async () => {
 
-      /* PRODUCTS */
       const {
         data: productsData,
       } =
@@ -53,7 +64,6 @@ export default function DashboardPage() {
           )
           .select("*");
 
-      /* MOVEMENTS */
       const {
         data: movementsData,
       } =
@@ -68,7 +78,7 @@ export default function DashboardPage() {
               ascending: false,
             }
           )
-          .limit(5);
+          .limit(10);
 
       if (productsData) {
 
@@ -102,7 +112,6 @@ export default function DashboardPage() {
 
       data.forEach((item) => {
 
-        /* DLC */
         if (item.dlc) {
 
           const dlcDate =
@@ -152,7 +161,6 @@ export default function DashboardPage() {
           }
         }
 
-        /* LOW STOCK */
         if (
           (item.quantity || 0) <= 2
         ) {
@@ -196,6 +204,30 @@ export default function DashboardPage() {
         "Critique"
     );
 
+  /* CHART DATA */
+  const stockChartData =
+    products.slice(0, 6).map(
+      (item) => ({
+        name:
+          item.product,
+        stock:
+          item.quantity || 0,
+      })
+    );
+
+  const alertsChartData = [
+    {
+      name: "Critiques",
+      value:
+        criticalAlerts.length,
+    },
+    {
+      name: "Alertes",
+      value:
+        alerts.length,
+    },
+  ];
+
   return (
 
     <main className="min-h-screen p-10 text-white">
@@ -227,7 +259,7 @@ export default function DashboardPage() {
 
           </div>
 
-          {/* ALERT BELL */}
+          {/* BELL */}
           <div className="relative">
 
             <button
@@ -284,131 +316,6 @@ export default function DashboardPage() {
 
             </button>
 
-            {/* DROPDOWN */}
-            {openNotifications && (
-
-              <div
-                className="
-                  absolute
-                  right-0
-                  top-20
-
-                  w-[420px]
-
-                  rounded-3xl
-
-                  border
-                  border-white/10
-
-                  bg-[#071120]
-
-                  shadow-2xl
-
-                  p-6
-
-                  z-50
-                "
-              >
-
-                <div className="flex items-center justify-between mb-6">
-
-                  <h3 className="text-2xl font-black">
-                    Notifications
-                  </h3>
-
-                  <div
-                    className="
-                      px-3
-                      py-1
-
-                      rounded-xl
-
-                      bg-red-500/10
-
-                      text-red-300
-                      text-sm
-                      font-bold
-                    "
-                  >
-
-                    {alerts.length} alertes
-
-                  </div>
-
-                </div>
-
-                <div className="space-y-4 max-h-[400px] overflow-y-auto">
-
-                  {alerts.slice(0, 6).map(
-                    (
-                      alert,
-                      index
-                    ) => (
-
-                      <div
-                        key={index}
-                        className="
-                          rounded-2xl
-
-                          border
-                          border-white/10
-
-                          bg-white/[0.03]
-
-                          p-4
-                        "
-                      >
-
-                        <div className="flex items-start justify-between gap-4">
-
-                          <div>
-
-                            <p className="font-bold">
-
-                              {alert.product}
-
-                            </p>
-
-                            <p className="text-gray-400 text-sm mt-1">
-
-                              {alert.message}
-
-                            </p>
-
-                          </div>
-
-                          <AlertTriangle className="text-red-300 w-5 h-5" />
-
-                        </div>
-
-                      </div>
-                    )
-                  )}
-
-                  {alerts.length === 0 && (
-
-                    <div className="text-center py-10">
-
-                      <ShieldCheck className="w-12 h-12 text-cyan-300 mx-auto mb-4" />
-
-                      <p className="font-bold text-xl">
-                        Aucun problème
-                      </p>
-
-                      <p className="text-gray-400 mt-2">
-                        Tout est conforme
-                      </p>
-
-                    </div>
-
-                  )}
-
-                </div>
-
-              </div>
-
-            )}
-
           </div>
 
         </div>
@@ -434,11 +341,7 @@ export default function DashboardPage() {
 
           <div className="flex items-center justify-between mb-8">
 
-            <div className="bg-cyan-500/20 p-4 rounded-2xl">
-
-              <Boxes className="text-cyan-300" />
-
-            </div>
+            <Boxes className="text-cyan-300" />
 
             <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
 
@@ -472,11 +375,7 @@ export default function DashboardPage() {
 
           <div className="flex items-center justify-between mb-8">
 
-            <div className="bg-green-500/20 p-4 rounded-2xl">
-
-              <Package className="text-green-300" />
-
-            </div>
+            <Package className="text-green-300" />
 
             <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
 
@@ -510,11 +409,7 @@ export default function DashboardPage() {
 
           <div className="flex items-center justify-between mb-8">
 
-            <div className="bg-red-500/20 p-4 rounded-2xl">
-
-              <AlertTriangle className="text-red-300" />
-
-            </div>
+            <AlertTriangle className="text-red-300" />
 
             <div className="w-3 h-3 rounded-full bg-red-400 animate-pulse" />
 
@@ -548,11 +443,7 @@ export default function DashboardPage() {
 
           <div className="flex items-center justify-between mb-8">
 
-            <div className="bg-cyan-500/20 p-4 rounded-2xl">
-
-              <ShieldCheck className="text-cyan-300" />
-
-            </div>
+            <ShieldCheck className="text-cyan-300" />
 
             <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
 
@@ -570,10 +461,10 @@ export default function DashboardPage() {
 
       </div>
 
-      {/* CONTENT */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      {/* CHARTS */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
 
-        {/* ACTIVITY */}
+        {/* STOCK CHART */}
         <div
           className="
             rounded-3xl
@@ -584,104 +475,47 @@ export default function DashboardPage() {
           "
         >
 
-          <div className="flex items-center justify-between mb-8">
+          <h2 className="text-3xl font-black mb-8">
+            Évolution stock
+          </h2>
 
-            <h2 className="text-3xl font-black">
-              Activité récente
-            </h2>
+          <div className="h-[320px]">
 
-            <Clock3 className="text-cyan-300" />
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+            >
 
-          </div>
+              <LineChart
+                data={
+                  stockChartData
+                }
+              >
 
-          <div className="space-y-5">
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
 
-            {movements.map(
-              (
-                movement,
-                index
-              ) => (
+                <XAxis dataKey="name" />
 
-                <div
-                  key={index}
-                  className="
-                    flex
-                    items-center
-                    justify-between
+                <YAxis />
 
-                    rounded-2xl
+                <Tooltip />
 
-                    border
-                    border-white/10
+                <Line
+                  type="monotone"
+                  dataKey="stock"
+                  stroke="#06b6d4"
+                  strokeWidth={4}
+                />
 
-                    bg-white/[0.03]
+              </LineChart>
 
-                    p-5
-                  "
-                >
-
-                  <div>
-
-                    <p className="font-bold text-lg">
-
-                      {
-                        movement.product
-                      }
-
-                    </p>
-
-                    <p className="text-gray-400 text-sm mt-1">
-
-                      {
-                        movement.movement_type
-                      }
-
-                    </p>
-
-                  </div>
-
-                  <div
-                    className={`
-                      px-4
-                      py-2
-                      rounded-2xl
-                      font-bold
-
-                      ${
-                        movement.movement_type ===
-                        "Entrée"
-
-                          ? "bg-green-500/10 text-green-300"
-
-                          : "bg-red-500/10 text-red-300"
-                      }
-                    `}
-                  >
-
-                    {
-                      movement.movement_type ===
-                      "Entrée"
-
-                        ? "+"
-
-                        : "-"
-                    }
-
-                    {
-                      movement.quantity
-                    }
-
-                  </div>
-
-                </div>
-              )
-            )}
+            </ResponsiveContainer>
 
           </div>
 
         </div>
 
-        {/* ALERTS */}
+        {/* ALERTS CHART */}
         <div
           className="
             rounded-3xl
@@ -692,90 +526,45 @@ export default function DashboardPage() {
           "
         >
 
-          <div className="flex items-center justify-between mb-8">
+          <h2 className="text-3xl font-black mb-8">
+            Analyse alertes
+          </h2>
 
-            <h2 className="text-3xl font-black">
-              Alertes HACCP
-            </h2>
+          <div className="h-[320px]">
 
-            <Thermometer className="text-red-300" />
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+            >
 
-          </div>
-
-          <div className="space-y-5">
-
-            {alerts.slice(0, 5).map(
-              (
-                alert,
-                index
-              ) => (
-
-                <div
-                  key={index}
-                  className="
-                    flex
-                    items-center
-                    justify-between
-
-                    rounded-2xl
-
-                    border
-                    border-red-500/10
-
-                    bg-red-500/5
-
-                    p-5
-                  "
-                >
-
-                  <div>
-
-                    <p className="font-bold text-lg">
-
-                      {alert.product}
-
-                    </p>
-
-                    <p className="text-gray-400 text-sm mt-1">
-
-                      {alert.message}
-
-                    </p>
-
-                  </div>
-
-                  <AlertTriangle className="text-red-300" />
-
-                </div>
-              )
-            )}
-
-            {alerts.length === 0 && (
-
-              <div
-                className="
-                  flex
-                  flex-col
-                  items-center
-                  justify-center
-
-                  py-16
-                "
+              <BarChart
+                data={
+                  alertsChartData
+                }
               >
 
-                <ShieldCheck className="w-16 h-16 text-cyan-300 mb-5" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
 
-                <h3 className="text-2xl font-black mb-2">
-                  Aucun problème détecté
-                </h3>
+                <XAxis dataKey="name" />
 
-                <p className="text-gray-400">
-                  Tous les systèmes sont conformes
-                </p>
+                <YAxis />
 
-              </div>
+                <Tooltip />
 
-            )}
+                <Bar
+                  dataKey="value"
+                  fill="#ef4444"
+                  radius={[
+                    10,
+                    10,
+                    0,
+                    0,
+                  ]}
+                />
+
+              </BarChart>
+
+            </ResponsiveContainer>
 
           </div>
 
@@ -784,7 +573,7 @@ export default function DashboardPage() {
       </div>
 
       {/* QUICK ACCESS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         <Link href="/stocks">
 
