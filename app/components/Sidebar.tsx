@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import {
   DndContext,
@@ -32,7 +35,7 @@ import {
   GripVertical,
 } from "lucide-react";
 
-const initialItems = [
+const defaultItems = [
   {
     id: "dashboard",
     name: "Dashboard",
@@ -229,7 +232,33 @@ function SortableItem({ item }: any) {
 export default function Sidebar() {
 
   const [items, setItems] =
-    useState(initialItems);
+    useState(defaultItems);
+
+  /* LOAD SAVED ORDER */
+  useEffect(() => {
+
+    const saved =
+      localStorage.getItem(
+        "sidebar-order"
+      );
+
+    if (saved) {
+
+      setItems(JSON.parse(saved));
+
+    }
+
+  }, []);
+
+  /* SAVE ORDER */
+  useEffect(() => {
+
+    localStorage.setItem(
+      "sidebar-order",
+      JSON.stringify(items)
+    );
+
+  }, [items]);
 
   function handleDragEnd(event: any) {
 
