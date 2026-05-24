@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { motion } from "framer-motion";
 
 import {
@@ -9,7 +11,51 @@ import {
   Package,
   Thermometer,
   Truck,
+  Plus,
+  X,
 } from "lucide-react";
+
+const categories = [
+  {
+    name: "Viande",
+    emoji: "🥩",
+  },
+
+  {
+    name: "Poisson",
+    emoji: "🐟",
+  },
+
+  {
+    name: "Surgelé",
+    emoji: "🥶",
+  },
+
+  {
+    name: "Fruits & légumes",
+    emoji: "🥬",
+  },
+
+  {
+    name: "Produits laitiers",
+    emoji: "🧀",
+  },
+
+  {
+    name: "Produits secs",
+    emoji: "🥫",
+  },
+
+  {
+    name: "Desserts",
+    emoji: "🍰",
+  },
+
+  {
+    name: "Boulangerie",
+    emoji: "🍞",
+  },
+];
 
 const traceabilityItems = [
   {
@@ -38,50 +84,82 @@ const traceabilityItems = [
     dlc: "02/06/2026",
     status: "ok",
   },
-
-  {
-    product: "Crème fraîche",
-    lot: "LOT-7741",
-    supplier: "Metro",
-    temperature: "9°C",
-    dlc: "24/05/2026",
-    status: "critical",
-  },
 ];
 
 export default function TraceabilityPage() {
+
+  const [open, setOpen] =
+    useState(false);
+
+  const [selectedCategory, setSelectedCategory] =
+    useState("");
 
   return (
 
     <main className="min-h-screen p-10 text-white">
 
       {/* HEADER */}
-      <div className="mb-12">
+      <div className="flex items-center justify-between mb-12">
 
-        <div className="flex items-center gap-4 mb-4">
+        <div>
 
-          <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
+          <div className="flex items-center gap-4 mb-4">
 
-          <p className="text-cyan-400 font-semibold tracking-widest uppercase">
-            TRACEABILITY CENTER
+            <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
+
+            <p className="text-cyan-400 font-semibold tracking-widest uppercase">
+              TRACEABILITY CENTER
+            </p>
+
+          </div>
+
+          <h1 className="text-7xl font-black tracking-tight">
+            Traçabilité
+          </h1>
+
+          <p className="text-gray-400 mt-5 text-xl">
+            Gestion intelligente des produits, lots et DLC
           </p>
 
         </div>
 
-        <h1 className="text-7xl font-black tracking-tight">
-          Traçabilité
-        </h1>
+        {/* BUTTON */}
+        <button
+          onClick={() => setOpen(true)}
+          className="
+            flex
+            items-center
+            gap-3
 
-        <p className="text-gray-400 mt-5 text-xl">
-          Gestion intelligente des produits, lots et DLC
-        </p>
+            rounded-2xl
+
+            bg-cyan-500
+
+            px-6
+            py-4
+
+            text-black
+            font-bold
+            text-lg
+
+            hover:scale-105
+
+            transition-all
+          "
+        >
+
+          <Plus className="w-6 h-6" />
+
+          Ajouter produit
+
+        </button>
 
       </div>
 
       {/* TOP CARDS */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-10">
 
-        {/* CARD 1 */}
+        {/* CARD */}
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="
@@ -118,7 +196,7 @@ export default function TraceabilityPage() {
 
         </motion.div>
 
-        {/* CARD 2 */}
+        {/* CARD */}
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="
@@ -155,7 +233,7 @@ export default function TraceabilityPage() {
 
         </motion.div>
 
-        {/* CARD 3 */}
+        {/* CARD */}
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="
@@ -192,7 +270,7 @@ export default function TraceabilityPage() {
 
         </motion.div>
 
-        {/* CARD 4 */}
+        {/* CARD */}
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="
@@ -243,7 +321,7 @@ export default function TraceabilityPage() {
         "
       >
 
-        {/* TABLE HEADER */}
+        {/* HEADER */}
         <div
           className="
             grid
@@ -266,15 +344,22 @@ export default function TraceabilityPage() {
 
         </div>
 
-        {/* TABLE CONTENT */}
+        {/* CONTENT */}
         {traceabilityItems.map((item, index) => (
 
           <motion.div
             key={index}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{
+              opacity: 0,
+              y: 10,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
             whileHover={{
-              backgroundColor: "rgba(255,255,255,0.03)",
+              backgroundColor:
+                "rgba(255,255,255,0.03)",
             }}
             className="
               grid
@@ -284,7 +369,6 @@ export default function TraceabilityPage() {
               py-6
               border-b
               border-white/5
-              transition-all
             "
           >
 
@@ -354,77 +438,33 @@ export default function TraceabilityPage() {
             {/* STATUS */}
             <div>
 
-              {item.status === "ok" && (
+              <div
+                className={`
+                  inline-flex
+                  items-center
+                  gap-2
 
-                <div
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    bg-green-500/20
-                    px-4
-                    py-2
-                    rounded-full
-                    text-green-300
-                    font-semibold
-                  "
-                >
+                  px-4
+                  py-2
 
-                  <CheckCircle2 className="w-4 h-4" />
+                  rounded-full
+                  font-semibold
 
-                  Conforme
+                  ${
+                    item.status === "ok"
+                      ? "bg-green-500/20 text-green-300"
+                      : "bg-orange-500/20 text-orange-300"
+                  }
+                `}
+              >
 
-                </div>
+                <AlertTriangle className="w-4 h-4" />
 
-              )}
+                {item.status === "ok"
+                  ? "Conforme"
+                  : "Surveillance"}
 
-              {item.status === "warning" && (
-
-                <div
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    bg-orange-500/20
-                    px-4
-                    py-2
-                    rounded-full
-                    text-orange-300
-                    font-semibold
-                  "
-                >
-
-                  <AlertTriangle className="w-4 h-4" />
-
-                  Surveillance
-
-                </div>
-
-              )}
-
-              {item.status === "critical" && (
-
-                <div
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    bg-red-500/20
-                    px-4
-                    py-2
-                    rounded-full
-                    text-red-300
-                    font-semibold
-                  "
-                >
-
-                  <AlertTriangle className="w-4 h-4" />
-
-                  Critique
-
-                </div>
-
-              )}
+              </div>
 
             </div>
 
@@ -434,7 +474,139 @@ export default function TraceabilityPage() {
 
       </div>
 
-    </main>
+      {/* MODAL */}
+      {open && (
 
+        <div
+          className="
+            fixed
+            inset-0
+
+            bg-black/70
+            backdrop-blur-sm
+
+            flex
+            items-center
+            justify-center
+
+            z-50
+          "
+        >
+
+          <motion.div
+            initial={{
+              opacity: 0,
+              scale: 0.9,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+            }}
+            className="
+              w-full
+              max-w-3xl
+
+              rounded-3xl
+
+              border
+              border-white/10
+
+              bg-[#071120]
+
+              p-8
+            "
+          >
+
+            {/* TOP */}
+            <div className="flex items-center justify-between mb-8">
+
+              <div>
+
+                <h2 className="text-4xl font-black">
+                  Ajouter produit
+                </h2>
+
+                <p className="text-gray-400 mt-2">
+                  Sélection rapide catégorie produit
+                </p>
+
+              </div>
+
+              <button
+                onClick={() => setOpen(false)}
+                className="
+                  rounded-2xl
+
+                  bg-white/10
+
+                  p-3
+
+                  hover:bg-red-500/20
+
+                  transition-all
+                "
+              >
+
+                <X />
+
+              </button>
+
+            </div>
+
+            {/* CATEGORIES */}
+            <div className="grid grid-cols-2 gap-4">
+
+              {categories.map((category) => (
+
+                <button
+                  key={category.name}
+                  onClick={() =>
+                    setSelectedCategory(
+                      category.name
+                    )
+                  }
+                  className={`
+                    rounded-2xl
+
+                    border
+
+                    p-6
+
+                    text-left
+
+                    transition-all
+
+                    ${
+                      selectedCategory ===
+                      category.name
+
+                        ? "border-cyan-400 bg-cyan-500/20"
+
+                        : "border-white/10 bg-white/[0.03]"
+                    }
+                  `}
+                >
+
+                  <div className="text-4xl mb-4">
+                    {category.emoji}
+                  </div>
+
+                  <p className="text-xl font-bold">
+                    {category.name}
+                  </p>
+
+                </button>
+
+              ))}
+
+            </div>
+
+          </motion.div>
+
+        </div>
+
+      )}
+
+    </main>
   );
 }
