@@ -33,11 +33,13 @@ const equipmentTypes = {
     min: 0,
     max: 4,
   },
+
   chambre_froide: {
     label: "Chambre froide",
     min: 0,
-    max: 3,
+    max: 4,
   },
+
   congelateur: {
     label: "Congélateur",
     min: -25,
