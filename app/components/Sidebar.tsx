@@ -13,6 +13,7 @@ import {
   Settings,
   Truck,
   Sparkles,
+  Boxes,
 } from "lucide-react";
 
 const menuItems = [
@@ -32,6 +33,12 @@ const menuItems = [
     name: "Traçabilité",
     href: "/traceability",
     icon: Truck,
+  },
+
+  {
+    name: "Stocks",
+    href: "/stocks",
+    icon: Boxes,
   },
 
   {
