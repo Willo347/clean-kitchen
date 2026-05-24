@@ -81,11 +81,9 @@ export default function TraceabilityPage() {
       {/* TOP CARDS */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-10">
 
-        {/* CARD */}
+        {/* CARD 1 */}
         <motion.div
-          whileHover={{
-            scale: 1.02,
-          }}
+          whileHover={{ scale: 1.02 }}
           className="
             rounded-3xl
             border
@@ -98,13 +96,7 @@ export default function TraceabilityPage() {
 
           <div className="flex items-center justify-between mb-6">
 
-            <div
-              className="
-                bg-cyan-500/20
-                p-4
-                rounded-2xl
-              "
-            >
+            <div className="bg-cyan-500/20 p-4 rounded-2xl">
 
               <Package className="text-cyan-300 w-7 h-7" />
 
@@ -126,11 +118,9 @@ export default function TraceabilityPage() {
 
         </motion.div>
 
-        {/* CARD */}
+        {/* CARD 2 */}
         <motion.div
-          whileHover={{
-            scale: 1.02,
-          }}
+          whileHover={{ scale: 1.02 }}
           className="
             rounded-3xl
             border
@@ -143,13 +133,7 @@ export default function TraceabilityPage() {
 
           <div className="flex items-center justify-between mb-6">
 
-            <div
-              className="
-                bg-orange-500/20
-                p-4
-                rounded-2xl
-              "
-            >
+            <div className="bg-orange-500/20 p-4 rounded-2xl">
 
               <Calendar className="text-orange-300 w-7 h-7" />
 
@@ -171,11 +155,9 @@ export default function TraceabilityPage() {
 
         </motion.div>
 
-        {/* CARD */}
+        {/* CARD 3 */}
         <motion.div
-          whileHover={{
-            scale: 1.02,
-          }}
+          whileHover={{ scale: 1.02 }}
           className="
             rounded-3xl
             border
@@ -188,13 +170,7 @@ export default function TraceabilityPage() {
 
           <div className="flex items-center justify-between mb-6">
 
-            <div
-              className="
-                bg-green-500/20
-                p-4
-                rounded-2xl
-              "
-            >
+            <div className="bg-green-500/20 p-4 rounded-2xl">
 
               <CheckCircle2 className="text-green-300 w-7 h-7" />
 
@@ -216,11 +192,9 @@ export default function TraceabilityPage() {
 
         </motion.div>
 
-        {/* CARD */}
+        {/* CARD 4 */}
         <motion.div
-          whileHover={{
-            scale: 1.02,
-          }}
+          whileHover={{ scale: 1.02 }}
           className="
             rounded-3xl
             border
@@ -233,13 +207,7 @@ export default function TraceabilityPage() {
 
           <div className="flex items-center justify-between mb-6">
 
-            <div
-              className="
-                bg-red-500/20
-                p-4
-                rounded-2xl
-              "
-            >
+            <div className="bg-red-500/20 p-4 rounded-2xl">
 
               <AlertTriangle className="text-red-300 w-7 h-7" />
 
@@ -303,14 +271,8 @@ export default function TraceabilityPage() {
 
           <motion.div
             key={index}
-            initial={{
-              opacity: 0,
-              y: 10,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             whileHover={{
               backgroundColor: "rgba(255,255,255,0.03)",
             }}
@@ -329,13 +291,7 @@ export default function TraceabilityPage() {
             {/* PRODUCT */}
             <div className="flex items-center gap-4">
 
-              <div
-                className="
-                  bg-cyan-500/20
-                  p-3
-                  rounded-2xl
-                "
-              >
+              <div className="bg-cyan-500/20 p-3 rounded-2xl">
 
                 <Package className="w-5 h-5 text-cyan-300" />
 
