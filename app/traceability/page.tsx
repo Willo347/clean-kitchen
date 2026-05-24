@@ -112,23 +112,39 @@ export default function TraceabilityPage() {
 
   const addProduct = () => {
 
-    if (
-      !productName ||
-      !lot ||
-      !supplier ||
-      !temperature ||
-      !dlc
-    ) {
+    if (productName.trim() === "") {
+
+      alert("Veuillez entrer un nom produit.");
+
       return;
     }
 
     setProducts([
       {
         product: productName,
-        lot,
-        supplier,
-        temperature,
-        dlc,
+
+        lot:
+          lot.trim() === ""
+            ? "Non renseigné"
+            : lot,
+
+        supplier:
+          supplier.trim() === ""
+            ? "Non renseigné"
+            : supplier,
+
+        temperature:
+          temperature.trim() === ""
+            ? "--"
+            : temperature.includes("°C")
+              ? temperature
+              : `${temperature}°C`,
+
+        dlc:
+          dlc.trim() === ""
+            ? "--"
+            : dlc,
+
         status: "ok",
       },
 
@@ -210,7 +226,6 @@ export default function TraceabilityPage() {
       {/* TOP CARDS */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-10">
 
-        {/* CARD */}
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="
@@ -247,7 +262,6 @@ export default function TraceabilityPage() {
 
         </motion.div>
 
-        {/* CARD */}
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="
@@ -284,7 +298,6 @@ export default function TraceabilityPage() {
 
         </motion.div>
 
-        {/* CARD */}
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="
@@ -321,7 +334,6 @@ export default function TraceabilityPage() {
 
         </motion.div>
 
-        {/* CARD */}
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="
@@ -372,7 +384,6 @@ export default function TraceabilityPage() {
         "
       >
 
-        {/* HEADER */}
         <div
           className="
             grid
@@ -395,7 +406,6 @@ export default function TraceabilityPage() {
 
         </div>
 
-        {/* CONTENT */}
         {products.map((item, index) => (
 
           <motion.div
@@ -408,10 +418,6 @@ export default function TraceabilityPage() {
               opacity: 1,
               y: 0,
             }}
-            whileHover={{
-              backgroundColor:
-                "rgba(255,255,255,0.03)",
-            }}
             className="
               grid
               grid-cols-6
@@ -423,7 +429,6 @@ export default function TraceabilityPage() {
             "
           >
 
-            {/* PRODUCT */}
             <div className="flex items-center gap-4">
 
               <div className="bg-cyan-500/20 p-3 rounded-2xl">
@@ -446,16 +451,12 @@ export default function TraceabilityPage() {
 
             </div>
 
-            {/* LOT */}
             <div>
-
               <p className="font-semibold">
                 {item.lot}
               </p>
-
             </div>
 
-            {/* SUPPLIER */}
             <div className="flex items-center gap-3">
 
               <Truck className="w-5 h-5 text-cyan-300" />
@@ -466,7 +467,6 @@ export default function TraceabilityPage() {
 
             </div>
 
-            {/* TEMP */}
             <div className="flex items-center gap-3">
 
               <Thermometer className="w-5 h-5 text-cyan-300" />
@@ -477,16 +477,12 @@ export default function TraceabilityPage() {
 
             </div>
 
-            {/* DLC */}
             <div>
-
               <p className="font-semibold">
                 {item.dlc}
               </p>
-
             </div>
 
-            {/* STATUS */}
             <div>
 
               <div
@@ -569,7 +565,6 @@ export default function TraceabilityPage() {
             "
           >
 
-            {/* TOP */}
             <div className="flex items-center justify-between mb-8">
 
               <div>
@@ -613,13 +608,9 @@ export default function TraceabilityPage() {
                   }
                   className={`
                     rounded-2xl
-
                     border
-
                     p-6
-
                     text-left
-
                     transition-all
 
                     ${
@@ -654,7 +645,7 @@ export default function TraceabilityPage() {
 
                 <input
                   type="text"
-                  placeholder="Nom produit"
+                  placeholder="Nom produit *"
                   value={productName}
                   onChange={(e) =>
                     setProductName(e.target.value)
