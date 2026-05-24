@@ -153,7 +153,6 @@ export default function StocksPage() {
       {/* KPI */}
       <div className="grid grid-cols-3 gap-6 mb-10">
 
-        {/* TOTAL */}
         <div
           className="
             rounded-3xl
@@ -180,7 +179,6 @@ export default function StocksPage() {
 
         </div>
 
-        {/* QUANTITY */}
         <div
           className="
             rounded-3xl
@@ -207,7 +205,6 @@ export default function StocksPage() {
 
         </div>
 
-        {/* ALERT */}
         <div
           className="
             rounded-3xl
@@ -337,7 +334,7 @@ export default function StocksPage() {
         <div
           className="
             grid
-            grid-cols-[2fr_1fr_1fr_180px]
+            grid-cols-[2fr_1fr_1fr_320px]
 
             border-b
             border-white/10
@@ -353,7 +350,7 @@ export default function StocksPage() {
           <div>Produit</div>
           <div>Catégorie</div>
           <div>Stock</div>
-          <div>Actions</div>
+          <div>Mouvements</div>
 
         </div>
 
@@ -372,7 +369,7 @@ export default function StocksPage() {
             }}
             className="
               grid
-              grid-cols-[2fr_1fr_1fr_180px]
+              grid-cols-[2fr_1fr_1fr_320px]
 
               items-center
 
@@ -464,9 +461,35 @@ export default function StocksPage() {
 
             </div>
 
-            {/* ACTIONS */}
+            {/* MOVEMENTS */}
             <div className="flex gap-3">
 
+              {/* -5 */}
+              <button
+                onClick={() =>
+                  updateQuantity(
+                    item,
+                    -5
+                  )
+                }
+                className="
+                  px-4
+                  py-3
+
+                  rounded-2xl
+
+                  bg-red-500/10
+
+                  text-red-300
+                  font-bold
+                "
+              >
+
+                -5
+
+              </button>
+
+              {/* -1 */}
               <button
                 onClick={() =>
                   updateQuantity(
@@ -475,23 +498,23 @@ export default function StocksPage() {
                   )
                 }
                 className="
-                  w-12
-                  h-12
+                  px-4
+                  py-3
 
                   rounded-2xl
 
                   bg-red-500/10
 
-                  flex
-                  items-center
-                  justify-center
+                  text-red-300
+                  font-bold
                 "
               >
 
-                <Minus className="w-5 h-5 text-red-300" />
+                -1
 
               </button>
 
+              {/* +1 */}
               <button
                 onClick={() =>
                   updateQuantity(
@@ -500,20 +523,44 @@ export default function StocksPage() {
                   )
                 }
                 className="
-                  w-12
-                  h-12
+                  px-4
+                  py-3
 
                   rounded-2xl
 
                   bg-green-500/10
 
-                  flex
-                  items-center
-                  justify-center
+                  text-green-300
+                  font-bold
                 "
               >
 
-                <Plus className="w-5 h-5 text-green-300" />
+                +1
+
+              </button>
+
+              {/* +5 */}
+              <button
+                onClick={() =>
+                  updateQuantity(
+                    item,
+                    5
+                  )
+                }
+                className="
+                  px-4
+                  py-3
+
+                  rounded-2xl
+
+                  bg-green-500/10
+
+                  text-green-300
+                  font-bold
+                "
+              >
+
+                +5
 
               </button>
 
