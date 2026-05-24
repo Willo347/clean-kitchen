@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { motion } from "framer-motion";
 
 import {
-  AlertTriangle,
-  Calendar,
   CheckCircle2,
   Package,
   Thermometer,
@@ -15,6 +13,8 @@ import {
   X,
   Camera,
 } from "lucide-react";
+
+import { supabase } from "@/lib/supabase";
 
 const categories = [
   { name: "Viande", emoji: "🥩" },
@@ -54,27 +54,31 @@ export default function TraceabilityPage() {
     useState("");
 
   const [products, setProducts] =
-    useState([
-      {
-        product: "Poulet frais",
-        lot: "LOT-2458",
-        supplier: "Metro",
-        temperature: "3°C",
-        dlc: "28/05/2026",
-        status: "ok",
-      },
+    useState<any[]>([]);
 
-      {
-        product: "Saumon fumé",
-        lot: "LOT-9182",
-        supplier: "Pomona",
-        temperature: "7°C",
-        dlc: "25/05/2026",
-        status: "warning",
-      },
-    ]);
+  useEffect(() => {
 
-  const addProduct = () => {
+    fetchProducts();
+
+  }, []);
+
+  const fetchProducts = async () => {
+
+    const { data, error } =
+      await supabase
+        .from("traceability_products")
+        .select("*")
+        .order("created_at", {
+          ascending: false,
+        });
+
+    if (!error && data) {
+
+      setProducts(data);
+    }
+  };
+
+  const addProduct = async () => {
 
     if (productName.trim() === "") {
 
@@ -83,49 +87,58 @@ export default function TraceabilityPage() {
       return;
     }
 
-    setProducts([
-      {
-        product: productName,
+    const newProduct = {
 
-        lot:
-          lot.trim() === ""
-            ? "Non renseigné"
-            : lot,
+      product: productName,
 
-        supplier:
-          supplier.trim() === ""
-            ? "Non renseigné"
-            : supplier,
+      category: selectedCategory,
 
-        temperature:
-          temperature.trim() === ""
-            ? "--"
-            : temperature.includes("°C")
-              ? temperature
-              : `${temperature}°C`,
+      lot:
+        lot.trim() === ""
+          ? "Non renseigné"
+          : lot,
 
-        dlc:
-          dlc.trim() === ""
-            ? "--"
-            : dlc,
+      supplier:
+        supplier.trim() === ""
+          ? "Non renseigné"
+          : supplier,
 
-        status: "ok",
-      },
+      temperature:
+        temperature.trim() === ""
+          ? "--"
+          : temperature.includes("°C")
+            ? temperature
+            : `${temperature}°C`,
 
-      ...products,
-    ]);
+      dlc:
+        dlc.trim() === ""
+          ? "--"
+          : dlc,
 
-    setProductName("");
-    setLot("");
-    setSupplier("");
-    setTemperature("");
-    setDlc("");
+      image_url: imagePreview,
+    };
 
-    setImagePreview("");
+    const { error } =
+      await supabase
+        .from("traceability_products")
+        .insert([newProduct]);
 
-    setSelectedCategory("");
+    if (!error) {
 
-    setOpen(false);
+      fetchProducts();
+
+      setProductName("");
+      setLot("");
+      setSupplier("");
+      setTemperature("");
+      setDlc("");
+
+      setImagePreview("");
+
+      setSelectedCategory("");
+
+      setOpen(false);
+    }
   };
 
   return (
@@ -174,10 +187,6 @@ export default function TraceabilityPage() {
             text-black
             font-bold
             text-lg
-
-            hover:scale-105
-
-            transition-all
           "
         >
 
@@ -201,6 +210,7 @@ export default function TraceabilityPage() {
         "
       >
 
+        {/* HEADER */}
         <div
           className="
             grid
@@ -223,6 +233,7 @@ export default function TraceabilityPage() {
 
         </div>
 
+        {/* PRODUCTS */}
         {products.map((item, index) => (
 
           <motion.div
@@ -246,13 +257,33 @@ export default function TraceabilityPage() {
             "
           >
 
+            {/* PRODUCT */}
             <div className="flex items-center gap-4">
 
-              <div className="bg-cyan-500/20 p-3 rounded-2xl">
+              {item.image_url ? (
 
-                <Package className="w-5 h-5 text-cyan-300" />
+                <img
+                  src={item.image_url}
+                  alt={item.product}
+                  className="
+                    w-16
+                    h-16
+                    object-cover
+                    rounded-2xl
+                    border
+                    border-white/10
+                  "
+                />
 
-              </div>
+              ) : (
+
+                <div className="bg-cyan-500/20 p-3 rounded-2xl">
+
+                  <Package className="w-5 h-5 text-cyan-300" />
+
+                </div>
+
+              )}
 
               <div>
 
@@ -261,33 +292,46 @@ export default function TraceabilityPage() {
                 </p>
 
                 <p className="text-gray-500 text-sm">
-                  Produit alimentaire
+                  {item.category || "Produit alimentaire"}
                 </p>
 
               </div>
 
             </div>
 
-            <div>{item.lot}</div>
+            {/* LOT */}
+            <div>
+              {item.lot}
+            </div>
 
+            {/* SUPPLIER */}
             <div className="flex items-center gap-3">
 
               <Truck className="w-5 h-5 text-cyan-300" />
 
-              <span>{item.supplier}</span>
+              <span>
+                {item.supplier}
+              </span>
 
             </div>
 
+            {/* TEMP */}
             <div className="flex items-center gap-3">
 
               <Thermometer className="w-5 h-5 text-cyan-300" />
 
-              <span>{item.temperature}</span>
+              <span>
+                {item.temperature}
+              </span>
 
             </div>
 
-            <div>{item.dlc}</div>
+            {/* DLC */}
+            <div>
+              {item.dlc}
+            </div>
 
+            {/* STATUS */}
             <div>
 
               <div
@@ -456,7 +500,7 @@ export default function TraceabilityPage() {
 
             </label>
 
-            {/* IMAGE PREVIEW */}
+            {/* PREVIEW */}
             {imagePreview && (
 
               <div className="mb-8">
