@@ -42,38 +42,30 @@ export default function TraceabilityPage() {
   const [editingProduct, setEditingProduct] =
     useState<any>(null);
 
-  const [selectedCategory, setSelectedCategory] =
-    useState("");
-
   const [activeFilter, setActiveFilter] =
     useState("Tous");
 
   const [search, setSearch] =
     useState("");
 
-  const [productName, setProductName] =
-    useState("");
+  const [products, setProducts] =
+    useState<any[]>([]);
 
-  const [lot, setLot] =
-    useState("");
-
-  const [supplier, setSupplier] =
-    useState("");
-
-  const [temperature, setTemperature] =
-    useState("");
-
-  const [dlc, setDlc] =
-    useState("");
-
-  const [imagePreview, setImagePreview] =
-    useState("");
+  const [formData, setFormData] =
+    useState({
+      product: "",
+      category: "",
+      lot: "",
+      supplier: "",
+      temperature: "",
+      dlc: "",
+    });
 
   const [imageFile, setImageFile] =
     useState<File | null>(null);
 
-  const [products, setProducts] =
-    useState<any[]>([]);
+  const [imagePreview, setImagePreview] =
+    useState("");
 
   useEffect(() => {
 
@@ -83,7 +75,7 @@ export default function TraceabilityPage() {
 
   const fetchProducts = async () => {
 
-    const { data, error } =
+    const { data } =
       await supabase
         .from("traceability_products")
         .select("*")
@@ -91,7 +83,7 @@ export default function TraceabilityPage() {
           ascending: false,
         });
 
-    if (!error && data) {
+    if (data) {
 
       setProducts(data);
     }
@@ -154,13 +146,12 @@ export default function TraceabilityPage() {
     const today =
       new Date();
 
-    const diffTime =
-      date.getTime() -
-      today.getTime();
-
     const diffDays =
       Math.ceil(
-        diffTime /
+        (
+          date.getTime() -
+          today.getTime()
+        ) /
         (1000 * 60 * 60 * 24)
       );
 
@@ -189,11 +180,46 @@ export default function TraceabilityPage() {
     };
   };
 
-  const addProduct = async () => {
+  const handleChange = (
+    field: string,
+    value: string
+  ) => {
 
-    if (productName.trim() === "") {
+    setFormData({
+      ...formData,
+      [field]: value,
+    });
+  };
 
-      alert("Veuillez entrer un nom produit.");
+  const resetForm = () => {
+
+    setFormData({
+      product: "",
+      category: "",
+      lot: "",
+      supplier: "",
+      temperature: "",
+      dlc: "",
+    });
+
+    setImageFile(null);
+
+    setImagePreview("");
+
+    setOpen(false);
+
+    setEditOpen(false);
+  };
+
+  const saveProduct = async () => {
+
+    if (
+      formData.product.trim() === ""
+    ) {
+
+      alert(
+        "Nom produit requis"
+      );
 
       return;
     }
@@ -205,51 +231,37 @@ export default function TraceabilityPage() {
       const fileName =
         `${Date.now()}-${imageFile.name}`;
 
-      const { error: uploadError } =
-        await supabase.storage
-          .from("traceability-images")
-          .upload(fileName, imageFile);
+      await supabase.storage
+        .from(
+          "traceability-images"
+        )
+        .upload(fileName, imageFile);
 
-      if (!uploadError) {
+      const { data } =
+        supabase.storage
+          .from(
+            "traceability-images"
+          )
+          .getPublicUrl(fileName);
 
-        const { data } =
-          supabase.storage
-            .from("traceability-images")
-            .getPublicUrl(fileName);
-
-        imageUrl =
-          data.publicUrl;
-      }
+      imageUrl =
+        data.publicUrl;
     }
 
-    const newProduct = {
+    await supabase
+      .from(
+        "traceability_products"
+      )
+      .insert([
+        {
+          ...formData,
+          image_url: imageUrl,
+        },
+      ]);
 
-      product: productName,
+    fetchProducts();
 
-      category: selectedCategory,
-
-      lot,
-
-      supplier,
-
-      temperature,
-
-      dlc,
-
-      image_url: imageUrl,
-    };
-
-    const { error } =
-      await supabase
-        .from("traceability_products")
-        .insert([newProduct]);
-
-    if (!error) {
-
-      fetchProducts();
-
-      resetForm();
-    }
+    resetForm();
   };
 
   const updateProduct = async () => {
@@ -257,20 +269,18 @@ export default function TraceabilityPage() {
     if (!editingProduct) return;
 
     await supabase
-      .from("traceability_products")
-      .update({
-        product: productName,
-        lot,
-        supplier,
-        temperature,
-        dlc,
-        category: selectedCategory,
-      })
-      .eq("id", editingProduct.id);
+      .from(
+        "traceability_products"
+      )
+      .update(formData)
+      .eq(
+        "id",
+        editingProduct.id
+      );
 
     fetchProducts();
 
-    setEditOpen(false);
+    resetForm();
   };
 
   const deleteProduct = async (
@@ -285,43 +295,33 @@ export default function TraceabilityPage() {
     if (!confirmDelete) return;
 
     await supabase
-      .from("traceability_products")
+      .from(
+        "traceability_products"
+      )
       .delete()
       .eq("id", id);
 
     fetchProducts();
   };
 
-  const resetForm = () => {
-
-    setProductName("");
-    setLot("");
-    setSupplier("");
-    setTemperature("");
-    setDlc("");
-
-    setImagePreview("");
-    setImageFile(null);
-
-    setSelectedCategory("");
-
-    setOpen(false);
-  };
-
   const openEditModal = (
-    product: any
+    item: any
   ) => {
 
-    setEditingProduct(product);
+    setEditingProduct(item);
 
-    setProductName(product.product || "");
-    setLot(product.lot || "");
-    setSupplier(product.supplier || "");
-    setTemperature(product.temperature || "");
-    setDlc(product.dlc || "");
-    setSelectedCategory(
-      product.category || ""
-    );
+    setFormData({
+      product:
+        item.product || "",
+      category:
+        item.category || "",
+      lot: item.lot || "",
+      supplier:
+        item.supplier || "",
+      temperature:
+        item.temperature || "",
+      dlc: item.dlc || "",
+    });
 
     setEditOpen(true);
   };
@@ -349,14 +349,12 @@ export default function TraceabilityPage() {
             Traçabilité
           </h1>
 
-          <p className="text-gray-400 mt-5 text-xl">
-            Gestion intelligente des produits, lots et DLC
-          </p>
-
         </div>
 
         <button
-          onClick={() => setOpen(true)}
+          onClick={() =>
+            setOpen(true)
+          }
           className="
             flex
             items-center
@@ -387,14 +385,10 @@ export default function TraceabilityPage() {
             flex
             items-center
             gap-4
-
             rounded-3xl
-
             border
             border-white/10
-
             bg-white/[0.04]
-
             px-6
             py-5
           "
@@ -407,7 +401,9 @@ export default function TraceabilityPage() {
             placeholder="Rechercher un produit..."
             value={search}
             onChange={(e) =>
-              setSearch(e.target.value)
+              setSearch(
+                e.target.value
+              )
             }
             className="
               w-full
@@ -488,23 +484,18 @@ export default function TraceabilityPage() {
           border
           border-white/10
           bg-white/[0.04]
-          backdrop-blur-2xl
           overflow-hidden
         "
       >
 
-        {/* HEADER */}
         <div
           className="
             grid
             grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_140px]
-
             border-b
             border-white/10
-
             px-8
             py-6
-
             text-gray-400
             font-semibold
           "
@@ -520,7 +511,6 @@ export default function TraceabilityPage() {
 
         </div>
 
-        {/* PRODUCTS */}
         {filteredProducts.map((item, index) => (
 
           <motion.div
@@ -536,33 +526,27 @@ export default function TraceabilityPage() {
             className="
               grid
               grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_140px]
-
               items-center
-
               px-8
               py-6
-
               border-b
               border-white/5
             "
           >
 
-            {/* PRODUCT */}
-            <div className="flex items-center gap-4 min-w-0">
+            <div className="flex items-center gap-4">
 
               {item.image_url ? (
 
                 <img
-                  src={item.image_url}
-                  alt={item.product}
+                  src={
+                    item.image_url
+                  }
                   className="
                     w-16
                     h-16
                     object-cover
                     rounded-2xl
-                    border
-                    border-white/10
-                    flex-shrink-0
                   "
                 />
 
@@ -576,13 +560,13 @@ export default function TraceabilityPage() {
 
               )}
 
-              <div className="min-w-0">
+              <div>
 
-                <p className="font-bold text-lg truncate">
+                <p className="font-bold text-lg">
                   {item.product}
                 </p>
 
-                <p className="text-gray-500 text-sm truncate">
+                <p className="text-gray-500 text-sm">
                   {item.category}
                 </p>
 
@@ -592,35 +576,20 @@ export default function TraceabilityPage() {
 
             <div>{item.lot}</div>
 
-            <div className="flex items-center gap-3">
+            <div>{item.supplier}</div>
 
-              <Truck className="w-5 h-5 text-cyan-300" />
-
-              <span>
-                {item.supplier}
-              </span>
-
-            </div>
-
-            <div className="flex items-center gap-3">
-
-              <Thermometer className="w-5 h-5 text-cyan-300" />
-
-              <span>
-                {item.temperature}
-              </span>
-
-            </div>
+            <div>{item.temperature}</div>
 
             <div>{item.dlc}</div>
 
-            {/* STATUS */}
             <div>
 
               {(() => {
 
                 const status =
-                  getStatus(item.dlc);
+                  getStatus(
+                    item.dlc
+                  );
 
                 return (
 
@@ -652,28 +621,22 @@ export default function TraceabilityPage() {
 
             </div>
 
-            {/* ACTIONS */}
-            <div className="flex items-center gap-3">
+            <div className="flex gap-3">
 
               <button
                 onClick={() =>
-                  openEditModal(item)
+                  openEditModal(
+                    item
+                  )
                 }
                 className="
+                  w-12
+                  h-12
+                  rounded-2xl
+                  bg-cyan-500/10
                   flex
                   items-center
                   justify-center
-
-                  w-12
-                  h-12
-
-                  rounded-2xl
-
-                  bg-cyan-500/10
-
-                  hover:bg-cyan-500/20
-
-                  transition-all
                 "
               >
 
@@ -683,23 +646,18 @@ export default function TraceabilityPage() {
 
               <button
                 onClick={() =>
-                  deleteProduct(item.id)
+                  deleteProduct(
+                    item.id
+                  )
                 }
                 className="
+                  w-12
+                  h-12
+                  rounded-2xl
+                  bg-red-500/10
                   flex
                   items-center
                   justify-center
-
-                  w-12
-                  h-12
-
-                  rounded-2xl
-
-                  bg-red-500/10
-
-                  hover:bg-red-500/20
-
-                  transition-all
                 "
               >
 
@@ -714,6 +672,321 @@ export default function TraceabilityPage() {
         ))}
 
       </div>
+
+      {/* MODAL */}
+      {(open || editOpen) && (
+
+        <div
+          className="
+            fixed
+            inset-0
+            bg-black/70
+            backdrop-blur-sm
+            flex
+            items-center
+            justify-center
+            z-50
+            p-4
+          "
+        >
+
+          <div
+            className="
+              w-full
+              max-w-2xl
+              rounded-3xl
+              bg-[#071120]
+              border
+              border-white/10
+              p-8
+            "
+          >
+
+            <div className="flex items-center justify-between mb-8">
+
+              <h2 className="text-4xl font-black">
+
+                {editOpen
+                  ? "Modifier produit"
+                  : "Ajouter produit"}
+
+              </h2>
+
+              <button
+                onClick={resetForm}
+                className="
+                  rounded-2xl
+                  bg-white/10
+                  p-3
+                "
+              >
+
+                <X />
+
+              </button>
+
+            </div>
+
+            {/* PHOTO */}
+            <label
+              className="
+                flex
+                flex-col
+                items-center
+                justify-center
+
+                border-2
+                border-dashed
+                border-white/10
+
+                rounded-3xl
+
+                p-10
+
+                cursor-pointer
+
+                hover:border-cyan-400
+
+                transition-all
+
+                mb-8
+              "
+            >
+
+              <Camera className="w-12 h-12 text-cyan-300 mb-4" />
+
+              <p className="font-bold">
+                Importer photo
+              </p>
+
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+
+                  const file =
+                    e.target.files?.[0];
+
+                  if (file) {
+
+                    setImageFile(file);
+
+                    setImagePreview(
+                      URL.createObjectURL(
+                        file
+                      )
+                    );
+                  }
+                }}
+              />
+
+            </label>
+
+            {imagePreview && (
+
+              <img
+                src={imagePreview}
+                className="
+                  w-full
+                  h-60
+                  object-cover
+                  rounded-3xl
+                  mb-6
+                "
+              />
+
+            )}
+
+            <div className="space-y-5">
+
+              <input
+                type="text"
+                placeholder="Nom produit"
+                value={formData.product}
+                onChange={(e) =>
+                  handleChange(
+                    "product",
+                    e.target.value
+                  )
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                  outline-none
+                "
+              />
+
+              <select
+                value={
+                  formData.category
+                }
+                onChange={(e) =>
+                  handleChange(
+                    "category",
+                    e.target.value
+                  )
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                  outline-none
+                "
+              >
+
+                <option value="">
+                  Catégorie
+                </option>
+
+                {categories
+                  .filter(
+                    (c) =>
+                      c.name !==
+                      "Tous"
+                  )
+                  .map((c) => (
+
+                    <option
+                      key={c.name}
+                      value={c.name}
+                    >
+
+                      {c.emoji} {c.name}
+
+                    </option>
+
+                  ))}
+
+              </select>
+
+              <input
+                type="text"
+                placeholder="Lot"
+                value={formData.lot}
+                onChange={(e) =>
+                  handleChange(
+                    "lot",
+                    e.target.value
+                  )
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                "
+              />
+
+              <input
+                type="text"
+                placeholder="Fournisseur"
+                value={
+                  formData.supplier
+                }
+                onChange={(e) =>
+                  handleChange(
+                    "supplier",
+                    e.target.value
+                  )
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                "
+              />
+
+              <input
+                type="text"
+                placeholder="Température"
+                value={
+                  formData.temperature
+                }
+                onChange={(e) =>
+                  handleChange(
+                    "temperature",
+                    e.target.value
+                  )
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                "
+              />
+
+              <input
+                type="text"
+                placeholder="DLC jj/mm/aaaa"
+                value={formData.dlc}
+                onChange={(e) =>
+                  handleChange(
+                    "dlc",
+                    e.target.value
+                  )
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                "
+              />
+
+              <button
+                onClick={
+                  editOpen
+                    ? updateProduct
+                    : saveProduct
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-cyan-500
+                  py-4
+                  text-black
+                  font-bold
+                  text-lg
+                "
+              >
+
+                {editOpen
+                  ? "Sauvegarder"
+                  : "Ajouter produit"}
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
 
     </main>
   );
