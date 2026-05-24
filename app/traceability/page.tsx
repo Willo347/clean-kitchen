@@ -6,15 +6,14 @@ import { motion } from "framer-motion";
 
 import {
   Package,
-  Thermometer,
-  Truck,
   Plus,
-  X,
-  Camera,
+  Minus,
   Trash2,
   Pencil,
-  AlertTriangle,
   Search,
+  AlertTriangle,
+  X,
+  Camera,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -27,29 +26,27 @@ const categories = [
   { name: "Fruits & légumes", emoji: "🥬" },
   { name: "Produits laitiers", emoji: "🧀" },
   { name: "Produits secs", emoji: "🥫" },
-  { name: "Desserts", emoji: "🍰" },
-  { name: "Boulangerie", emoji: "🍞" },
 ];
 
 export default function TraceabilityPage() {
 
-  const [open, setOpen] =
-    useState(false);
-
-  const [editOpen, setEditOpen] =
-    useState(false);
-
-  const [editingProduct, setEditingProduct] =
-    useState<any>(null);
-
-  const [activeFilter, setActiveFilter] =
-    useState("Tous");
+  const [products, setProducts] =
+    useState<any[]>([]);
 
   const [search, setSearch] =
     useState("");
 
-  const [products, setProducts] =
-    useState<any[]>([]);
+  const [activeFilter, setActiveFilter] =
+    useState("Tous");
+
+  const [open, setOpen] =
+    useState(false);
+
+  const [imageFile, setImageFile] =
+    useState<File | null>(null);
+
+  const [imagePreview, setImagePreview] =
+    useState("");
 
   const [formData, setFormData] =
     useState({
@@ -57,15 +54,10 @@ export default function TraceabilityPage() {
       category: "",
       lot: "",
       supplier: "",
-      temperature: "",
       dlc: "",
+      quantity: 0,
+      unit: "pièce",
     });
-
-  const [imageFile, setImageFile] =
-    useState<File | null>(null);
-
-  const [imagePreview, setImagePreview] =
-    useState("");
 
   useEffect(() => {
 
@@ -92,22 +84,22 @@ export default function TraceabilityPage() {
   const filteredProducts =
     products.filter((item) => {
 
-      const matchesSearch =
+      const searchMatch =
         item.product
           ?.toLowerCase()
           .includes(
             search.toLowerCase()
           );
 
-      const matchesCategory =
+      const categoryMatch =
         activeFilter === "Tous"
           ? true
           : item.category ===
             activeFilter;
 
       return (
-        matchesSearch &&
-        matchesCategory
+        searchMatch &&
+        categoryMatch
       );
     });
 
@@ -182,7 +174,7 @@ export default function TraceabilityPage() {
 
   const handleChange = (
     field: string,
-    value: string
+    value: any
   ) => {
 
     setFormData({
@@ -198,8 +190,9 @@ export default function TraceabilityPage() {
       category: "",
       lot: "",
       supplier: "",
-      temperature: "",
       dlc: "",
+      quantity: 0,
+      unit: "pièce",
     });
 
     setImageFile(null);
@@ -207,11 +200,9 @@ export default function TraceabilityPage() {
     setImagePreview("");
 
     setOpen(false);
-
-    setEditOpen(false);
   };
 
-  const saveProduct = async () => {
+  const addProduct = async () => {
 
     if (
       formData.product.trim() === ""
@@ -264,35 +255,9 @@ export default function TraceabilityPage() {
     resetForm();
   };
 
-  const updateProduct = async () => {
-
-    if (!editingProduct) return;
-
-    await supabase
-      .from(
-        "traceability_products"
-      )
-      .update(formData)
-      .eq(
-        "id",
-        editingProduct.id
-      );
-
-    fetchProducts();
-
-    resetForm();
-  };
-
   const deleteProduct = async (
     id: string
   ) => {
-
-    const confirmDelete =
-      confirm(
-        "Supprimer ce produit ?"
-      );
-
-    if (!confirmDelete) return;
 
     await supabase
       .from(
@@ -304,27 +269,31 @@ export default function TraceabilityPage() {
     fetchProducts();
   };
 
-  const openEditModal = (
-    item: any
-  ) => {
+  const updateQuantity =
+    async (
+      item: any,
+      change: number
+    ) => {
 
-    setEditingProduct(item);
+      const newQuantity =
+        Math.max(
+          0,
+          (item.quantity || 0) +
+            change
+        );
 
-    setFormData({
-      product:
-        item.product || "",
-      category:
-        item.category || "",
-      lot: item.lot || "",
-      supplier:
-        item.supplier || "",
-      temperature:
-        item.temperature || "",
-      dlc: item.dlc || "",
-    });
+      await supabase
+        .from(
+          "traceability_products"
+        )
+        .update({
+          quantity:
+            newQuantity,
+        })
+        .eq("id", item.id);
 
-    setEditOpen(true);
-  };
+      fetchProducts();
+    };
 
   return (
 
@@ -340,13 +309,13 @@ export default function TraceabilityPage() {
             <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
 
             <p className="text-cyan-400 font-semibold tracking-widest uppercase">
-              TRACEABILITY CENTER
+              STOCK CENTER
             </p>
 
           </div>
 
-          <h1 className="text-7xl font-black tracking-tight">
-            Traçabilité
+          <h1 className="text-7xl font-black">
+            Stocks
           </h1>
 
         </div>
@@ -365,11 +334,10 @@ export default function TraceabilityPage() {
             py-4
             text-black
             font-bold
-            text-lg
           "
         >
 
-          <Plus className="w-6 h-6" />
+          <Plus />
 
           Ajouter produit
 
@@ -385,20 +353,24 @@ export default function TraceabilityPage() {
             flex
             items-center
             gap-4
+
             rounded-3xl
+
             border
             border-white/10
+
             bg-white/[0.04]
+
             px-6
             py-5
           "
         >
 
-          <Search className="w-6 h-6 text-cyan-300" />
+          <Search className="text-cyan-300" />
 
           <input
             type="text"
-            placeholder="Rechercher un produit..."
+            placeholder="Rechercher..."
             value={search}
             onChange={(e) =>
               setSearch(
@@ -409,7 +381,6 @@ export default function TraceabilityPage() {
               w-full
               bg-transparent
               outline-none
-              text-lg
             "
           />
 
@@ -420,13 +391,13 @@ export default function TraceabilityPage() {
       {/* FILTERS */}
       <div className="flex gap-4 overflow-x-auto mb-8 pb-2">
 
-        {categories.map((category) => (
+        {categories.map((cat) => (
 
           <button
-            key={category.name}
+            key={cat.name}
             onClick={() =>
               setActiveFilter(
-                category.name
+                cat.name
               )
             }
             className={`
@@ -443,11 +414,9 @@ export default function TraceabilityPage() {
 
               border
 
-              transition-all
-
               ${
                 activeFilter ===
-                category.name
+                cat.name
 
                   ? "bg-cyan-500 text-black border-cyan-400"
 
@@ -456,13 +425,11 @@ export default function TraceabilityPage() {
             `}
           >
 
-            <span className="text-xl">
-              {category.emoji}
+            <span>
+              {cat.emoji}
             </span>
 
-            <span className="font-semibold">
-              {category.name}
-            </span>
+            {cat.name}
 
           </button>
 
@@ -491,20 +458,22 @@ export default function TraceabilityPage() {
         <div
           className="
             grid
-            grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_140px]
+            grid-cols-[2fr_1fr_1fr_1fr_1fr_180px]
+
             border-b
             border-white/10
+
             px-8
             py-6
+
             text-gray-400
             font-semibold
           "
         >
 
           <div>Produit</div>
+          <div>Stock</div>
           <div>Lot</div>
-          <div>Fournisseur</div>
-          <div>Température</div>
           <div>DLC</div>
           <div>Statut</div>
           <div>Actions</div>
@@ -525,15 +494,19 @@ export default function TraceabilityPage() {
             }}
             className="
               grid
-              grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_140px]
+              grid-cols-[2fr_1fr_1fr_1fr_1fr_180px]
+
               items-center
+
               px-8
               py-6
+
               border-b
               border-white/5
             "
           >
 
+            {/* PRODUCT */}
             <div className="flex items-center gap-4">
 
               {item.image_url ? (
@@ -554,7 +527,7 @@ export default function TraceabilityPage() {
 
                 <div className="bg-cyan-500/20 p-3 rounded-2xl">
 
-                  <Package className="w-5 h-5 text-cyan-300" />
+                  <Package className="text-cyan-300" />
 
                 </div>
 
@@ -574,14 +547,70 @@ export default function TraceabilityPage() {
 
             </div>
 
+            {/* STOCK */}
+            <div>
+
+              <div className="flex items-center gap-3">
+
+                <button
+                  onClick={() =>
+                    updateQuantity(
+                      item,
+                      -1
+                    )
+                  }
+                  className="
+                    w-10
+                    h-10
+                    rounded-xl
+                    bg-red-500/10
+                    flex
+                    items-center
+                    justify-center
+                  "
+                >
+
+                  <Minus className="w-4 h-4 text-red-400" />
+
+                </button>
+
+                <div className="font-bold text-lg min-w-[70px] text-center">
+
+                  {item.quantity || 0} {item.unit}
+
+                </div>
+
+                <button
+                  onClick={() =>
+                    updateQuantity(
+                      item,
+                      1
+                    )
+                  }
+                  className="
+                    w-10
+                    h-10
+                    rounded-xl
+                    bg-green-500/10
+                    flex
+                    items-center
+                    justify-center
+                  "
+                >
+
+                  <Plus className="w-4 h-4 text-green-400" />
+
+                </button>
+
+              </div>
+
+            </div>
+
             <div>{item.lot}</div>
-
-            <div>{item.supplier}</div>
-
-            <div>{item.temperature}</div>
 
             <div>{item.dlc}</div>
 
+            {/* STATUS */}
             <div>
 
               {(() => {
@@ -621,28 +650,8 @@ export default function TraceabilityPage() {
 
             </div>
 
+            {/* ACTIONS */}
             <div className="flex gap-3">
-
-              <button
-                onClick={() =>
-                  openEditModal(
-                    item
-                  )
-                }
-                className="
-                  w-12
-                  h-12
-                  rounded-2xl
-                  bg-cyan-500/10
-                  flex
-                  items-center
-                  justify-center
-                "
-              >
-
-                <Pencil className="w-5 h-5 text-cyan-300" />
-
-              </button>
 
               <button
                 onClick={() =>
@@ -674,7 +683,7 @@ export default function TraceabilityPage() {
       </div>
 
       {/* MODAL */}
-      {(open || editOpen) && (
+      {open && (
 
         <div
           className="
@@ -705,11 +714,7 @@ export default function TraceabilityPage() {
             <div className="flex items-center justify-between mb-8">
 
               <h2 className="text-4xl font-black">
-
-                {editOpen
-                  ? "Modifier produit"
-                  : "Ajouter produit"}
-
+                Ajouter produit
               </h2>
 
               <button
@@ -818,7 +823,6 @@ export default function TraceabilityPage() {
                   border-white/10
                   px-5
                   py-4
-                  outline-none
                 "
               />
 
@@ -840,7 +844,6 @@ export default function TraceabilityPage() {
                   border-white/10
                   px-5
                   py-4
-                  outline-none
                 "
               >
 
@@ -870,58 +873,74 @@ export default function TraceabilityPage() {
               </select>
 
               <input
+                type="number"
+                placeholder="Quantité"
+                value={
+                  formData.quantity
+                }
+                onChange={(e) =>
+                  handleChange(
+                    "quantity",
+                    Number(
+                      e.target.value
+                    )
+                  )
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                "
+              />
+
+              <select
+                value={formData.unit}
+                onChange={(e) =>
+                  handleChange(
+                    "unit",
+                    e.target.value
+                  )
+                }
+                className="
+                  w-full
+                  rounded-2xl
+                  bg-white/[0.05]
+                  border
+                  border-white/10
+                  px-5
+                  py-4
+                "
+              >
+
+                <option>
+                  pièce
+                </option>
+
+                <option>
+                  kg
+                </option>
+
+                <option>
+                  litre
+                </option>
+
+                <option>
+                  carton
+                </option>
+
+              </select>
+
+              <input
                 type="text"
                 placeholder="Lot"
                 value={formData.lot}
                 onChange={(e) =>
                   handleChange(
                     "lot",
-                    e.target.value
-                  )
-                }
-                className="
-                  w-full
-                  rounded-2xl
-                  bg-white/[0.05]
-                  border
-                  border-white/10
-                  px-5
-                  py-4
-                "
-              />
-
-              <input
-                type="text"
-                placeholder="Fournisseur"
-                value={
-                  formData.supplier
-                }
-                onChange={(e) =>
-                  handleChange(
-                    "supplier",
-                    e.target.value
-                  )
-                }
-                className="
-                  w-full
-                  rounded-2xl
-                  bg-white/[0.05]
-                  border
-                  border-white/10
-                  px-5
-                  py-4
-                "
-              />
-
-              <input
-                type="text"
-                placeholder="Température"
-                value={
-                  formData.temperature
-                }
-                onChange={(e) =>
-                  handleChange(
-                    "temperature",
                     e.target.value
                   )
                 }
@@ -958,11 +977,7 @@ export default function TraceabilityPage() {
               />
 
               <button
-                onClick={
-                  editOpen
-                    ? updateProduct
-                    : saveProduct
-                }
+                onClick={addProduct}
                 className="
                   w-full
                   rounded-2xl
@@ -970,13 +985,10 @@ export default function TraceabilityPage() {
                   py-4
                   text-black
                   font-bold
-                  text-lg
                 "
               >
 
-                {editOpen
-                  ? "Sauvegarder"
-                  : "Ajouter produit"}
+                Ajouter produit
 
               </button>
 
