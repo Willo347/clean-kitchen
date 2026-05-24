@@ -57,35 +57,6 @@ const categories = [
   },
 ];
 
-const traceabilityItems = [
-  {
-    product: "Poulet frais",
-    lot: "LOT-2458",
-    supplier: "Metro",
-    temperature: "3°C",
-    dlc: "28/05/2026",
-    status: "ok",
-  },
-
-  {
-    product: "Saumon fumé",
-    lot: "LOT-9182",
-    supplier: "Pomona",
-    temperature: "7°C",
-    dlc: "25/05/2026",
-    status: "warning",
-  },
-
-  {
-    product: "Mozzarella",
-    lot: "LOT-5521",
-    supplier: "Transgourmet",
-    temperature: "4°C",
-    dlc: "02/06/2026",
-    status: "ok",
-  },
-];
-
 export default function TraceabilityPage() {
 
   const [open, setOpen] =
@@ -93,6 +64,87 @@ export default function TraceabilityPage() {
 
   const [selectedCategory, setSelectedCategory] =
     useState("");
+
+  const [productName, setProductName] =
+    useState("");
+
+  const [lot, setLot] =
+    useState("");
+
+  const [supplier, setSupplier] =
+    useState("");
+
+  const [temperature, setTemperature] =
+    useState("");
+
+  const [dlc, setDlc] =
+    useState("");
+
+  const [products, setProducts] =
+    useState([
+      {
+        product: "Poulet frais",
+        lot: "LOT-2458",
+        supplier: "Metro",
+        temperature: "3°C",
+        dlc: "28/05/2026",
+        status: "ok",
+      },
+
+      {
+        product: "Saumon fumé",
+        lot: "LOT-9182",
+        supplier: "Pomona",
+        temperature: "7°C",
+        dlc: "25/05/2026",
+        status: "warning",
+      },
+
+      {
+        product: "Mozzarella",
+        lot: "LOT-5521",
+        supplier: "Transgourmet",
+        temperature: "4°C",
+        dlc: "02/06/2026",
+        status: "ok",
+      },
+    ]);
+
+  const addProduct = () => {
+
+    if (
+      !productName ||
+      !lot ||
+      !supplier ||
+      !temperature ||
+      !dlc
+    ) {
+      return;
+    }
+
+    setProducts([
+      {
+        product: productName,
+        lot,
+        supplier,
+        temperature,
+        dlc,
+        status: "ok",
+      },
+
+      ...products,
+    ]);
+
+    setProductName("");
+    setLot("");
+    setSupplier("");
+    setTemperature("");
+    setDlc("");
+
+    setSelectedCategory("");
+
+    setOpen(false);
+  };
 
   return (
 
@@ -123,7 +175,6 @@ export default function TraceabilityPage() {
 
         </div>
 
-        {/* BUTTON */}
         <button
           onClick={() => setOpen(true)}
           className="
@@ -187,7 +238,7 @@ export default function TraceabilityPage() {
           </div>
 
           <h2 className="text-5xl font-black">
-            248
+            {products.length}
           </h2>
 
           <p className="text-gray-400 mt-3">
@@ -345,7 +396,7 @@ export default function TraceabilityPage() {
         </div>
 
         {/* CONTENT */}
-        {traceabilityItems.map((item, index) => (
+        {products.map((item, index) => (
 
           <motion.div
             key={index}
@@ -439,30 +490,26 @@ export default function TraceabilityPage() {
             <div>
 
               <div
-                className={`
+                className="
                   inline-flex
                   items-center
                   gap-2
+
+                  bg-green-500/20
 
                   px-4
                   py-2
 
                   rounded-full
-                  font-semibold
 
-                  ${
-                    item.status === "ok"
-                      ? "bg-green-500/20 text-green-300"
-                      : "bg-orange-500/20 text-orange-300"
-                  }
-                `}
+                  text-green-300
+                  font-semibold
+                "
               >
 
-                <AlertTriangle className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4" />
 
-                {item.status === "ok"
-                  ? "Conforme"
-                  : "Surveillance"}
+                Conforme
 
               </div>
 
@@ -536,14 +583,8 @@ export default function TraceabilityPage() {
                 onClick={() => setOpen(false)}
                 className="
                   rounded-2xl
-
                   bg-white/10
-
                   p-3
-
-                  hover:bg-red-500/20
-
-                  transition-all
                 "
               >
 
@@ -554,7 +595,7 @@ export default function TraceabilityPage() {
             </div>
 
             {/* CATEGORIES */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mb-8">
 
               {categories.map((category) => (
 
@@ -600,6 +641,135 @@ export default function TraceabilityPage() {
               ))}
 
             </div>
+
+            {/* FORM */}
+            {selectedCategory && (
+
+              <div className="space-y-5">
+
+                <input
+                  type="text"
+                  placeholder="Nom produit"
+                  value={productName}
+                  onChange={(e) =>
+                    setProductName(e.target.value)
+                  }
+                  className="
+                    w-full
+                    rounded-2xl
+                    bg-white/[0.05]
+                    border
+                    border-white/10
+                    px-5
+                    py-4
+                    outline-none
+                  "
+                />
+
+                <input
+                  type="text"
+                  placeholder="Numéro lot"
+                  value={lot}
+                  onChange={(e) =>
+                    setLot(e.target.value)
+                  }
+                  className="
+                    w-full
+                    rounded-2xl
+                    bg-white/[0.05]
+                    border
+                    border-white/10
+                    px-5
+                    py-4
+                    outline-none
+                  "
+                />
+
+                <input
+                  type="text"
+                  placeholder="Fournisseur"
+                  value={supplier}
+                  onChange={(e) =>
+                    setSupplier(e.target.value)
+                  }
+                  className="
+                    w-full
+                    rounded-2xl
+                    bg-white/[0.05]
+                    border
+                    border-white/10
+                    px-5
+                    py-4
+                    outline-none
+                  "
+                />
+
+                <input
+                  type="text"
+                  placeholder="Température réception"
+                  value={temperature}
+                  onChange={(e) =>
+                    setTemperature(e.target.value)
+                  }
+                  className="
+                    w-full
+                    rounded-2xl
+                    bg-white/[0.05]
+                    border
+                    border-white/10
+                    px-5
+                    py-4
+                    outline-none
+                  "
+                />
+
+                <input
+                  type="text"
+                  placeholder="DLC"
+                  value={dlc}
+                  onChange={(e) =>
+                    setDlc(e.target.value)
+                  }
+                  className="
+                    w-full
+                    rounded-2xl
+                    bg-white/[0.05]
+                    border
+                    border-white/10
+                    px-5
+                    py-4
+                    outline-none
+                  "
+                />
+
+                <button
+                  onClick={addProduct}
+                  className="
+                    w-full
+
+                    rounded-2xl
+
+                    bg-cyan-500
+
+                    py-4
+
+                    text-black
+                    font-bold
+                    text-lg
+
+                    hover:scale-[1.01]
+
+                    transition-all
+                  "
+                >
+
+                  Ajouter produit
+
+                </button>
+
+              </div>
+
+            )}
 
           </motion.div>
 
