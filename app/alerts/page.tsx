@@ -12,6 +12,10 @@ import {
   Package,
 } from "lucide-react";
 
+import jsPDF from "jspdf";
+
+import autoTable from "jspdf-autotable";
+
 import { supabase } from "@/lib/supabase";
 
 export default function AlertsPage() {
@@ -38,7 +42,6 @@ export default function AlertsPage() {
       if (!data)
         return;
 
-      /* FIX TYPESCRIPT */
       const generatedAlerts: any[] =
         [];
 
@@ -133,7 +136,7 @@ export default function AlertsPage() {
 
             color:
               "yellow",
-          });
+            });
         }
       });
 
@@ -141,6 +144,43 @@ export default function AlertsPage() {
         generatedAlerts
       );
     };
+
+  const exportPDF = () => {
+
+    const doc =
+      new jsPDF();
+
+    doc.setFontSize(22);
+
+    doc.text(
+      "Rapport HACCP",
+      14,
+      20
+    );
+
+    autoTable(doc, {
+
+      startY: 35,
+
+      head: [[
+        "Produit",
+        "Alerte",
+      ]],
+
+      body: alerts.map(
+        (alert) => [
+
+          alert.product,
+
+          alert.message,
+        ]
+      ),
+    });
+
+    doc.save(
+      "rapport-haccp.pdf"
+    );
+  };
 
   const criticalAlerts =
     alerts.filter(
@@ -159,6 +199,34 @@ export default function AlertsPage() {
   return (
 
     <main className="min-h-screen p-10 text-white">
+
+      {/* EXPORT BUTTON */}
+      <div className="flex justify-end mb-6">
+
+        <button
+          onClick={exportPDF}
+          className="
+            px-6
+            py-3
+
+            rounded-2xl
+
+            bg-cyan-500
+
+            text-black
+            font-black
+
+            hover:scale-105
+
+            transition-all
+          "
+        >
+
+          📄 Export PDF
+
+        </button>
+
+      </div>
 
       {/* HEADER */}
       <div className="mb-12">
