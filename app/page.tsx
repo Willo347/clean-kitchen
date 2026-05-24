@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import {
   Boxes,
   AlertTriangle,
-  Truck,
   Package,
   ShieldCheck,
   Clock3,
@@ -29,6 +28,11 @@ export default function DashboardPage() {
 
   const [alerts, setAlerts] =
     useState<any[]>([]);
+
+  const [
+    openNotifications,
+    setOpenNotifications,
+  ] = useState(false);
 
   useEffect(() => {
 
@@ -160,9 +164,9 @@ export default function DashboardPage() {
             product:
               item.product,
 
-              message:
-                "Stock faible",
-            });
+            message:
+              "Stock faible",
+          });
         }
       });
 
@@ -224,48 +228,182 @@ export default function DashboardPage() {
           </div>
 
           {/* ALERT BELL */}
-          <div
-            className="
-              relative
+          <div className="relative">
 
-              rounded-2xl
+            <button
+              onClick={() =>
+                setOpenNotifications(
+                  !openNotifications
+                )
+              }
+              className="
+                relative
 
-              border
-              border-red-500/20
+                rounded-2xl
 
-              bg-red-500/10
+                border
+                border-red-500/20
 
-              p-4
-            "
-          >
+                bg-red-500/10
 
-            <Bell className="text-red-300" />
+                p-4
+              "
+            >
 
-            {alerts.length > 0 && (
+              <Bell className="text-red-300" />
+
+              {alerts.length > 0 && (
+
+                <div
+                  className="
+                    absolute
+                    -top-2
+                    -right-2
+
+                    w-7
+                    h-7
+
+                    rounded-full
+
+                    bg-red-500
+
+                    flex
+                    items-center
+                    justify-center
+
+                    text-xs
+                    font-black
+                  "
+                >
+
+                  {alerts.length}
+
+                </div>
+
+              )}
+
+            </button>
+
+            {/* DROPDOWN */}
+            {openNotifications && (
 
               <div
                 className="
                   absolute
-                  -top-2
-                  -right-2
+                  right-0
+                  top-20
 
-                  w-7
-                  h-7
+                  w-[420px]
 
-                  rounded-full
+                  rounded-3xl
 
-                  bg-red-500
+                  border
+                  border-white/10
 
-                  flex
-                  items-center
-                  justify-center
+                  bg-[#071120]
 
-                  text-xs
-                  font-black
+                  shadow-2xl
+
+                  p-6
+
+                  z-50
                 "
               >
 
-                {alerts.length}
+                <div className="flex items-center justify-between mb-6">
+
+                  <h3 className="text-2xl font-black">
+                    Notifications
+                  </h3>
+
+                  <div
+                    className="
+                      px-3
+                      py-1
+
+                      rounded-xl
+
+                      bg-red-500/10
+
+                      text-red-300
+                      text-sm
+                      font-bold
+                    "
+                  >
+
+                    {alerts.length} alertes
+
+                  </div>
+
+                </div>
+
+                <div className="space-y-4 max-h-[400px] overflow-y-auto">
+
+                  {alerts.slice(0, 6).map(
+                    (
+                      alert,
+                      index
+                    ) => (
+
+                      <div
+                        key={index}
+                        className="
+                          rounded-2xl
+
+                          border
+                          border-white/10
+
+                          bg-white/[0.03]
+
+                          p-4
+                        "
+                      >
+
+                        <div className="flex items-start justify-between gap-4">
+
+                          <div>
+
+                            <p className="font-bold">
+
+                              {alert.product}
+
+                            </p>
+
+                            <p className="text-gray-400 text-sm mt-1">
+
+                              {alert.message}
+
+                            </p>
+
+                          </div>
+
+                          <AlertTriangle className="text-red-300 w-5 h-5" />
+
+                        </div>
+
+                      </div>
+                    )
+                  )}
+
+                  {alerts.length === 0 && (
+
+                    <div className="text-center py-10">
+
+                      <ShieldCheck className="w-12 h-12 text-cyan-300 mx-auto mb-4" />
+
+                      <p className="font-bold text-xl">
+                        Aucun problème
+                      </p>
+
+                      <p className="text-gray-400 mt-2">
+                        Tout est conforme
+                      </p>
+
+                    </div>
+
+                  )}
+
+                </div>
 
               </div>
 
@@ -280,7 +418,6 @@ export default function DashboardPage() {
       {/* KPI */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-7 mb-10">
 
-        {/* PRODUCTS */}
         <motion.div
           whileHover={{
             scale: 1.03,
@@ -319,7 +456,6 @@ export default function DashboardPage() {
 
         </motion.div>
 
-        {/* QUANTITY */}
         <motion.div
           whileHover={{
             scale: 1.03,
@@ -358,7 +494,6 @@ export default function DashboardPage() {
 
         </motion.div>
 
-        {/* ALERTS */}
         <motion.div
           whileHover={{
             scale: 1.03,
@@ -397,7 +532,6 @@ export default function DashboardPage() {
 
         </motion.div>
 
-        {/* SYSTEM */}
         <motion.div
           whileHover={{
             scale: 1.03,
@@ -436,10 +570,10 @@ export default function DashboardPage() {
 
       </div>
 
-      {/* GRID */}
+      {/* CONTENT */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
 
-        {/* RECENT MOVEMENTS */}
+        {/* ACTIVITY */}
         <div
           className="
             rounded-3xl
