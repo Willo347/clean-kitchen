@@ -16,73 +16,140 @@ import { supabase } from "@/lib/supabase";
 
 export default function AlertsPage() {
 
-  const [products, setProducts] =
+  const [alerts, setAlerts] =
     useState<any[]>([]);
 
   useEffect(() => {
 
-    fetchProducts();
+    generateAlerts();
 
   }, []);
 
-  const fetchProducts = async () => {
+  const generateAlerts =
+    async () => {
 
-    const { data } =
-      await supabase
-        .from("traceability_products")
-        .select("*");
+      const { data } =
+        await supabase
+          .from(
+            "traceability_products"
+          )
+          .select("*");
 
-    if (data) {
+      if (!data)
+        return;
 
-      setProducts(data);
-    }
-  };
+      const generatedAlerts =
+        [];
 
-  const today =
-    new Date();
+      const today =
+        new Date();
 
-  const stockAlerts =
-    products.filter(
-      (item) =>
-        (item.quantity || 0) <= 2
+      data.forEach((item) => {
+
+        /* DLC ALERTS */
+        if (item.dlc) {
+
+          const dlcDate =
+            new Date(item.dlc);
+
+          const diffDays =
+            Math.ceil(
+              (
+                dlcDate.getTime() -
+                today.getTime()
+              ) /
+                (
+                  1000 *
+                  60 *
+                  60 *
+                  24
+                )
+            );
+
+          if (diffDays <= 0) {
+
+            generatedAlerts.push({
+              type:
+                "DLC expirée",
+
+              level:
+                "Critique",
+
+              product:
+                item.product,
+
+              message:
+                `Produit périmé depuis ${Math.abs(diffDays)} jour(s)`,
+
+              color:
+                "red",
+            });
+
+          } else if (
+            diffDays <= 3
+          ) {
+
+            generatedAlerts.push({
+              type:
+                "DLC proche",
+
+              level:
+                "Attention",
+
+              product:
+                item.product,
+
+              message:
+                `Expire dans ${diffDays} jour(s)`,
+
+              color:
+                "orange",
+            });
+          }
+        }
+
+        /* LOW STOCK */
+        if (
+          (item.quantity || 0) <= 2
+        ) {
+
+          generatedAlerts.push({
+            type:
+              "Stock faible",
+
+            level:
+              "Attention",
+
+            product:
+              item.product,
+
+            message:
+              `Stock faible : ${item.quantity} ${item.unit}`,
+
+            color:
+              "yellow",
+          });
+        }
+      });
+
+      setAlerts(
+        generatedAlerts
+      );
+    };
+
+  const criticalAlerts =
+    alerts.filter(
+      (a) =>
+        a.level ===
+        "Critique"
     );
 
-  const dlcAlerts =
-    products.filter((item) => {
-
-      if (!item.dlc)
-        return false;
-
-      const parts =
-        item.dlc.split("/");
-
-      if (
-        parts.length !== 3
-      )
-        return false;
-
-      const date =
-        new Date(
-          Number(parts[2]),
-          Number(parts[1]) - 1,
-          Number(parts[0])
-        );
-
-      const diffDays =
-        Math.ceil(
-          (
-            date.getTime() -
-            today.getTime()
-          ) /
-          (1000 * 60 * 60 * 24)
-        );
-
-      return diffDays <= 3;
-    });
-
-  const totalAlerts =
-    stockAlerts.length +
-    dlcAlerts.length;
+  const warningAlerts =
+    alerts.filter(
+      (a) =>
+        a.level ===
+        "Attention"
+    );
 
   return (
 
@@ -114,7 +181,7 @@ export default function AlertsPage() {
       {/* STATS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-7 mb-10">
 
-        {/* TOTAL */}
+        {/* CRITICAL */}
         <motion.div
           whileHover={{
             scale: 1.03,
@@ -148,12 +215,14 @@ export default function AlertsPage() {
           </p>
 
           <h2 className="text-6xl font-black mt-4">
-            {totalAlerts}
+
+            {criticalAlerts.length}
+
           </h2>
 
         </motion.div>
 
-        {/* STOCK */}
+        {/* WARNINGS */}
         <motion.div
           whileHover={{
             scale: 1.03,
@@ -174,7 +243,7 @@ export default function AlertsPage() {
 
             <div className="bg-orange-500/20 p-4 rounded-2xl">
 
-              <Package className="text-orange-300" />
+              <Thermometer className="text-orange-300" />
 
             </div>
 
@@ -183,16 +252,18 @@ export default function AlertsPage() {
           </div>
 
           <p className="text-orange-200">
-            Stocks faibles
+            Alertes attention
           </p>
 
           <h2 className="text-6xl font-black mt-4">
-            {stockAlerts.length}
+
+            {warningAlerts.length}
+
           </h2>
 
         </motion.div>
 
-        {/* HACCP */}
+        {/* SYSTEM */}
         <motion.div
           whileHover={{
             scale: 1.03,
@@ -225,8 +296,8 @@ export default function AlertsPage() {
             Système HACCP
           </p>
 
-          <h2 className="text-5xl font-black mt-4">
-            Actif
+          <h2 className="text-4xl font-black mt-6">
+            ACTIF
           </h2>
 
         </motion.div>
@@ -271,153 +342,168 @@ export default function AlertsPage() {
 
         <div className="space-y-5">
 
-          {/* STOCK ALERTS */}
-          {stockAlerts.map((item, index) => (
+          {alerts.map(
+            (
+              alert,
+              index
+            ) => (
 
-            <motion.div
-              key={index}
-              whileHover={{
-                scale: 1.01,
-              }}
-              className="
-                flex
-                items-center
-                justify-between
+              <motion.div
+                key={index}
+                whileHover={{
+                  scale: 1.01,
+                }}
+                className={`
+                  flex
+                  items-center
+                  justify-between
 
-                rounded-2xl
+                  rounded-2xl
 
-                border
-                border-orange-500/10
+                  border
 
-                bg-orange-500/5
+                  p-5
 
-                p-5
-              "
-            >
+                  ${
+                    alert.color ===
+                    "red"
 
-              <div className="flex items-center gap-5">
+                      ? "border-red-500/10 bg-red-500/5"
 
-                <div className="bg-orange-500/20 p-4 rounded-2xl">
+                      : alert.color ===
+                        "orange"
 
-                  <Package className="text-orange-300" />
+                        ? "border-orange-500/10 bg-orange-500/5"
 
-                </div>
+                        : "border-yellow-500/10 bg-yellow-500/5"
+                  }
+                `}
+              >
 
-                <div>
+                <div className="flex items-center gap-5">
 
-                  <h3 className="text-xl font-bold">
-                    Stock faible
-                  </h3>
+                  <div
+                    className={`
+                      p-4
+                      rounded-2xl
 
-                  <p className="text-gray-400 mt-1">
+                      ${
+                        alert.color ===
+                        "red"
 
-                    {item.product}
-                    {" "}
-                    :
-                    {" "}
-                    {item.quantity}
-                    {" "}
-                    {item.unit}
+                          ? "bg-red-500/20"
 
-                  </p>
+                          : alert.color ===
+                            "orange"
 
-                </div>
+                            ? "bg-orange-500/20"
 
-              </div>
+                            : "bg-yellow-500/20"
+                      }
+                    `}
+                  >
 
-              <div className="text-orange-300 font-bold">
-                Attention
-              </div>
+                    <AlertTriangle
+                      className={`
+                        ${
+                          alert.color ===
+                          "red"
 
-            </motion.div>
+                            ? "text-red-400"
 
-          ))}
+                            : alert.color ===
+                              "orange"
 
-          {/* DLC ALERTS */}
-          {dlcAlerts.map((item, index) => (
+                              ? "text-orange-300"
 
-            <motion.div
-              key={index}
-              whileHover={{
-                scale: 1.01,
-              }}
-              className="
-                flex
-                items-center
-                justify-between
+                              : "text-yellow-300"
+                        }
+                      `}
+                    />
 
-                rounded-2xl
+                  </div>
 
-                border
-                border-red-500/10
+                  <div>
 
-                bg-red-500/5
+                    <h3 className="text-xl font-bold">
 
-                p-5
-              "
-            >
+                      {alert.product}
 
-              <div className="flex items-center gap-5">
+                    </h3>
 
-                <div className="bg-red-500/20 p-4 rounded-2xl">
+                    <p className="text-gray-400 mt-1">
 
-                  <AlertTriangle className="text-red-300" />
+                      {alert.message}
 
-                </div>
+                    </p>
 
-                <div>
-
-                  <h3 className="text-xl font-bold">
-                    DLC proche
-                  </h3>
-
-                  <p className="text-gray-400 mt-1">
-
-                    {item.product}
-                    {" "}
-                    expire le
-                    {" "}
-                    {item.dlc}
-
-                  </p>
+                  </div>
 
                 </div>
 
-              </div>
+                <div className="flex items-center gap-8">
 
-              <div className="flex items-center gap-2 text-gray-400">
+                  <div
+                    className={`
+                      px-4
+                      py-2
+                      rounded-2xl
+                      font-bold
 
-                <Clock3 className="w-4 h-4" />
+                      ${
+                        alert.level ===
+                        "Critique"
 
-                <span className="text-sm">
-                  Surveillance active
-                </span>
+                          ? "bg-red-500/20 text-red-300"
 
-              </div>
+                          : "bg-orange-500/20 text-orange-300"
+                      }
+                    `}
+                  >
 
-            </motion.div>
+                    {alert.level}
 
-          ))}
+                  </div>
 
-          {totalAlerts === 0 && (
+                  <div className="flex items-center gap-2 text-gray-400">
+
+                    <Clock3 className="w-4 h-4" />
+
+                    <span className="text-sm">
+
+                      Temps réel
+
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </motion.div>
+            )
+          )}
+
+          {alerts.length === 0 && (
 
             <div
               className="
-                rounded-3xl
-                border
-                border-green-500/20
-                bg-green-500/10
-                p-8
-                text-center
+                flex
+                flex-col
+                items-center
+                justify-center
+
+                py-20
               "
             >
 
-              <h3 className="text-3xl font-black text-green-300 mb-3">
-                Aucun problème détecté
+              <Package className="w-16 h-16 text-cyan-300 mb-6" />
+
+              <h3 className="text-3xl font-black mb-3">
+                Aucune alerte
               </h3>
 
-              <p className="text-green-200/70">
-                Tous les systèmes sont conformes.
+              <p className="text-gray-400">
+                Tous les produits sont conformes
               </p>
 
             </div>
