@@ -256,14 +256,14 @@ export default function Sidebar() {
   /* LOAD ORDER */
   useEffect(() => {
 
-    const saved =
-      localStorage.getItem(
-        "sidebar-order"
-      );
+    try {
 
-    if (saved) {
+      const saved =
+        localStorage.getItem(
+          "sidebar-order"
+        );
 
-      try {
+      if (saved) {
 
         const parsed =
           JSON.parse(saved);
@@ -274,17 +274,17 @@ export default function Sidebar() {
 
         }
 
-      } catch (error) {
-
-        console.log(
-          "Sidebar reset"
-        );
-
-        localStorage.removeItem(
-          "sidebar-order"
-        );
-
       }
+
+    } catch (error) {
+
+      console.log(
+        "Sidebar reset"
+      );
+
+      localStorage.removeItem(
+        "sidebar-order"
+      );
 
     }
 
@@ -475,7 +475,7 @@ export default function Sidebar() {
       >
 
         <SortableContext
-          items={items}
+          items={items.map((item) => item.id)}
           strategy={verticalListSortingStrategy}
         >
 
