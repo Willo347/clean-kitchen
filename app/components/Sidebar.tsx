@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 
+import { useState } from "react";
+
 import {
   LayoutDashboard,
   Thermometer,
@@ -13,64 +15,75 @@ import {
   Settings,
   Truck,
   Sparkles,
+  GripVertical,
 } from "lucide-react";
 
 const menuItems = [
   {
+    id: "dashboard",
     name: "Dashboard",
     href: "/",
     icon: LayoutDashboard,
   },
 
   {
+    id: "releves",
     name: "Relevés",
     href: "/temperatures",
     icon: Thermometer,
   },
 
   {
+    id: "traceability",
     name: "Traçabilité",
     href: "/traceability",
     icon: Truck,
   },
 
   {
+    id: "equipments",
     name: "Équipements",
     href: "/equipments",
     icon: Refrigerator,
   },
 
   {
+    id: "cleaning",
     name: "PMS / Nettoyage",
     href: "/cleaning",
     icon: Sparkles,
   },
 
   {
+    id: "controls",
     name: "Contrôles",
     href: "/controls",
     icon: ClipboardList,
   },
 
   {
+    id: "employees",
     name: "Employés",
     href: "/employees",
     icon: Users,
   },
 
   {
+    id: "alerts",
     name: "Alertes",
     href: "/alerts",
     icon: Bell,
   },
 
   {
+    id: "haccp",
     name: "HACCP",
     href: "/haccp",
     icon: ShieldCheck,
   },
 
   {
+    id: "settings",
     name: "Paramètres",
     href: "/settings",
     icon: Settings,
@@ -78,6 +91,9 @@ const menuItems = [
 ];
 
 export default function Sidebar() {
+
+  /* DYNAMIC SIDEBAR */
+  const [items, setItems] = useState(menuItems);
 
   return (
     <aside
@@ -196,13 +212,13 @@ export default function Sidebar() {
       {/* MENU */}
       <div className="space-y-4">
 
-        {menuItems.map((item, index) => {
+        {items.map((item, index) => {
 
           const Icon = item.icon;
 
           return (
             <Link
-              key={index}
+              key={item.id}
               href={item.href}
               className="
                 group
@@ -228,6 +244,22 @@ export default function Sidebar() {
               "
             >
 
+              {/* DRAG ICON */}
+              <div
+                className="
+                  opacity-40
+
+                  group-hover:opacity-100
+
+                  transition-all
+                "
+              >
+
+                <GripVertical className="w-5 h-5 text-gray-500" />
+
+              </div>
+
+              {/* ICON */}
               <div
                 className="
                   rounded-2xl
@@ -255,6 +287,7 @@ export default function Sidebar() {
 
               </div>
 
+              {/* TEXT */}
               <span
                 className="
                   text-2xl
