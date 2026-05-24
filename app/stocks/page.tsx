@@ -516,13 +516,32 @@ export default function StocksPage() {
             className="grid grid-cols-[2fr_1fr_1fr_240px] items-center px-8 py-6 border-b border-white/5"
           >
 
+            {/* PRODUCT */}
             <div className="flex items-center gap-4">
 
-              <div className="bg-cyan-500/20 p-3 rounded-2xl">
+              {item.image_url ? (
 
-                <Package className="text-cyan-300" />
+                <img
+                  src={item.image_url}
+                  className="
+                    w-16
+                    h-16
+                    object-cover
+                    rounded-2xl
+                    border
+                    border-white/10
+                  "
+                />
 
-              </div>
+              ) : (
+
+                <div className="bg-cyan-500/20 p-3 rounded-2xl">
+
+                  <Package className="text-cyan-300" />
+
+                </div>
+
+              )}
 
               <div>
 
@@ -538,10 +557,12 @@ export default function StocksPage() {
 
             </div>
 
+            {/* CATEGORY */}
             <div>
               {item.category}
             </div>
 
+            {/* STOCK */}
             <div>
 
               <div
@@ -570,6 +591,7 @@ export default function StocksPage() {
 
             </div>
 
+            {/* ACTIONS */}
             <div className="flex gap-3">
 
               <button
