@@ -38,7 +38,8 @@ export default function AlertsPage() {
       if (!data)
         return;
 
-      const generatedAlerts =
+      /* FIX TYPESCRIPT */
+      const generatedAlerts: any[] =
         [];
 
       const today =
@@ -46,7 +47,7 @@ export default function AlertsPage() {
 
       data.forEach((item) => {
 
-        /* DLC ALERTS */
+        /* DLC */
         if (item.dlc) {
 
           const dlcDate =
@@ -66,6 +67,7 @@ export default function AlertsPage() {
                 )
             );
 
+          /* EXPIRED */
           if (diffDays <= 0) {
 
             generatedAlerts.push({
@@ -85,7 +87,10 @@ export default function AlertsPage() {
                 "red",
             });
 
-          } else if (
+          }
+
+          /* WARNING */
+          else if (
             diffDays <= 3
           ) {
 
@@ -222,7 +227,7 @@ export default function AlertsPage() {
 
         </motion.div>
 
-        {/* WARNINGS */}
+        {/* WARNING */}
         <motion.div
           whileHover={{
             scale: 1.03,
@@ -304,14 +309,13 @@ export default function AlertsPage() {
 
       </div>
 
-      {/* ALERT LIST */}
+      {/* LIST */}
       <div
         className="
           rounded-3xl
           border
           border-white/10
           bg-white/[0.04]
-          backdrop-blur-2xl
           p-8
         "
       >
@@ -359,9 +363,7 @@ export default function AlertsPage() {
                   justify-between
 
                   rounded-2xl
-
                   border
-
                   p-5
 
                   ${
@@ -470,9 +472,7 @@ export default function AlertsPage() {
                     <Clock3 className="w-4 h-4" />
 
                     <span className="text-sm">
-
                       Temps réel
-
                     </span>
 
                   </div>
@@ -491,7 +491,6 @@ export default function AlertsPage() {
                 flex-col
                 items-center
                 justify-center
-
                 py-20
               "
             >
