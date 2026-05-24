@@ -95,7 +95,8 @@ export default function Sidebar() {
         w-full
         xl:w-[320px]
 
-        min-h-screen
+        h-screen
+        overflow-y-auto
 
         border-r
         border-white/10

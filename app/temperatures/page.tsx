@@ -30,6 +30,9 @@ export default function TemperaturesPage() {
   const [endDate, setEndDate] =
     useState("");
 
+  const [newEquipment, setNewEquipment] =
+    useState("");
+
   useEffect(() => {
 
     fetchTemperatures();
@@ -92,6 +95,31 @@ export default function TemperaturesPage() {
       }
     };
 
+  const addEquipment =
+    async () => {
+
+      if (!newEquipment) {
+        return;
+      }
+
+      await supabase
+        .from(
+          "temperature_logs"
+        )
+        .insert([
+          {
+            equipment:
+              newEquipment,
+
+            temperature: 0,
+          },
+        ]);
+
+      setNewEquipment("");
+
+      fetchTemperatures();
+    };
+
   const updateTemperature =
     async (
       id: string,
@@ -135,21 +163,9 @@ export default function TemperaturesPage() {
       20
     );
 
-    doc.setFontSize(12);
-
-    doc.text(
-      `Période : ${
-        startDate || "Début"
-      } → ${
-        endDate || "Aujourd'hui"
-      }`,
-      14,
-      32
-    );
-
     autoTable(doc, {
 
-      startY: 45,
+      startY: 40,
 
       head: [[
         "Équipement",
@@ -163,8 +179,7 @@ export default function TemperaturesPage() {
             item
           ) => [
 
-            item.equipment ||
-              "Équipement",
+            item.equipment,
 
             `${item.temperature}°C`,
 
@@ -176,7 +191,7 @@ export default function TemperaturesPage() {
     });
 
     doc.save(
-      "rapport-temperatures-haccp.pdf"
+      "rapport-temperatures.pdf"
     );
   };
 
@@ -225,9 +240,70 @@ export default function TemperaturesPage() {
           Températures HACCP
         </h1>
 
-        <p className="text-gray-400 mt-4 text-lg md:text-xl">
-          Contrôle rapide chaîne du froid
-        </p>
+      </div>
+
+      {/* ADD EQUIPMENT */}
+      <div
+        className="
+          rounded-3xl
+          border
+          border-white/10
+          bg-white/[0.04]
+          p-6
+          mb-8
+        "
+      >
+
+        <div className="flex flex-col xl:flex-row gap-5">
+
+          <input
+            value={newEquipment}
+            onChange={(e) =>
+              setNewEquipment(
+                e.target.value
+              )
+            }
+            placeholder="Ajouter un équipement..."
+            className="
+              flex-1
+
+              rounded-3xl
+
+              bg-black/20
+
+              border
+              border-white/10
+
+              px-6
+              py-6
+
+              text-2xl
+
+              outline-none
+            "
+          />
+
+          <button
+            onClick={addEquipment}
+            className="
+              rounded-3xl
+
+              bg-cyan-500
+
+              px-10
+              py-6
+
+              text-black
+              text-2xl
+              font-black
+            "
+          >
+
+            Ajouter
+
+          </button>
+
+        </div>
 
       </div>
 
@@ -247,103 +323,58 @@ export default function TemperaturesPage() {
 
           <div className="flex flex-col md:flex-row gap-5 w-full">
 
-            {/* START */}
-            <div className="flex-1">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) =>
+                setStartDate(
+                  e.target.value
+                )
+              }
+              className="
+                flex-1
 
-              <label className="text-sm text-gray-400 mb-2 block">
-                Date début
-              </label>
+                rounded-3xl
 
-              <div
-                className="
-                  flex
-                  items-center
-                  gap-3
+                bg-black/20
 
-                  rounded-2xl
+                border
+                border-white/10
 
-                  border
-                  border-white/10
+                px-6
+                py-5
 
-                  bg-black/20
+                text-xl
+              "
+            />
 
-                  px-5
-                  py-5
-                "
-              >
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) =>
+                setEndDate(
+                  e.target.value
+                )
+              }
+              className="
+                flex-1
 
-                <Calendar className="text-cyan-300" />
+                rounded-3xl
 
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) =>
-                    setStartDate(
-                      e.target.value
-                    )
-                  }
-                  className="
-                    bg-transparent
-                    outline-none
-                    w-full
-                    text-lg
-                  "
-                />
+                bg-black/20
 
-              </div>
+                border
+                border-white/10
 
-            </div>
+                px-6
+                py-5
 
-            {/* END */}
-            <div className="flex-1">
-
-              <label className="text-sm text-gray-400 mb-2 block">
-                Date fin
-              </label>
-
-              <div
-                className="
-                  flex
-                  items-center
-                  gap-3
-
-                  rounded-2xl
-
-                  border
-                  border-white/10
-
-                  bg-black/20
-
-                  px-5
-                  py-5
-                "
-              >
-
-                <Calendar className="text-cyan-300" />
-
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) =>
-                    setEndDate(
-                      e.target.value
-                    )
-                  }
-                  className="
-                    bg-transparent
-                    outline-none
-                    w-full
-                    text-lg
-                  "
-                />
-
-              </div>
-
-            </div>
+                text-xl
+              "
+            />
 
           </div>
 
-          {/* EXPORT */}
           <button
             onClick={exportPDF}
             className="
@@ -361,10 +392,6 @@ export default function TemperaturesPage() {
               text-black
               text-lg
               font-black
-
-              hover:scale-105
-
-              transition-all
             "
           >
 
@@ -377,248 +404,6 @@ export default function TemperaturesPage() {
         </div>
 
       </div>
-
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-
-        <motion.div
-          whileHover={{
-            scale: 1.02,
-          }}
-          className="
-            rounded-3xl
-            border
-            border-cyan-500/20
-            bg-cyan-500/10
-            p-7
-          "
-        >
-
-          <Thermometer className="text-cyan-300 mb-6 w-10 h-10" />
-
-          <p className="text-cyan-200">
-            Relevés
-          </p>
-
-          <h2 className="text-5xl font-black mt-4">
-
-            {temperatures.length}
-
-          </h2>
-
-        </motion.div>
-
-        <motion.div
-          whileHover={{
-            scale: 1.02,
-          }}
-          className="
-            rounded-3xl
-            border
-            border-green-500/20
-            bg-green-500/10
-            p-7
-          "
-        >
-
-          <Snowflake className="text-green-300 mb-6 w-10 h-10" />
-
-          <p className="text-green-200">
-            Moyenne
-          </p>
-
-          <h2 className="text-5xl font-black mt-4">
-
-            {averageTemp}°C
-
-          </h2>
-
-        </motion.div>
-
-        <motion.div
-          whileHover={{
-            scale: 1.02,
-          }}
-          className="
-            rounded-3xl
-            border
-            border-red-500/20
-            bg-red-500/10
-            p-7
-          "
-        >
-
-          <Thermometer className="text-red-300 mb-6 w-10 h-10" />
-
-          <p className="text-red-200">
-            Critiques
-          </p>
-
-          <h2 className="text-5xl font-black mt-4">
-
-            {criticalTemps.length}
-
-          </h2>
-
-        </motion.div>
-
-      </div>
-
-      {/* TEMPERATURE CARDS */}
-      <div className="space-y-6">
-
-        {temperatures.map(
-          (
-            item,
-            index
-          ) => (
-
-            <motion.div
-              key={index}
-              whileHover={{
-                scale: 1.01,
-              }}
-              className={`
-                rounded-3xl
-                border
-                p-8
-
-                ${
-                  item.temperature >= 8
-
-                    ? "border-red-500/20 bg-red-500/10"
-
-                    : "border-white/10 bg-white/[0.04]"
-                }
-              `}
-            >
-
-              <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
-
-                {/* INFO */}
-                <div>
-
-                  <h2 className="text-4xl font-black">
-
-                    {
-                      item.equipment ||
-                      "Équipement"
-                    }
-
-                  </h2>
-
-                  <p className="text-gray-400 mt-3 text-lg">
-
-                    {
-                      new Date(
-                        item.created_at
-                      ).toLocaleString()
-                    }
-
-                  </p>
-
-                </div>
-
-                {/* TABLET CONTROLS */}
-                <div className="flex items-center gap-6">
-
-                  {/* MINUS */}
-                  <button
-                    onClick={() =>
-                      updateTemperature(
-                        item.id,
-                        item.temperature,
-                        "minus"
-                      )
-                    }
-                    className="
-                      w-20
-                      h-20
-
-                      rounded-3xl
-
-                      bg-red-500/20
-
-                      flex
-                      items-center
-                      justify-center
-
-                      active:scale-95
-
-                      transition-all
-                    "
-                  >
-
-                    <Minus className="w-10 h-10 text-red-300" />
-
-                  </button>
-
-                  {/* TEMP */}
-                  <div
-                    className={`
-                      px-10
-                      py-6
-
-                      rounded-3xl
-
-                      text-5xl
-                      font-black
-
-                      ${
-                        item.temperature >= 8
-
-                          ? "bg-red-500/20 text-red-300"
-
-                          : "bg-cyan-500/20 text-cyan-300"
-                      }
-                    `}
-                  >
-
-                    {item.temperature}°C
-
-                  </div>
-
-                  {/* PLUS */}
-                  <button
-                    onClick={() =>
-                      updateTemperature(
-                        item.id,
-                        item.temperature,
-                        "plus"
-                      )
-                    }
-                    className="
-                      w-20
-                      h-20
-
-                      rounded-3xl
-
-                      bg-green-500/20
-
-                      flex
-                      items-center
-                      justify-center
-
-                      active:scale-95
-
-                      transition-all
-                    "
-                  >
-
-                    <Plus className="w-10 h-10 text-green-300" />
-
-                  </button>
-
-                </div>
-
-              </div>
-
-            </motion.div>
-          )
-        )}
-
-      </div>
-
     </main>
   );
 }

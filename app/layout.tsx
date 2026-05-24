@@ -1,173 +1,122 @@
-import type { Metadata } from "next";
 import "./globals.css";
 
-import Sidebar from "./components/Sidebar";
+import type { Metadata } from "next";
 
-import { Toaster } from "sonner";
-import { Geist } from "next/font/google";
-import { cn } from "@/lib/utils";
-
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+import Sidebar from "@/app/components/Sidebar";
 
 export const metadata: Metadata = {
   title: "Clean Kitchen",
-  description: "Plateforme HACCP premium",
+
+  description:
+    "Système HACCP premium",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
 
   return (
-    <html lang="fr" className={cn("font-sans", geist.variable)}>
 
-      <body className="bg-[#070B14] text-white overflow-hidden">
+    <html lang="fr">
 
-        {/* GLOBAL BACKGROUND */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      <body
+        className="
+          bg-[#020617]
+          text-white
+          overflow-hidden
+        "
+      >
 
-          {/* GRID */}
-          <div
-            className="
-              absolute
-              inset-0
-              opacity-[0.03]
+        {/* BACKGROUND */}
+        <div
+          className="
+            fixed
+            inset-0
 
-              [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)]
+            bg-[radial-gradient(circle_at_top,#0f172a,#020617_65%)]
 
-              [background-size:60px_60px]
-            "
-          />
+            pointer-events-none
+          "
+        />
 
-          {/* BLUE GLOW */}
-          <div
-            className="
-              absolute
-              top-[-250px]
-              left-[-150px]
+        {/* CYAN GLOW */}
+        <div
+          className="
+            fixed
 
-              w-[600px]
-              h-[600px]
+            top-[-250px]
+            right-[-250px]
 
-              bg-blue-500/20
+            w-[600px]
+            h-[600px]
 
-              rounded-full
-              blur-3xl
+            rounded-full
 
-              animate-pulse
-            "
-          />
+            bg-cyan-500/10
 
-          {/* CYAN GLOW */}
-          <div
-            className="
-              absolute
-              bottom-[-250px]
-              right-[-150px]
+            blur-3xl
 
-              w-[600px]
-              h-[600px]
+            pointer-events-none
+          "
+        />
 
-              bg-cyan-500/20
+        {/* PURPLE GLOW */}
+        <div
+          className="
+            fixed
 
-              rounded-full
-              blur-3xl
+            bottom-[-250px]
+            left-[-250px]
 
-              animate-pulse
-            "
-          />
+            w-[600px]
+            h-[600px]
 
-          {/* CENTER LIGHT */}
-          <div
-            className="
-              absolute
-              top-[30%]
-              left-[40%]
+            rounded-full
 
-              w-[400px]
-              h-[400px]
+            bg-purple-500/10
 
-              bg-white/5
+            blur-3xl
 
-              rounded-full
-              blur-3xl
-            "
-          />
+            pointer-events-none
+          "
+        />
 
-          {/* FLOATING BALL 1 */}
-          <div
-            className="
-              absolute
-              top-[20%]
-              left-[15%]
+        {/* MAIN LAYOUT */}
+        <div
+          className="
+            relative
+            z-10
 
-              w-32
-              h-32
+            flex
 
-              rounded-full
-              bg-blue-400/10
+            h-screen
 
-              blur-2xl
-
-              animate-bounce
-            "
-          />
-
-          {/* FLOATING BALL 2 */}
-          <div
-            className="
-              absolute
-              bottom-[15%]
-              right-[20%]
-
-              w-40
-              h-40
-
-              rounded-full
-              bg-cyan-400/10
-
-              blur-2xl
-
-              animate-pulse
-            "
-          />
-
-        </div>
-
-        {/* APP */}
-        <div className="relative z-10 flex h-screen">
+            overflow-hidden
+          "
+        >
 
           {/* SIDEBAR */}
           <Sidebar />
 
           {/* CONTENT */}
-          <main className="flex-1 overflow-y-auto">
+          <main
+            className="
+              flex-1
 
-            <div
-              className="
-                animate-in
-                fade-in
-                duration-500
-                slide-in-from-bottom-4
-              "
-            >
+              overflow-y-auto
 
-              {children}
+              p-3
+              md:p-5
+            "
+          >
 
-            </div>
+            {children}
 
           </main>
 
         </div>
-
-        {/* TOASTER */}
-        <Toaster
-          position="top-right"
-          richColors
-          theme="dark"
-        />
 
       </body>
 
