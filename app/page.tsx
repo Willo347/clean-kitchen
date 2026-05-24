@@ -1,625 +1,690 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import CountUp from "react-countup";
-import { toast } from "sonner";
-
-import Topbar from "./components/Topbar";
-import { supabase } from "@/lib/supabase";
 
 import {
-  Thermometer,
+  Boxes,
   AlertTriangle,
-  Refrigerator,
+  Truck,
+  Package,
   ShieldCheck,
-  Database,
-  Wifi,
   Clock3,
-  Activity,
-  Flame,
+  Thermometer,
 } from "lucide-react";
 
-import {
-  LineChart,
-  Line,
-  ResponsiveContainer,
-  XAxis,
-  Tooltip,
-  Area,
-} from "recharts";
+import { motion } from "framer-motion";
+
+import Link from "next/link";
+
+import { supabase } from "@/lib/supabase";
 
 export default function DashboardPage() {
 
-  const [logsCount, setLogsCount] = useState(0);
-  const [alertsCount, setAlertsCount] = useState(0);
-  const [equipmentsCount, setEquipmentsCount] = useState(0);
+  const [products, setProducts] =
+    useState<any[]>([]);
 
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [recentLogs, setRecentLogs] = useState<any[]>([]);
-  const [lastUpdate, setLastUpdate] = useState("");
+  const [movements, setMovements] =
+    useState<any[]>([]);
+
+  const [alerts, setAlerts] =
+    useState<any[]>([]);
 
   useEffect(() => {
 
     fetchDashboard();
 
-    const interval = setInterval(() => {
-      fetchDashboard();
-    }, 5000);
-
-    return () => clearInterval(interval);
-
   }, []);
 
-  async function fetchDashboard() {
+  const fetchDashboard =
+    async () => {
 
-    setLastUpdate(
-      new Date().toLocaleTimeString()
-    );
+      /* PRODUCTS */
+      const {
+        data: productsData,
+      } =
+        await supabase
+          .from(
+            "traceability_products"
+          )
+          .select("*");
 
-    const { data: logsData } = await supabase
-      .from("temperature_logs")
-      .select(`
-        *,
-        equipments (
-          name,
-          temp_min,
-          temp_max
-        ),
-        employees (
-          full_name
-        )
-      `)
-      .order("created_at", { ascending: false });
+      /* MOVEMENTS */
+      const {
+        data: movementsData,
+      } =
+        await supabase
+          .from(
+            "stock_movements"
+          )
+          .select("*")
+          .order(
+            "created_at",
+            {
+              ascending: false,
+            }
+          )
+          .limit(5);
 
-    if (logsData) {
+      if (productsData) {
 
-      setLogsCount(logsData.length);
-
-      setRecentLogs(logsData.slice(0, 5));
-
-      const alerts = logsData.filter((log: any) => {
-
-        const eq = log.equipments;
-
-        if (!eq) return false;
-
-        return (
-          log.temperature < eq.temp_min ||
-          log.temperature > eq.temp_max
-        );
-      });
-
-      setAlertsCount(alerts.length);
-
-      if (alerts.length > 0) {
-
-        toast.error(
-          `${alerts.length} alerte(s) HACCP détectée(s)`
+        setProducts(
+          productsData
         );
 
+        generateAlerts(
+          productsData
+        );
       }
 
-      setChartData(
-        logsData
-          .slice(0, 7)
-          .reverse()
-          .map((log: any) => ({
-            temperature: log.temperature,
-            date: new Date(
-              log.created_at
-            ).toLocaleTimeString(),
-          }))
+      if (movementsData) {
+
+        setMovements(
+          movementsData
+        );
+      }
+    };
+
+  const generateAlerts =
+    (
+      data: any[]
+    ) => {
+
+      const generated: any[] =
+        [];
+
+      const today =
+        new Date();
+
+      data.forEach((item) => {
+
+        /* DLC */
+        if (item.dlc) {
+
+          const dlcDate =
+            new Date(item.dlc);
+
+          const diffDays =
+            Math.ceil(
+              (
+                dlcDate.getTime() -
+                today.getTime()
+              ) /
+                (
+                  1000 *
+                  60 *
+                  60 *
+                  24
+                )
+            );
+
+          if (diffDays <= 0) {
+
+            generated.push({
+              type:
+                "Critique",
+
+              product:
+                item.product,
+
+              message:
+                "Produit périmé",
+            });
+
+          } else if (
+            diffDays <= 3
+          ) {
+
+            generated.push({
+              type:
+                "Attention",
+
+              product:
+                item.product,
+
+              message:
+                "DLC proche",
+            });
+          }
+        }
+
+        /* LOW STOCK */
+        if (
+          (item.quantity || 0) <= 2
+        ) {
+
+          generated.push({
+            type:
+              "Stock faible",
+
+            product:
+              item.product,
+
+            message:
+              "Stock faible",
+          });
+        }
+      });
+
+      setAlerts(
+        generated
       );
-    }
+    };
 
-    const { data: equipmentsData } = await supabase
-      .from("equipments")
-      .select("*");
+  const totalProducts =
+    products.length;
 
-    if (equipmentsData) {
-      setEquipmentsCount(equipmentsData.length);
-    }
-  }
-
-  function isAlert(log: any) {
-
-    const eq = log.equipments;
-
-    if (!eq) return false;
-
-    return (
-      log.temperature < eq.temp_min ||
-      log.temperature > eq.temp_max
+  const totalQuantity =
+    products.reduce(
+      (
+        acc,
+        item
+      ) =>
+        acc +
+        (item.quantity || 0),
+      0
     );
-  }
 
-  const stats = [
-    {
-      title: "Relevés enregistrés",
-      value: logsCount,
-      icon: Thermometer,
-      color: "from-blue-500/20 to-cyan-500/10",
-      border: "border-blue-500/20",
-      glow: "shadow-blue-500/20",
-      badge: "LIVE",
-    },
-    {
-      title: "Alertes détectées",
-      value: alertsCount,
-      icon: AlertTriangle,
-      color: "from-red-500/20 to-orange-500/10",
-      border: "border-red-500/20",
-      glow: "shadow-red-500/20",
-      badge: "HACCP",
-    },
-    {
-      title: "Équipements",
-      value: equipmentsCount,
-      icon: Refrigerator,
-      color: "from-cyan-500/20 to-blue-500/10",
-      border: "border-cyan-500/20",
-      glow: "shadow-cyan-500/20",
-      badge: "Actifs",
-    },
-    {
-      title: "Score conformité",
-      value: "98%",
-      icon: ShieldCheck,
-      color: "from-green-500/20 to-emerald-500/10",
-      border: "border-green-500/20",
-      glow: "shadow-green-500/20",
-      badge: "Conforme",
-    },
-  ];
+  const criticalAlerts =
+    alerts.filter(
+      (a) =>
+        a.type ===
+        "Critique"
+    );
 
   return (
-    <main className="min-h-screen bg-[#070B14] text-white p-8">
 
-      <Topbar />
+    <main className="min-h-screen p-10 text-white">
 
       {/* HEADER */}
-      <div className="mb-14">
+      <div className="mb-12">
 
         <div className="flex items-center gap-4 mb-4">
 
-          <div className="w-4 h-4 rounded-full bg-green-400 animate-pulse" />
+          <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
 
-          <p className="text-green-400 font-semibold tracking-widest uppercase">
-            LIVE SYSTEM
+          <p className="text-cyan-400 font-semibold tracking-widest uppercase">
+            CLEAN KITCHEN AI
           </p>
 
         </div>
 
-        <h1 className="text-7xl font-black tracking-tight">
+        <h1 className="text-7xl font-black">
           Dashboard HACCP
         </h1>
 
         <p className="text-gray-400 mt-5 text-xl">
-          Surveillance intelligente temps réel
+          Monitoring intelligent restauration
         </p>
 
       </div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-7 mb-10">
+      {/* KPI */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-7 mb-10">
 
-        {stats.map((card, index) => {
-
-          const Icon = card.icon;
-
-          return (
-
-            <motion.div
-              key={index}
-              whileHover={{
-                scale: 1.04,
-                y: -8,
-              }}
-              className={`
-                relative
-                overflow-hidden
-                rounded-3xl
-                border
-                ${card.border}
-                bg-gradient-to-br
-                ${card.color}
-                backdrop-blur-2xl
-                p-7
-                shadow-2xl
-                ${card.glow}
-                group
-              `}
-            >
-
-              {/* SHINE */}
-              <div
-                className="
-                  absolute
-                  top-0
-                  left-[-100%]
-                  w-[120%]
-                  h-full
-                  bg-gradient-to-r
-                  from-transparent
-                  via-white/10
-                  to-transparent
-                  group-hover:left-[120%]
-                  transition-all
-                  duration-1000
-                "
-              />
-
-              {/* LIVE DOT */}
-              <motion.div
-                animate={{
-                  scale: [1, 1.4, 1],
-                }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 2,
-                }}
-                className="absolute top-6 right-6 w-3 h-3 rounded-full bg-green-400"
-              />
-
-              <div className="relative z-10">
-
-                <div className="flex items-center justify-between mb-6">
-
-                  <div className="bg-white/10 p-4 rounded-2xl">
-                    <Icon className="text-white" />
-                  </div>
-
-                  <span className="text-sm font-bold text-white">
-                    {card.badge}
-                  </span>
-
-                </div>
-
-                <p className="text-gray-300 text-sm">
-                  {card.title}
-                </p>
-
-                <motion.h2
-                  animate={{
-                    opacity: [0.7, 1, 0.7],
-                  }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 2,
-                  }}
-                  className="text-6xl font-black mt-4"
-                >
-                  {typeof card.value === "number" ? (
-                    <CountUp end={card.value} duration={1} />
-                  ) : (
-                    card.value
-                  )}
-                </motion.h2>
-
-              </div>
-
-            </motion.div>
-          );
-        })}
-
-      </div>
-
-      {/* MAIN CONTENT */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-
-        {/* GRAPH */}
-        <div className="xl:col-span-2 bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl">
+        {/* PRODUCTS */}
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+            y: -5,
+          }}
+          className="
+            rounded-3xl
+            border
+            border-white/10
+            bg-white/[0.04]
+            p-7
+          "
+        >
 
           <div className="flex items-center justify-between mb-8">
 
-            <div>
+            <div className="bg-cyan-500/20 p-4 rounded-2xl">
 
-              <h2 className="text-3xl font-bold">
-                Températures temps réel
-              </h2>
-
-              <p className="text-gray-400 mt-2">
-                Actualisation automatique toutes les 5 secondes
-              </p>
+              <Boxes className="text-cyan-300" />
 
             </div>
 
-            <div className="bg-green-500/10 border border-green-500/20 px-5 py-2 rounded-2xl text-green-300 text-sm font-semibold">
-              LIVE
-            </div>
+            <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
 
           </div>
 
-          <div className="h-[260px]">
+          <p className="text-gray-400">
+            Produits
+          </p>
 
-            <ResponsiveContainer width="100%" height="100%">
+          <h2 className="text-6xl font-black mt-4">
 
-              <LineChart data={chartData}>
+            {totalProducts}
 
-                <defs>
+          </h2>
 
-                  <linearGradient
-                    id="colorTemp"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
+        </motion.div>
 
-                    <stop
-                      offset="5%"
-                      stopColor="#3B82F6"
-                      stopOpacity={0.4}
-                    />
+        {/* QUANTITY */}
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+            y: -5,
+          }}
+          className="
+            rounded-3xl
+            border
+            border-white/10
+            bg-white/[0.04]
+            p-7
+          "
+        >
 
-                    <stop
-                      offset="95%"
-                      stopColor="#3B82F6"
-                      stopOpacity={0}
-                    />
+          <div className="flex items-center justify-between mb-8">
 
-                  </linearGradient>
+            <div className="bg-green-500/20 p-4 rounded-2xl">
 
-                </defs>
+              <Package className="text-green-300" />
 
-                <XAxis
-                  dataKey="date"
-                  stroke="#6B7280"
-                  tickLine={false}
-                  axisLine={false}
-                />
+            </div>
 
-                <Tooltip />
-
-                <Area
-                  type="monotone"
-                  dataKey="temperature"
-                  stroke="none"
-                  fillOpacity={1}
-                  fill="url(#colorTemp)"
-                />
-
-                <Line
-                  type="monotone"
-                  dataKey="temperature"
-                  stroke="#3B82F6"
-                  strokeWidth={5}
-                  dot={{
-                    r: 6,
-                    fill: "#3B82F6",
-                  }}
-                />
-
-              </LineChart>
-
-            </ResponsiveContainer>
+            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
 
           </div>
 
-          {/* MINI STATS */}
-          <div className="grid grid-cols-3 gap-5 mt-8">
+          <p className="text-gray-400">
+            Quantité totale
+          </p>
 
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
+          <h2 className="text-6xl font-black mt-4">
 
-              <div className="flex items-center gap-3 mb-3">
+            {totalQuantity}
 
-                <Activity className="text-cyan-400" />
+          </h2>
 
-                <p className="text-gray-400 text-sm">
-                  Température moyenne
-                </p>
+        </motion.div>
 
-              </div>
+        {/* ALERTS */}
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+            y: -5,
+          }}
+          className="
+            rounded-3xl
+            border
+            border-red-500/20
+            bg-red-500/10
+            p-7
+          "
+        >
 
-              <h3 className="text-3xl font-black">
-                4.2°
-              </h3>
+          <div className="flex items-center justify-between mb-8">
 
-            </div>
+            <div className="bg-red-500/20 p-4 rounded-2xl">
 
-            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-5">
-
-              <div className="flex items-center gap-3 mb-3">
-
-                <Flame className="text-red-400" />
-
-                <p className="text-red-300 text-sm">
-                  Alertes critiques
-                </p>
-
-              </div>
-
-              <h3 className="text-3xl font-black text-red-400">
-                {alertsCount}
-              </h3>
+              <AlertTriangle className="text-red-300" />
 
             </div>
 
-            <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-5">
-
-              <div className="flex items-center gap-3 mb-3">
-
-                <ShieldCheck className="text-green-400" />
-
-                <p className="text-green-300 text-sm">
-                  HACCP Status
-                </p>
-
-              </div>
-
-              <h3 className="text-3xl font-black text-green-400">
-                OK
-              </h3>
-
-            </div>
+            <div className="w-3 h-3 rounded-full bg-red-400 animate-pulse" />
 
           </div>
 
-        </div>
+          <p className="text-red-200">
+            Alertes critiques
+          </p>
 
-        {/* RIGHT PANEL */}
-        <div className="space-y-8">
+          <h2 className="text-6xl font-black mt-4">
 
-          {/* ACTIVITY */}
-          <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl">
+            {criticalAlerts.length}
 
-            <div className="flex items-center justify-between mb-8">
+          </h2>
 
-              <h2 className="text-3xl font-bold">
-                Activité récente
-              </h2>
+        </motion.div>
 
-              <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+        {/* SYSTEM */}
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+            y: -5,
+          }}
+          className="
+            rounded-3xl
+            border
+            border-cyan-500/20
+            bg-cyan-500/10
+            p-7
+          "
+        >
+
+          <div className="flex items-center justify-between mb-8">
+
+            <div className="bg-cyan-500/20 p-4 rounded-2xl">
+
+              <ShieldCheck className="text-cyan-300" />
 
             </div>
 
-            <div className="space-y-5">
+            <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
 
-              {recentLogs.map((log) => {
+          </div>
 
-                const alert = isAlert(log);
+          <p className="text-cyan-200">
+            Système HACCP
+          </p>
 
-                return (
+          <h2 className="text-4xl font-black mt-6">
+            ACTIF
+          </h2>
+
+        </motion.div>
+
+      </div>
+
+      {/* GRID */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+        {/* RECENT MOVEMENTS */}
+        <div
+          className="
+            rounded-3xl
+            border
+            border-white/10
+            bg-white/[0.04]
+            p-8
+          "
+        >
+
+          <div className="flex items-center justify-between mb-8">
+
+            <h2 className="text-3xl font-black">
+              Activité récente
+            </h2>
+
+            <Clock3 className="text-cyan-300" />
+
+          </div>
+
+          <div className="space-y-5">
+
+            {movements.map(
+              (
+                movement,
+                index
+              ) => (
+
+                <div
+                  key={index}
+                  className="
+                    flex
+                    items-center
+                    justify-between
+
+                    rounded-2xl
+
+                    border
+                    border-white/10
+
+                    bg-white/[0.03]
+
+                    p-5
+                  "
+                >
+
+                  <div>
+
+                    <p className="font-bold text-lg">
+
+                      {
+                        movement.product
+                      }
+
+                    </p>
+
+                    <p className="text-gray-400 text-sm mt-1">
+
+                      {
+                        movement.movement_type
+                      }
+
+                    </p>
+
+                  </div>
 
                   <div
-                    key={log.id}
                     className={`
+                      px-4
+                      py-2
                       rounded-2xl
-                      border
-                      p-4
+                      font-bold
+
                       ${
-                        alert
-                          ? "bg-red-500/10 border-red-500/20"
-                          : "bg-white/[0.03] border-white/5"
+                        movement.movement_type ===
+                        "Entrée"
+
+                          ? "bg-green-500/10 text-green-300"
+
+                          : "bg-red-500/10 text-red-300"
                       }
                     `}
                   >
 
-                    <div className="flex items-center justify-between">
+                    {
+                      movement.movement_type ===
+                      "Entrée"
 
-                      <div>
+                        ? "+"
 
-                        <p className="font-bold text-lg">
-                          {log.equipments?.name}
-                        </p>
+                        : "-"
+                    }
 
-                        <p className="text-gray-400 text-sm mt-1">
-                          {log.employees?.full_name}
-                        </p>
-
-                      </div>
-
-                      <p
-                        className={`text-2xl font-black ${
-                          alert
-                            ? "text-red-400"
-                            : "text-white"
-                        }`}
-                      >
-                        {log.temperature}°
-                      </p>
-
-                    </div>
-
-                  </div>
-                );
-              })}
-
-            </div>
-
-          </div>
-
-          {/* SYSTEM */}
-          <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-8 backdrop-blur-2xl">
-
-            <h2 className="text-3xl font-bold mb-8">
-              État système
-            </h2>
-
-            <div className="space-y-5">
-
-              <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-2xl p-4">
-
-                <div className="flex items-center gap-4">
-
-                  <div className="bg-green-500/20 p-3 rounded-2xl">
-                    <Database className="text-green-400" />
-                  </div>
-
-                  <div>
-
-                    <p className="font-bold">
-                      Supabase
-                    </p>
-
-                    <p className="text-gray-400 text-sm">
-                      Base connectée
-                    </p>
+                    {
+                      movement.quantity
+                    }
 
                   </div>
 
                 </div>
-
-                <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
-
-              </div>
-
-              <div className="flex items-center justify-between bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4">
-
-                <div className="flex items-center gap-4">
-
-                  <div className="bg-blue-500/20 p-3 rounded-2xl">
-                    <Wifi className="text-blue-400" />
-                  </div>
-
-                  <div>
-
-                    <p className="font-bold">
-                      Synchronisation
-                    </p>
-
-                    <p className="text-gray-400 text-sm">
-                      Temps réel actif
-                    </p>
-
-                  </div>
-
-                </div>
-
-                <div className="w-3 h-3 rounded-full bg-blue-400 animate-pulse" />
-
-              </div>
-
-              <div className="flex items-center justify-between bg-white/[0.03] border border-white/10 rounded-2xl p-4">
-
-                <div className="flex items-center gap-4">
-
-                  <div className="bg-white/10 p-3 rounded-2xl">
-                    <Clock3 className="text-white" />
-                  </div>
-
-                  <div>
-
-                    <p className="font-bold">
-                      Dernière MAJ
-                    </p>
-
-                    <p className="text-gray-400 text-sm">
-                      {lastUpdate}
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
+              )
+            )}
 
           </div>
 
         </div>
+
+        {/* ALERTS */}
+        <div
+          className="
+            rounded-3xl
+            border
+            border-white/10
+            bg-white/[0.04]
+            p-8
+          "
+        >
+
+          <div className="flex items-center justify-between mb-8">
+
+            <h2 className="text-3xl font-black">
+              Alertes HACCP
+            </h2>
+
+            <Thermometer className="text-red-300" />
+
+          </div>
+
+          <div className="space-y-5">
+
+            {alerts.slice(0, 5).map(
+              (
+                alert,
+                index
+              ) => (
+
+                <div
+                  key={index}
+                  className="
+                    flex
+                    items-center
+                    justify-between
+
+                    rounded-2xl
+
+                    border
+                    border-red-500/10
+
+                    bg-red-500/5
+
+                    p-5
+                  "
+                >
+
+                  <div>
+
+                    <p className="font-bold text-lg">
+
+                      {alert.product}
+
+                    </p>
+
+                    <p className="text-gray-400 text-sm mt-1">
+
+                      {alert.message}
+
+                    </p>
+
+                  </div>
+
+                  <AlertTriangle className="text-red-300" />
+
+                </div>
+              )
+            )}
+
+            {alerts.length === 0 && (
+
+              <div
+                className="
+                  flex
+                  flex-col
+                  items-center
+                  justify-center
+
+                  py-16
+                "
+              >
+
+                <ShieldCheck className="w-16 h-16 text-cyan-300 mb-5" />
+
+                <h3 className="text-2xl font-black mb-2">
+                  Aucun problème détecté
+                </h3>
+
+                <p className="text-gray-400">
+                  Tous les systèmes sont conformes
+                </p>
+
+              </div>
+
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* QUICK ACCESS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+
+        <Link href="/stocks">
+
+          <div
+            className="
+              rounded-3xl
+              border
+              border-white/10
+              bg-white/[0.04]
+              p-7
+              hover:scale-[1.02]
+              transition-all
+              cursor-pointer
+            "
+          >
+
+            <p className="text-5xl mb-5">
+              📦
+            </p>
+
+            <h2 className="text-2xl font-black mb-3">
+              Stocks
+            </h2>
+
+            <p className="text-gray-400">
+              Gestion marchandises
+            </p>
+
+          </div>
+
+        </Link>
+
+        <Link href="/deliveries/new">
+
+          <div
+            className="
+              rounded-3xl
+              border
+              border-cyan-500/20
+              bg-cyan-500/10
+              p-7
+              hover:scale-[1.02]
+              transition-all
+              cursor-pointer
+            "
+          >
+
+            <p className="text-5xl mb-5">
+              🚚
+            </p>
+
+            <h2 className="text-2xl font-black mb-3">
+              Nouvelle livraison
+            </h2>
+
+            <p className="text-cyan-100/70">
+              Réception fournisseur
+            </p>
+
+          </div>
+
+        </Link>
+
+        <Link href="/alerts">
+
+          <div
+            className="
+              rounded-3xl
+              border
+              border-red-500/20
+              bg-red-500/10
+              p-7
+              hover:scale-[1.02]
+              transition-all
+              cursor-pointer
+            "
+          >
+
+            <p className="text-5xl mb-5">
+              🚨
+            </p>
+
+            <h2 className="text-2xl font-black mb-3">
+              Alertes
+            </h2>
+
+            <p className="text-red-200">
+              Surveillance HACCP
+            </p>
+
+          </div>
+
+        </Link>
 
       </div>
 
