@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { motion } from "framer-motion";
 
 import {
@@ -7,35 +9,83 @@ import {
   Thermometer,
   ShieldAlert,
   Clock3,
+  Package,
 } from "lucide-react";
 
-const alerts = [
-  {
-    id: 1,
-    equipment: "Frigo réserve",
-    temp: "15°C",
-    status: "Critique",
-    time: "Il y a 2 min",
-  },
-  {
-    id: 2,
-    equipment: "Chambre froide",
-    temp: "11°C",
-    status: "Attention",
-    time: "Il y a 8 min",
-  },
-  {
-    id: 3,
-    equipment: "Congélateur",
-    temp: "-2°C",
-    status: "Critique",
-    time: "Il y a 14 min",
-  },
-];
+import { supabase } from "@/lib/supabase";
 
 export default function AlertsPage() {
 
+  const [products, setProducts] =
+    useState<any[]>([]);
+
+  useEffect(() => {
+
+    fetchProducts();
+
+  }, []);
+
+  const fetchProducts = async () => {
+
+    const { data } =
+      await supabase
+        .from("traceability_products")
+        .select("*");
+
+    if (data) {
+
+      setProducts(data);
+    }
+  };
+
+  const today =
+    new Date();
+
+  const stockAlerts =
+    products.filter(
+      (item) =>
+        (item.quantity || 0) <= 2
+    );
+
+  const dlcAlerts =
+    products.filter((item) => {
+
+      if (!item.dlc)
+        return false;
+
+      const parts =
+        item.dlc.split("/");
+
+      if (
+        parts.length !== 3
+      )
+        return false;
+
+      const date =
+        new Date(
+          Number(parts[2]),
+          Number(parts[1]) - 1,
+          Number(parts[0])
+        );
+
+      const diffDays =
+        Math.ceil(
+          (
+            date.getTime() -
+            today.getTime()
+          ) /
+          (1000 * 60 * 60 * 24)
+        );
+
+      return diffDays <= 3;
+    });
+
+  const totalAlerts =
+    stockAlerts.length +
+    dlcAlerts.length;
+
   return (
+
     <main className="min-h-screen p-10 text-white">
 
       {/* HEADER */}
@@ -71,18 +121,12 @@ export default function AlertsPage() {
             y: -5,
           }}
           className="
-            relative
-            overflow-hidden
-
             rounded-3xl
-
             border
             border-red-500/20
-
             bg-gradient-to-br
             from-red-500/20
             to-red-900/10
-
             p-7
           "
         >
@@ -104,30 +148,24 @@ export default function AlertsPage() {
           </p>
 
           <h2 className="text-6xl font-black mt-4">
-            5
+            {totalAlerts}
           </h2>
 
         </motion.div>
 
-        {/* TEMP */}
+        {/* STOCK */}
         <motion.div
           whileHover={{
             scale: 1.03,
             y: -5,
           }}
           className="
-            relative
-            overflow-hidden
-
             rounded-3xl
-
             border
             border-orange-500/20
-
             bg-gradient-to-br
             from-orange-500/20
             to-yellow-900/10
-
             p-7
           "
         >
@@ -136,7 +174,7 @@ export default function AlertsPage() {
 
             <div className="bg-orange-500/20 p-4 rounded-2xl">
 
-              <Thermometer className="text-orange-300" />
+              <Package className="text-orange-300" />
 
             </div>
 
@@ -145,11 +183,11 @@ export default function AlertsPage() {
           </div>
 
           <p className="text-orange-200">
-            Températures hors normes
+            Stocks faibles
           </p>
 
           <h2 className="text-6xl font-black mt-4">
-            3
+            {stockAlerts.length}
           </h2>
 
         </motion.div>
@@ -161,18 +199,12 @@ export default function AlertsPage() {
             y: -5,
           }}
           className="
-            relative
-            overflow-hidden
-
             rounded-3xl
-
             border
             border-cyan-500/20
-
             bg-gradient-to-br
             from-cyan-500/20
             to-blue-900/10
-
             p-7
           "
         >
@@ -190,10 +222,10 @@ export default function AlertsPage() {
           </div>
 
           <p className="text-cyan-200">
-            Contrôles HACCP
+            Système HACCP
           </p>
 
-          <h2 className="text-6xl font-black mt-4">
+          <h2 className="text-5xl font-black mt-4">
             Actif
           </h2>
 
@@ -205,14 +237,10 @@ export default function AlertsPage() {
       <div
         className="
           rounded-3xl
-
           border
           border-white/10
-
           bg-white/[0.04]
-
           backdrop-blur-2xl
-
           p-8
         "
       >
@@ -228,12 +256,9 @@ export default function AlertsPage() {
               bg-red-500/10
               border
               border-red-500/20
-
               px-5
               py-2
-
               rounded-2xl
-
               text-red-300
               text-sm
               font-semibold
@@ -246,10 +271,73 @@ export default function AlertsPage() {
 
         <div className="space-y-5">
 
-          {alerts.map((alert) => (
+          {/* STOCK ALERTS */}
+          {stockAlerts.map((item, index) => (
 
             <motion.div
-              key={alert.id}
+              key={index}
+              whileHover={{
+                scale: 1.01,
+              }}
+              className="
+                flex
+                items-center
+                justify-between
+
+                rounded-2xl
+
+                border
+                border-orange-500/10
+
+                bg-orange-500/5
+
+                p-5
+              "
+            >
+
+              <div className="flex items-center gap-5">
+
+                <div className="bg-orange-500/20 p-4 rounded-2xl">
+
+                  <Package className="text-orange-300" />
+
+                </div>
+
+                <div>
+
+                  <h3 className="text-xl font-bold">
+                    Stock faible
+                  </h3>
+
+                  <p className="text-gray-400 mt-1">
+
+                    {item.product}
+                    {" "}
+                    :
+                    {" "}
+                    {item.quantity}
+                    {" "}
+                    {item.unit}
+
+                  </p>
+
+                </div>
+
+              </div>
+
+              <div className="text-orange-300 font-bold">
+                Attention
+              </div>
+
+            </motion.div>
+
+          ))}
+
+          {/* DLC ALERTS */}
+          {dlcAlerts.map((item, index) => (
+
+            <motion.div
+              key={index}
               whileHover={{
                 scale: 1.01,
               }}
@@ -271,56 +359,70 @@ export default function AlertsPage() {
 
               <div className="flex items-center gap-5">
 
-                <div
-                  className="
-                    bg-red-500/20
-                    p-4
-                    rounded-2xl
-                  "
-                >
+                <div className="bg-red-500/20 p-4 rounded-2xl">
 
-                  <AlertTriangle className="text-red-400" />
+                  <AlertTriangle className="text-red-300" />
 
                 </div>
 
                 <div>
 
                   <h3 className="text-xl font-bold">
-                    {alert.equipment}
+                    DLC proche
                   </h3>
 
                   <p className="text-gray-400 mt-1">
-                    Température détectée : {alert.temp}
+
+                    {item.product}
+                    {" "}
+                    expire le
+                    {" "}
+                    {item.dlc}
+
                   </p>
 
                 </div>
 
               </div>
 
-              <div className="flex items-center gap-8">
+              <div className="flex items-center gap-2 text-gray-400">
 
-                <div>
+                <Clock3 className="w-4 h-4" />
 
-                  <p className="text-red-300 font-semibold">
-                    {alert.status}
-                  </p>
-
-                </div>
-
-                <div className="flex items-center gap-2 text-gray-400">
-
-                  <Clock3 className="w-4 h-4" />
-
-                  <span className="text-sm">
-                    {alert.time}
-                  </span>
-
-                </div>
+                <span className="text-sm">
+                  Surveillance active
+                </span>
 
               </div>
 
             </motion.div>
+
           ))}
+
+          {totalAlerts === 0 && (
+
+            <div
+              className="
+                rounded-3xl
+                border
+                border-green-500/20
+                bg-green-500/10
+                p-8
+                text-center
+              "
+            >
+
+              <h3 className="text-3xl font-black text-green-300 mb-3">
+                Aucun problème détecté
+              </h3>
+
+              <p className="text-green-200/70">
+                Tous les systèmes sont conformes.
+              </p>
+
+            </div>
+
+          )}
 
         </div>
 
