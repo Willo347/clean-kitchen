@@ -13,48 +13,18 @@ import {
   Truck,
   Plus,
   X,
+  Camera,
 } from "lucide-react";
 
 const categories = [
-  {
-    name: "Viande",
-    emoji: "🥩",
-  },
-
-  {
-    name: "Poisson",
-    emoji: "🐟",
-  },
-
-  {
-    name: "Surgelé",
-    emoji: "🥶",
-  },
-
-  {
-    name: "Fruits & légumes",
-    emoji: "🥬",
-  },
-
-  {
-    name: "Produits laitiers",
-    emoji: "🧀",
-  },
-
-  {
-    name: "Produits secs",
-    emoji: "🥫",
-  },
-
-  {
-    name: "Desserts",
-    emoji: "🍰",
-  },
-
-  {
-    name: "Boulangerie",
-    emoji: "🍞",
-  },
+  { name: "Viande", emoji: "🥩" },
+  { name: "Poisson", emoji: "🐟" },
+  { name: "Surgelé", emoji: "🥶" },
+  { name: "Fruits & légumes", emoji: "🥬" },
+  { name: "Produits laitiers", emoji: "🧀" },
+  { name: "Produits secs", emoji: "🥫" },
+  { name: "Desserts", emoji: "🍰" },
+  { name: "Boulangerie", emoji: "🍞" },
 ];
 
 export default function TraceabilityPage() {
@@ -80,6 +50,9 @@ export default function TraceabilityPage() {
   const [dlc, setDlc] =
     useState("");
 
+  const [imagePreview, setImagePreview] =
+    useState("");
+
   const [products, setProducts] =
     useState([
       {
@@ -98,15 +71,6 @@ export default function TraceabilityPage() {
         temperature: "7°C",
         dlc: "25/05/2026",
         status: "warning",
-      },
-
-      {
-        product: "Mozzarella",
-        lot: "LOT-5521",
-        supplier: "Transgourmet",
-        temperature: "4°C",
-        dlc: "02/06/2026",
-        status: "ok",
       },
     ]);
 
@@ -156,6 +120,8 @@ export default function TraceabilityPage() {
     setSupplier("");
     setTemperature("");
     setDlc("");
+
+    setImagePreview("");
 
     setSelectedCategory("");
 
@@ -220,155 +186,6 @@ export default function TraceabilityPage() {
           Ajouter produit
 
         </button>
-
-      </div>
-
-      {/* TOP CARDS */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-10">
-
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="
-            rounded-3xl
-            border
-            border-white/10
-            bg-white/[0.04]
-            backdrop-blur-2xl
-            p-7
-          "
-        >
-
-          <div className="flex items-center justify-between mb-6">
-
-            <div className="bg-cyan-500/20 p-4 rounded-2xl">
-
-              <Package className="text-cyan-300 w-7 h-7" />
-
-            </div>
-
-            <span className="text-cyan-300 text-sm font-semibold">
-              PRODUITS
-            </span>
-
-          </div>
-
-          <h2 className="text-5xl font-black">
-            {products.length}
-          </h2>
-
-          <p className="text-gray-400 mt-3">
-            Produits suivis
-          </p>
-
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="
-            rounded-3xl
-            border
-            border-orange-500/20
-            bg-orange-500/10
-            backdrop-blur-2xl
-            p-7
-          "
-        >
-
-          <div className="flex items-center justify-between mb-6">
-
-            <div className="bg-orange-500/20 p-4 rounded-2xl">
-
-              <Calendar className="text-orange-300 w-7 h-7" />
-
-            </div>
-
-            <span className="text-orange-300 text-sm font-semibold">
-              DLC
-            </span>
-
-          </div>
-
-          <h2 className="text-5xl font-black">
-            12
-          </h2>
-
-          <p className="text-orange-200/70 mt-3">
-            Expirent bientôt
-          </p>
-
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="
-            rounded-3xl
-            border
-            border-green-500/20
-            bg-green-500/10
-            backdrop-blur-2xl
-            p-7
-          "
-        >
-
-          <div className="flex items-center justify-between mb-6">
-
-            <div className="bg-green-500/20 p-4 rounded-2xl">
-
-              <CheckCircle2 className="text-green-300 w-7 h-7" />
-
-            </div>
-
-            <span className="text-green-300 text-sm font-semibold">
-              CONFORME
-            </span>
-
-          </div>
-
-          <h2 className="text-5xl font-black">
-            98%
-          </h2>
-
-          <p className="text-green-200/70 mt-3">
-            Produits conformes
-          </p>
-
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="
-            rounded-3xl
-            border
-            border-red-500/20
-            bg-red-500/10
-            backdrop-blur-2xl
-            p-7
-          "
-        >
-
-          <div className="flex items-center justify-between mb-6">
-
-            <div className="bg-red-500/20 p-4 rounded-2xl">
-
-              <AlertTriangle className="text-red-300 w-7 h-7" />
-
-            </div>
-
-            <span className="text-red-300 text-sm font-semibold">
-              ALERTES
-            </span>
-
-          </div>
-
-          <h2 className="text-5xl font-black">
-            3
-          </h2>
-
-          <p className="text-red-200/70 mt-3">
-            Anomalies détectées
-          </p>
-
-        </motion.div>
 
       </div>
 
@@ -451,19 +268,13 @@ export default function TraceabilityPage() {
 
             </div>
 
-            <div>
-              <p className="font-semibold">
-                {item.lot}
-              </p>
-            </div>
+            <div>{item.lot}</div>
 
             <div className="flex items-center gap-3">
 
               <Truck className="w-5 h-5 text-cyan-300" />
 
-              <span>
-                {item.supplier}
-              </span>
+              <span>{item.supplier}</span>
 
             </div>
 
@@ -471,17 +282,11 @@ export default function TraceabilityPage() {
 
               <Thermometer className="w-5 h-5 text-cyan-300" />
 
-              <span className="font-bold">
-                {item.temperature}
-              </span>
+              <span>{item.temperature}</span>
 
             </div>
 
-            <div>
-              <p className="font-semibold">
-                {item.dlc}
-              </p>
-            </div>
+            <div>{item.dlc}</div>
 
             <div>
 
@@ -565,6 +370,7 @@ export default function TraceabilityPage() {
             "
           >
 
+            {/* TOP */}
             <div className="flex items-center justify-between mb-8">
 
               <div>
@@ -593,6 +399,86 @@ export default function TraceabilityPage() {
               </button>
 
             </div>
+
+            {/* PHOTO */}
+            <label
+              className="
+                flex
+                flex-col
+                items-center
+                justify-center
+
+                border-2
+                border-dashed
+                border-white/10
+
+                rounded-3xl
+
+                p-10
+
+                cursor-pointer
+
+                hover:border-cyan-400
+
+                transition-all
+
+                mb-8
+              "
+            >
+
+              <Camera className="w-12 h-12 text-cyan-300 mb-4" />
+
+              <p className="text-lg font-bold">
+                Importer une photo
+              </p>
+
+              <p className="text-gray-400 mt-2 text-sm">
+                JPG, PNG ou photo téléphone
+              </p>
+
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+
+                  const file =
+                    e.target.files?.[0];
+
+                  if (file) {
+
+                    setImagePreview(
+                      URL.createObjectURL(file)
+                    );
+                  }
+                }}
+              />
+
+            </label>
+
+            {/* IMAGE PREVIEW */}
+            {imagePreview && (
+
+              <div className="mb-8">
+
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="
+                    w-full
+                    max-h-72
+                    object-cover
+
+                    rounded-3xl
+
+                    border
+                    border-white/10
+                  "
+                />
+
+              </div>
+
+            )}
 
             {/* CATEGORIES */}
             <div className="grid grid-cols-2 gap-4 mb-8">
@@ -752,10 +638,6 @@ export default function TraceabilityPage() {
                     text-black
                     font-bold
                     text-lg
-
-                    hover:scale-[1.01]
-
-                    transition-all
                   "
                 >
 
