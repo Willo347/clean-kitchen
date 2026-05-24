@@ -213,18 +213,135 @@ export default function StocksPage() {
           <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
 
           <p className="text-cyan-400 font-semibold tracking-widest uppercase">
-            STOCK CENTER
+            MERCHANDISE CENTER
           </p>
 
         </div>
 
         <h1 className="text-7xl font-black">
-          Stocks
+          Marchandises
         </h1>
 
         <p className="text-gray-400 mt-5 text-xl">
-          Gestion intelligente des stocks restauration
+          Réception, traçabilité et gestion des stocks
         </p>
+
+      </div>
+
+      {/* HUB CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+
+        {/* NEW DELIVERY */}
+        <div
+          className="
+            rounded-3xl
+            border
+            border-cyan-500/20
+            bg-cyan-500/10
+            p-7
+            hover:scale-[1.02]
+            transition-all
+            cursor-pointer
+          "
+        >
+
+          <p className="text-5xl mb-5">
+            🚚
+          </p>
+
+          <h2 className="text-2xl font-black mb-3">
+            Nouvelle livraison
+          </h2>
+
+          <p className="text-cyan-100/70">
+            Ajouter réception fournisseur
+          </p>
+
+        </div>
+
+        {/* STOCK */}
+        <div
+          className="
+            rounded-3xl
+            border
+            border-white/10
+            bg-white/[0.04]
+            p-7
+            hover:scale-[1.02]
+            transition-all
+            cursor-pointer
+          "
+        >
+
+          <p className="text-5xl mb-5">
+            📦
+          </p>
+
+          <h2 className="text-2xl font-black mb-3">
+            Stock actuel
+          </h2>
+
+          <p className="text-gray-400">
+            Consulter les stocks
+          </p>
+
+        </div>
+
+        {/* TRACEABILITY */}
+        <div
+          className="
+            rounded-3xl
+            border
+            border-white/10
+            bg-white/[0.04]
+            p-7
+            hover:scale-[1.02]
+            transition-all
+            cursor-pointer
+          "
+        >
+
+          <p className="text-5xl mb-5">
+            🧾
+          </p>
+
+          <h2 className="text-2xl font-black mb-3">
+            Traçabilité
+          </h2>
+
+          <p className="text-gray-400">
+            DLC, lots, fournisseurs
+          </p>
+
+        </div>
+
+        {/* HISTORY */}
+        <div
+          className="
+            rounded-3xl
+            border
+            border-white/10
+            bg-white/[0.04]
+            p-7
+            hover:scale-[1.02]
+            transition-all
+            cursor-pointer
+          "
+        >
+
+          <p className="text-5xl mb-5">
+            📜
+          </p>
+
+          <h2 className="text-2xl font-black mb-3">
+            Historique
+          </h2>
+
+          <p className="text-gray-400">
+            Mouvements et activités
+          </p>
+
+        </div>
 
       </div>
 
