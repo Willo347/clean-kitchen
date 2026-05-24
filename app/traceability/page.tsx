@@ -1,63 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { motion } from "framer-motion";
 
 import {
+  Calendar,
+  FileText,
   Package,
-  Plus,
-  Minus,
-  Trash2,
-  Pencil,
-  Search,
-  AlertTriangle,
-  X,
-  Camera,
+  ShieldCheck,
 } from "lucide-react";
 
-import { supabase } from "@/lib/supabase";
+import jsPDF from "jspdf";
 
-const categories = [
-  { name: "Tous", emoji: "📦" },
-  { name: "Viande", emoji: "🥩" },
-  { name: "Poisson", emoji: "🐟" },
-  { name: "Surgelé", emoji: "🥶" },
-  { name: "Fruits & légumes", emoji: "🥬" },
-  { name: "Produits laitiers", emoji: "🧀" },
-  { name: "Produits secs", emoji: "🥫" },
-];
+import autoTable from "jspdf-autotable";
+
+import { supabase } from "@/lib/supabase";
 
 export default function TraceabilityPage() {
 
   const [products, setProducts] =
     useState<any[]>([]);
 
-  const [search, setSearch] =
+  const [startDate, setStartDate] =
     useState("");
 
-  const [activeFilter, setActiveFilter] =
-    useState("Tous");
-
-  const [open, setOpen] =
-    useState(false);
-
-  const [imageFile, setImageFile] =
-    useState<File | null>(null);
-
-  const [imagePreview, setImagePreview] =
+  const [endDate, setEndDate] =
     useState("");
-
-  const [formData, setFormData] =
-    useState({
-      product: "",
-      category: "",
-      lot: "",
-      supplier: "",
-      dlc: "",
-      quantity: 0,
-      unit: "pièce",
-    });
 
   useEffect(() => {
 
@@ -65,382 +34,365 @@ export default function TraceabilityPage() {
 
   }, []);
 
-  const fetchProducts = async () => {
+  useEffect(() => {
 
-    const { data } =
-      await supabase
-        .from("traceability_products")
-        .select("*")
-        .order("created_at", {
-          ascending: false,
-        });
+    fetchProducts();
 
-    if (data) {
+  }, [
+    startDate,
+    endDate,
+  ]);
 
-      setProducts(data);
-    }
-  };
+  const fetchProducts =
+    async () => {
 
-  const filteredProducts =
-    products.filter((item) => {
-
-      const searchMatch =
-        item.product
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
+      let query =
+        supabase
+          .from(
+            "traceability_products"
+          )
+          .select("*")
+          .order(
+            "created_at",
+            {
+              ascending: false,
+            }
           );
 
-      const categoryMatch =
-        activeFilter === "Tous"
-          ? true
-          : item.category ===
-            activeFilter;
+      if (startDate) {
 
-      return (
-        searchMatch &&
-        categoryMatch
-      );
-    });
+        query =
+          query.gte(
+            "created_at",
+            startDate
+          );
+      }
 
-  const getStatus = (
-    dlc: string
-  ) => {
+      if (endDate) {
 
-    if (!dlc) {
+        query =
+          query.lte(
+            "created_at",
+            endDate
+          );
+      }
 
-      return {
-        label: "Sans DLC",
-        color:
-          "bg-gray-500/20 text-gray-300",
-      };
-    }
+      const {
+        data,
+      } =
+        await query;
 
-    const parts =
-      dlc.split("/");
+      if (data) {
 
-    if (parts.length !== 3) {
-
-      return {
-        label: "Invalide",
-        color:
-          "bg-gray-500/20 text-gray-300",
-      };
-    }
-
-    const date =
-      new Date(
-        Number(parts[2]),
-        Number(parts[1]) - 1,
-        Number(parts[0])
-      );
-
-    const today =
-      new Date();
-
-    const diffDays =
-      Math.ceil(
-        (
-          date.getTime() -
-          today.getTime()
-        ) /
-        (1000 * 60 * 60 * 24)
-      );
-
-    if (diffDays < 0) {
-
-      return {
-        label: "Expiré",
-        color:
-          "bg-red-500/20 text-red-300",
-      };
-    }
-
-    if (diffDays <= 3) {
-
-      return {
-        label: "Attention",
-        color:
-          "bg-orange-500/20 text-orange-300",
-      };
-    }
-
-    return {
-      label: "Conforme",
-      color:
-        "bg-green-500/20 text-green-300",
-    };
-  };
-
-  const handleChange = (
-    field: string,
-    value: any
-  ) => {
-
-    setFormData({
-      ...formData,
-      [field]: value,
-    });
-  };
-
-  const resetForm = () => {
-
-    setFormData({
-      product: "",
-      category: "",
-      lot: "",
-      supplier: "",
-      dlc: "",
-      quantity: 0,
-      unit: "pièce",
-    });
-
-    setImageFile(null);
-
-    setImagePreview("");
-
-    setOpen(false);
-  };
-
-  const addProduct = async () => {
-
-    if (
-      formData.product.trim() === ""
-    ) {
-
-      alert(
-        "Nom produit requis"
-      );
-
-      return;
-    }
-
-    let imageUrl = "";
-
-    if (imageFile) {
-
-      const fileName =
-        `${Date.now()}-${imageFile.name}`;
-
-      await supabase.storage
-        .from(
-          "traceability-images"
-        )
-        .upload(fileName, imageFile);
-
-      const { data } =
-        supabase.storage
-          .from(
-            "traceability-images"
-          )
-          .getPublicUrl(fileName);
-
-      imageUrl =
-        data.publicUrl;
-    }
-
-    await supabase
-      .from(
-        "traceability_products"
-      )
-      .insert([
-        {
-          ...formData,
-          image_url: imageUrl,
-        },
-      ]);
-
-    fetchProducts();
-
-    resetForm();
-  };
-
-  const deleteProduct = async (
-    id: string
-  ) => {
-
-    await supabase
-      .from(
-        "traceability_products"
-      )
-      .delete()
-      .eq("id", id);
-
-    fetchProducts();
-  };
-
-  const updateQuantity =
-    async (
-      item: any,
-      change: number
-    ) => {
-
-      const newQuantity =
-        Math.max(
-          0,
-          (item.quantity || 0) +
-            change
+        setProducts(
+          data
         );
-
-      await supabase
-        .from(
-          "traceability_products"
-        )
-        .update({
-          quantity:
-            newQuantity,
-        })
-        .eq("id", item.id);
-
-      fetchProducts();
+      }
     };
+
+  const exportPDF = () => {
+
+    const doc =
+      new jsPDF();
+
+    doc.setFontSize(24);
+
+    doc.text(
+      "Rapport Traçabilité HACCP",
+      14,
+      20
+    );
+
+    doc.setFontSize(12);
+
+    doc.text(
+      `Période : ${
+        startDate || "Début"
+      } → ${
+        endDate || "Aujourd'hui"
+      }`,
+      14,
+      32
+    );
+
+    autoTable(doc, {
+
+      startY: 45,
+
+      head: [[
+        "Produit",
+        "Lot",
+        "DLC",
+        "Fournisseur",
+      ]],
+
+      body:
+        products.map(
+          (
+            item
+          ) => [
+
+            item.product ||
+              "-",
+
+            item.batch ||
+              "-",
+
+            item.dlc ||
+              "-",
+
+            item.supplier ||
+              "-",
+          ]
+        ),
+    });
+
+    doc.save(
+      "rapport-tracabilite-haccp.pdf"
+    );
+  };
 
   return (
 
     <main className="min-h-screen p-10 text-white">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-12">
+      <div className="mb-12">
 
-        <div>
+        <div className="flex items-center gap-4 mb-4">
 
-          <div className="flex items-center gap-4 mb-4">
+          <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
 
-            <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
-
-            <p className="text-cyan-400 font-semibold tracking-widest uppercase">
-              STOCK CENTER
-            </p>
-
-          </div>
-
-          <h1 className="text-7xl font-black">
-            Stocks
-          </h1>
+          <p className="text-cyan-400 font-semibold tracking-widest uppercase">
+            TRACEABILITY SYSTEM
+          </p>
 
         </div>
 
-        <button
-          onClick={() =>
-            setOpen(true)
-          }
-          className="
-            flex
-            items-center
-            gap-3
-            rounded-2xl
-            bg-cyan-500
-            px-6
-            py-4
-            text-black
-            font-bold
-          "
-        >
+        <h1 className="text-7xl font-black">
+          Traçabilité HACCP
+        </h1>
 
-          <Plus />
-
-          Ajouter produit
-
-        </button>
-
-      </div>
-
-      {/* SEARCH */}
-      <div className="mb-8">
-
-        <div
-          className="
-            flex
-            items-center
-            gap-4
-
-            rounded-3xl
-
-            border
-            border-white/10
-
-            bg-white/[0.04]
-
-            px-6
-            py-5
-          "
-        >
-
-          <Search className="text-cyan-300" />
-
-          <input
-            type="text"
-            placeholder="Rechercher..."
-            value={search}
-            onChange={(e) =>
-              setSearch(
-                e.target.value
-              )
-            }
-            className="
-              w-full
-              bg-transparent
-              outline-none
-            "
-          />
-
-        </div>
+        <p className="text-gray-400 mt-5 text-xl">
+          Suivi produits et conformité sanitaire
+        </p>
 
       </div>
 
       {/* FILTERS */}
-      <div className="flex gap-4 overflow-x-auto mb-8 pb-2">
+      <div
+        className="
+          rounded-3xl
+          border
+          border-white/10
+          bg-white/[0.04]
+          p-7
+          mb-10
+        "
+      >
 
-        {categories.map((cat) => (
+        <div className="flex flex-col xl:flex-row gap-5 items-center justify-between">
 
+          <div className="flex flex-col md:flex-row gap-5 w-full">
+
+            {/* START DATE */}
+            <div className="flex-1">
+
+              <label className="text-sm text-gray-400 mb-2 block">
+                Date début
+              </label>
+
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-3
+
+                  rounded-2xl
+
+                  border
+                  border-white/10
+
+                  bg-black/20
+
+                  px-5
+                  py-4
+                "
+              >
+
+                <Calendar className="text-cyan-300 w-5 h-5" />
+
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) =>
+                    setStartDate(
+                      e.target.value
+                    )
+                  }
+                  className="
+                    bg-transparent
+                    outline-none
+                    w-full
+                  "
+                />
+
+              </div>
+
+            </div>
+
+            {/* END DATE */}
+            <div className="flex-1">
+
+              <label className="text-sm text-gray-400 mb-2 block">
+                Date fin
+              </label>
+
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-3
+
+                  rounded-2xl
+
+                  border
+                  border-white/10
+
+                  bg-black/20
+
+                  px-5
+                  py-4
+                "
+              >
+
+                <Calendar className="text-cyan-300 w-5 h-5" />
+
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) =>
+                    setEndDate(
+                      e.target.value
+                    )
+                  }
+                  className="
+                    bg-transparent
+                    outline-none
+                    w-full
+                  "
+                />
+
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* EXPORT */}
           <button
-            key={cat.name}
-            onClick={() =>
-              setActiveFilter(
-                cat.name
-              )
-            }
-            className={`
+            onClick={exportPDF}
+            className="
               flex
               items-center
               gap-3
 
-              whitespace-nowrap
+              px-7
+              py-4
 
               rounded-2xl
 
-              px-5
-              py-3
+              bg-cyan-500
 
-              border
+              text-black
+              font-black
 
-              ${
-                activeFilter ===
-                cat.name
+              hover:scale-105
 
-                  ? "bg-cyan-500 text-black border-cyan-400"
-
-                  : "bg-white/[0.04] border-white/10 text-white"
-              }
-            `}
+              transition-all
+            "
           >
 
-            <span>
-              {cat.emoji}
-            </span>
+            <FileText className="w-5 h-5" />
 
-            {cat.name}
+            Export PDF
 
           </button>
 
-        ))}
+        </div>
 
       </div>
 
-      {/* COUNTER */}
-      <div className="mb-6 text-gray-400">
+      {/* STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-7 mb-10">
 
-        {filteredProducts.length} produit(s)
+        {/* PRODUCTS */}
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+            y: -5,
+          }}
+          className="
+            rounded-3xl
+            border
+            border-cyan-500/20
+            bg-cyan-500/10
+            p-7
+          "
+        >
+
+          <div className="flex items-center justify-between mb-8">
+
+            <Package className="text-cyan-300" />
+
+            <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
+
+          </div>
+
+          <p className="text-cyan-200">
+            Produits tracés
+          </p>
+
+          <h2 className="text-6xl font-black mt-4">
+
+            {products.length}
+
+          </h2>
+
+        </motion.div>
+
+        {/* SYSTEM */}
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+            y: -5,
+          }}
+          className="
+            rounded-3xl
+            border
+            border-green-500/20
+            bg-green-500/10
+            p-7
+          "
+        >
+
+          <div className="flex items-center justify-between mb-8">
+
+            <ShieldCheck className="text-green-300" />
+
+            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+
+          </div>
+
+          <p className="text-green-200">
+            Conformité HACCP
+          </p>
+
+          <h2 className="text-4xl font-black mt-6">
+            ACTIVE
+          </h2>
+
+        </motion.div>
 
       </div>
 
@@ -451,554 +403,161 @@ export default function TraceabilityPage() {
           border
           border-white/10
           bg-white/[0.04]
-          overflow-hidden
+          p-8
         "
       >
 
-        <div
-          className="
-            grid
-            grid-cols-[2fr_1fr_1fr_1fr_1fr_180px]
+        <div className="flex items-center justify-between mb-8">
 
-            border-b
-            border-white/10
-
-            px-8
-            py-6
-
-            text-gray-400
-            font-semibold
-          "
-        >
-
-          <div>Produit</div>
-          <div>Stock</div>
-          <div>Lot</div>
-          <div>DLC</div>
-          <div>Statut</div>
-          <div>Actions</div>
-
-        </div>
-
-        {filteredProducts.map((item, index) => (
-
-          <motion.div
-            key={index}
-            initial={{
-              opacity: 0,
-              y: 10,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            className="
-              grid
-              grid-cols-[2fr_1fr_1fr_1fr_1fr_180px]
-
-              items-center
-
-              px-8
-              py-6
-
-              border-b
-              border-white/5
-            "
-          >
-
-            {/* PRODUCT */}
-            <div className="flex items-center gap-4">
-
-              {item.image_url ? (
-
-                <img
-                  src={
-                    item.image_url
-                  }
-                  className="
-                    w-16
-                    h-16
-                    object-cover
-                    rounded-2xl
-                  "
-                />
-
-              ) : (
-
-                <div className="bg-cyan-500/20 p-3 rounded-2xl">
-
-                  <Package className="text-cyan-300" />
-
-                </div>
-
-              )}
-
-              <div>
-
-                <p className="font-bold text-lg">
-                  {item.product}
-                </p>
-
-                <p className="text-gray-500 text-sm">
-                  {item.category}
-                </p>
-
-              </div>
-
-            </div>
-
-            {/* STOCK */}
-            <div>
-
-              <div className="flex items-center gap-3">
-
-                <button
-                  onClick={() =>
-                    updateQuantity(
-                      item,
-                      -1
-                    )
-                  }
-                  className="
-                    w-10
-                    h-10
-                    rounded-xl
-                    bg-red-500/10
-                    flex
-                    items-center
-                    justify-center
-                  "
-                >
-
-                  <Minus className="w-4 h-4 text-red-400" />
-
-                </button>
-
-                <div className="font-bold text-lg min-w-[70px] text-center">
-
-                  {item.quantity || 0} {item.unit}
-
-                </div>
-
-                <button
-                  onClick={() =>
-                    updateQuantity(
-                      item,
-                      1
-                    )
-                  }
-                  className="
-                    w-10
-                    h-10
-                    rounded-xl
-                    bg-green-500/10
-                    flex
-                    items-center
-                    justify-center
-                  "
-                >
-
-                  <Plus className="w-4 h-4 text-green-400" />
-
-                </button>
-
-              </div>
-
-            </div>
-
-            <div>{item.lot}</div>
-
-            <div>{item.dlc}</div>
-
-            {/* STATUS */}
-            <div>
-
-              {(() => {
-
-                const status =
-                  getStatus(
-                    item.dlc
-                  );
-
-                return (
-
-                  <div
-                    className={`
-                      inline-flex
-                      items-center
-                      gap-2
-
-                      px-4
-                      py-2
-
-                      rounded-full
-
-                      font-semibold
-
-                      ${status.color}
-                    `}
-                  >
-
-                    <AlertTriangle className="w-4 h-4" />
-
-                    {status.label}
-
-                  </div>
-
-                );
-              })()}
-
-            </div>
-
-            {/* ACTIONS */}
-            <div className="flex gap-3">
-
-              <button
-                onClick={() =>
-                  deleteProduct(
-                    item.id
-                  )
-                }
-                className="
-                  w-12
-                  h-12
-                  rounded-2xl
-                  bg-red-500/10
-                  flex
-                  items-center
-                  justify-center
-                "
-              >
-
-                <Trash2 className="w-5 h-5 text-red-400" />
-
-              </button>
-
-            </div>
-
-          </motion.div>
-
-        ))}
-
-      </div>
-
-      {/* MODAL */}
-      {open && (
-
-        <div
-          className="
-            fixed
-            inset-0
-            bg-black/70
-            backdrop-blur-sm
-            flex
-            items-center
-            justify-center
-            z-50
-            p-4
-          "
-        >
+          <h2 className="text-3xl font-black">
+            Historique traçabilité
+          </h2>
 
           <div
             className="
-              w-full
-              max-w-2xl
-              rounded-3xl
-              bg-[#071120]
+              bg-cyan-500/10
               border
-              border-white/10
-              p-8
+              border-cyan-500/20
+              px-5
+              py-2
+              rounded-2xl
+              text-cyan-300
+              text-sm
+              font-semibold
             "
           >
+            LIVE TRACEABILITY
+          </div>
 
-            <div className="flex items-center justify-between mb-8">
+        </div>
 
-              <h2 className="text-4xl font-black">
-                Ajouter produit
-              </h2>
+        <div className="space-y-5">
 
-              <button
-                onClick={resetForm}
+          {products.map(
+            (
+              item,
+              index
+            ) => (
+
+              <motion.div
+                key={index}
+                whileHover={{
+                  scale: 1.01,
+                }}
                 className="
+                  flex
+                  items-center
+                  justify-between
+
                   rounded-2xl
-                  bg-white/10
-                  p-3
+
+                  border
+                  border-white/10
+
+                  bg-white/[0.03]
+
+                  p-5
                 "
               >
 
-                <X />
+                <div>
 
-              </button>
+                  <h3 className="text-2xl font-black">
 
-            </div>
+                    {
+                      item.product ||
+                      "-"
+                    }
 
-            {/* PHOTO */}
-            <label
+                  </h3>
+
+                  <p className="text-gray-400 mt-2">
+
+                    Lot :
+                    {" "}
+                    {
+                      item.batch ||
+                      "-"
+                    }
+
+                  </p>
+
+                  <p className="text-gray-400 mt-1">
+
+                    DLC :
+                    {" "}
+                    {
+                      item.dlc ||
+                      "-"
+                    }
+
+                  </p>
+
+                  <p className="text-gray-400 mt-1">
+
+                    Fournisseur :
+                    {" "}
+                    {
+                      item.supplier ||
+                      "-"
+                    }
+
+                  </p>
+
+                </div>
+
+                <div
+                  className="
+                    px-5
+                    py-3
+
+                    rounded-2xl
+
+                    bg-cyan-500/10
+
+                    text-cyan-300
+                    font-bold
+                  "
+                >
+
+                  HACCP
+
+                </div>
+
+              </motion.div>
+            )
+          )}
+
+          {products.length === 0 && (
+
+            <div
               className="
                 flex
                 flex-col
                 items-center
                 justify-center
 
-                border-2
-                border-dashed
-                border-white/10
-
-                rounded-3xl
-
-                p-10
-
-                cursor-pointer
-
-                hover:border-cyan-400
-
-                transition-all
-
-                mb-8
+                py-20
               "
             >
 
-              <Camera className="w-12 h-12 text-cyan-300 mb-4" />
+              <Package className="w-16 h-16 text-cyan-300 mb-6" />
 
-              <p className="font-bold">
-                Importer photo
+              <h3 className="text-3xl font-black mb-3">
+                Aucun produit
+              </h3>
+
+              <p className="text-gray-400">
+                Aucun historique disponible
               </p>
-
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-
-                  const file =
-                    e.target.files?.[0];
-
-                  if (file) {
-
-                    setImageFile(file);
-
-                    setImagePreview(
-                      URL.createObjectURL(
-                        file
-                      )
-                    );
-                  }
-                }}
-              />
-
-            </label>
-
-            {imagePreview && (
-
-              <img
-                src={imagePreview}
-                className="
-                  w-full
-                  h-60
-                  object-cover
-                  rounded-3xl
-                  mb-6
-                "
-              />
-
-            )}
-
-            <div className="space-y-5">
-
-              <input
-                type="text"
-                placeholder="Nom produit"
-                value={formData.product}
-                onChange={(e) =>
-                  handleChange(
-                    "product",
-                    e.target.value
-                  )
-                }
-                className="
-                  w-full
-                  rounded-2xl
-                  bg-white/[0.05]
-                  border
-                  border-white/10
-                  px-5
-                  py-4
-                "
-              />
-
-              <select
-                value={
-                  formData.category
-                }
-                onChange={(e) =>
-                  handleChange(
-                    "category",
-                    e.target.value
-                  )
-                }
-                className="
-                  w-full
-                  rounded-2xl
-                  bg-white/[0.05]
-                  border
-                  border-white/10
-                  px-5
-                  py-4
-                "
-              >
-
-                <option value="">
-                  Catégorie
-                </option>
-
-                {categories
-                  .filter(
-                    (c) =>
-                      c.name !==
-                      "Tous"
-                  )
-                  .map((c) => (
-
-                    <option
-                      key={c.name}
-                      value={c.name}
-                    >
-
-                      {c.emoji} {c.name}
-
-                    </option>
-
-                  ))}
-
-              </select>
-
-              <input
-                type="number"
-                placeholder="Quantité"
-                value={
-                  formData.quantity
-                }
-                onChange={(e) =>
-                  handleChange(
-                    "quantity",
-                    Number(
-                      e.target.value
-                    )
-                  )
-                }
-                className="
-                  w-full
-                  rounded-2xl
-                  bg-white/[0.05]
-                  border
-                  border-white/10
-                  px-5
-                  py-4
-                "
-              />
-
-              <select
-                value={formData.unit}
-                onChange={(e) =>
-                  handleChange(
-                    "unit",
-                    e.target.value
-                  )
-                }
-                className="
-                  w-full
-                  rounded-2xl
-                  bg-white/[0.05]
-                  border
-                  border-white/10
-                  px-5
-                  py-4
-                "
-              >
-
-                <option>
-                  pièce
-                </option>
-
-                <option>
-                  kg
-                </option>
-
-                <option>
-                  litre
-                </option>
-
-                <option>
-                  carton
-                </option>
-
-              </select>
-
-              <input
-                type="text"
-                placeholder="Lot"
-                value={formData.lot}
-                onChange={(e) =>
-                  handleChange(
-                    "lot",
-                    e.target.value
-                  )
-                }
-                className="
-                  w-full
-                  rounded-2xl
-                  bg-white/[0.05]
-                  border
-                  border-white/10
-                  px-5
-                  py-4
-                "
-              />
-
-              <input
-                type="text"
-                placeholder="DLC jj/mm/aaaa"
-                value={formData.dlc}
-                onChange={(e) =>
-                  handleChange(
-                    "dlc",
-                    e.target.value
-                  )
-                }
-                className="
-                  w-full
-                  rounded-2xl
-                  bg-white/[0.05]
-                  border
-                  border-white/10
-                  px-5
-                  py-4
-                "
-              />
-
-              <button
-                onClick={addProduct}
-                className="
-                  w-full
-                  rounded-2xl
-                  bg-cyan-500
-                  py-4
-                  text-black
-                  font-bold
-                "
-              >
-
-                Ajouter produit
-
-              </button>
 
             </div>
 
-          </div>
+          )}
 
         </div>
 
-      )}
+      </div>
 
     </main>
   );
