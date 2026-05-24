@@ -2,491 +2,229 @@
 
 import { useState } from "react";
 
+import { motion } from "framer-motion";
+
 import {
   Truck,
   Package,
   Calendar,
-  Thermometer,
   Save,
-  Camera,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 
 export default function NewDeliveryPage() {
 
+  const [product, setProduct] =
+    useState("");
+
+  const [supplier, setSupplier] =
+    useState("");
+
+  const [quantity, setQuantity] =
+    useState(1);
+
+  const [batch, setBatch] =
+    useState("");
+
+  const [dlc, setDlc] =
+    useState("");
+
   const [loading, setLoading] =
     useState(false);
 
-  const [imageFile, setImageFile] =
-    useState<any>(null);
-
-  const [preview, setPreview] =
-    useState("");
-
-  const [form, setForm] =
-    useState({
-
-      product: "",
-
-      category: "Viande",
-
-      supplier: "",
-
-      lot: "",
-
-      dlc: "",
-
-      quantity: 1,
-
-      unit: "pièce",
-
-      temperature: "",
-    });
-
-  const handleChange = (
-    e: any
-  ) => {
-
-    setForm({
-      ...form,
-
-      [e.target.name]:
-        e.target.value,
-    });
-  };
-
-  const handleImage = (
-    e: any
-  ) => {
-
-    const file =
-      e.target.files?.[0];
-
-    if (!file)
-      return;
-
-    setImageFile(file);
-
-    setPreview(
-      URL.createObjectURL(file)
-    );
-  };
-
-  const handleSubmit =
+  const saveDelivery =
     async () => {
 
-      try {
-
-        setLoading(true);
-
-        let imageUrl = "";
-
-        /* IMAGE UPLOAD */
-        if (imageFile) {
-
-          const fileName =
-            `${Date.now()}-${imageFile.name}`;
-
-          const {
-            error: uploadError,
-          } =
-            await supabase
-              .storage
-              .from("products")
-              .upload(
-                fileName,
-                imageFile
-              );
-
-          if (!uploadError) {
-
-            const {
-              data,
-            } = supabase
-              .storage
-              .from("products")
-              .getPublicUrl(
-                fileName
-              );
-
-            imageUrl =
-              data.publicUrl;
-          }
-        }
-
-        /* INSERT PRODUCT */
-        await supabase
-          .from(
-            "traceability_products"
-          )
-          .insert([
-            {
-              product:
-                form.product,
-
-              category:
-                form.category,
-
-              supplier:
-                form.supplier,
-
-              lot: form.lot,
-
-              dlc: form.dlc,
-
-              quantity:
-                form.quantity,
-
-              unit: form.unit,
-
-              temperature:
-                form.temperature,
-
-              image_url:
-                imageUrl,
-            },
-          ]);
-
-        /* INSERT HISTORY */
-        await supabase
-          .from(
-            "stock_movements"
-          )
-          .insert([
-            {
-              product:
-                form.product,
-
-              movement_type:
-                "Entrée",
-
-              quantity:
-                form.quantity,
-
-              unit: form.unit,
-            },
-          ]);
-
-        alert(
-          "Livraison ajoutée 🚚"
-        );
-
-        setPreview("");
-
-        setImageFile(null);
-
-        setForm({
-          product: "",
-          category: "Viande",
-          supplier: "",
-          lot: "",
-          dlc: "",
-          quantity: 1,
-          unit: "pièce",
-          temperature: "",
-        });
-
-      } catch (error) {
-
-        console.error(error);
-
-        alert(
-          "Erreur ajout livraison"
-        );
-
-      } finally {
-
-        setLoading(false);
+      if (
+        !product ||
+        !supplier
+      ) {
+        return;
       }
+
+      setLoading(true);
+
+      /* TRACEABILITY */
+      await supabase
+        .from(
+          "traceability_products"
+        )
+        .insert([
+          {
+            product,
+            supplier,
+            quantity,
+            batch,
+            dlc,
+          },
+        ]);
+
+      /* STOCK MOVEMENT */
+      await supabase
+        .from(
+          "stock_movements"
+        )
+        .insert([
+          {
+            product,
+            quantity,
+            movement_type:
+              "Entrée",
+          },
+        ]);
+
+      setProduct("");
+      setSupplier("");
+      setQuantity(1);
+      setBatch("");
+      setDlc("");
+
+      setLoading(false);
+
+      alert(
+        "Livraison enregistrée"
+      );
     };
 
   return (
 
-    <main className="min-h-screen p-10 text-white">
+    <main className="min-h-screen p-6 md:p-10 text-white">
 
       {/* HEADER */}
-      <div className="mb-12">
+      <div className="mb-10">
 
         <div className="flex items-center gap-4 mb-4">
 
           <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
 
           <p className="text-cyan-400 font-semibold tracking-widest uppercase">
-            DELIVERY CENTER
+            DELIVERY TABLET MODE
           </p>
 
         </div>
 
-        <h1 className="text-7xl font-black">
+        <h1 className="text-5xl md:text-7xl font-black">
           Nouvelle livraison
         </h1>
 
-        <p className="text-gray-400 mt-5 text-xl">
-          Réception intelligente des marchandises
+        <p className="text-gray-400 mt-4 text-lg md:text-xl">
+          Réception fournisseur rapide
         </p>
 
       </div>
 
       {/* FORM */}
-      <div
+      <motion.div
+        initial={{
+          opacity: 0,
+          y: 20,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
         className="
-          max-w-5xl
           rounded-3xl
           border
           border-white/10
           bg-white/[0.04]
-          p-10
+          p-8
         "
       >
 
-        {/* PHOTO */}
-        <div className="mb-10">
-
-          <label className="text-gray-400 mb-4 block">
-            Photo produit
-          </label>
-
-          <label
-            className="
-              flex
-              flex-col
-              items-center
-              justify-center
-              gap-4
-
-              border-2
-              border-dashed
-              border-cyan-500/30
-
-              rounded-3xl
-
-              p-10
-
-              bg-cyan-500/5
-
-              cursor-pointer
-            "
-          >
-
-            {preview ? (
-
-              <img
-                src={preview}
-                className="w-64 h-64 object-cover rounded-3xl"
-              />
-
-            ) : (
-
-              <>
-
-                <Camera className="w-16 h-16 text-cyan-300" />
-
-                <p className="text-cyan-200">
-                  Ajouter une photo
-                </p>
-
-              </>
-
-            )}
-
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={
-                handleImage
-              }
-              className="hidden"
-            />
-
-          </label>
-
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
           {/* PRODUCT */}
           <div>
 
-            <label className="text-gray-400 mb-3 block">
+            <label className="text-gray-400 text-sm block mb-3">
               Produit
             </label>
 
-            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4">
-
-              <Package className="text-cyan-300" />
-
-              <input
-                type="text"
-                name="product"
-                value={form.product}
-                onChange={
-                  handleChange
-                }
-                placeholder="Entrecôte..."
-                className="bg-transparent w-full outline-none"
-              />
-
-            </div>
-
-          </div>
-
-          {/* CATEGORY */}
-          <div>
-
-            <label className="text-gray-400 mb-3 block">
-              Catégorie
-            </label>
-
-            <select
-              name="category"
-              value={form.category}
-              onChange={
-                handleChange
-              }
+            <div
               className="
-                w-full
-                rounded-2xl
+                flex
+                items-center
+                gap-4
+
+                rounded-3xl
+
                 border
                 border-white/10
-                bg-white/[0.04]
-                px-5
-                py-4
-                outline-none
+
+                bg-black/20
+
+                px-6
+                py-6
               "
             >
 
-              <option>
-                Viande
-              </option>
+              <Package className="text-cyan-300 w-7 h-7" />
 
-              <option>
-                Poisson
-              </option>
+              <input
+                value={product}
+                onChange={(e) =>
+                  setProduct(
+                    e.target.value
+                  )
+                }
+                placeholder="Nom produit"
+                className="
+                  bg-transparent
+                  outline-none
+                  w-full
 
-              <option>
-                Surgelé
-              </option>
+                  text-2xl
+                "
+              />
 
-              <option>
-                Fruits & légumes
-              </option>
-
-              <option>
-                Produits laitiers
-              </option>
-
-              <option>
-                Produits secs
-              </option>
-
-            </select>
+            </div>
 
           </div>
 
           {/* SUPPLIER */}
           <div>
 
-            <label className="text-gray-400 mb-3 block">
+            <label className="text-gray-400 text-sm block mb-3">
               Fournisseur
             </label>
 
-            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4">
-
-              <Truck className="text-cyan-300" />
-
-              <input
-                type="text"
-                name="supplier"
-                value={form.supplier}
-                onChange={
-                  handleChange
-                }
-                placeholder="Metro..."
-                className="bg-transparent w-full outline-none"
-              />
-
-            </div>
-
-          </div>
-
-          {/* LOT */}
-          <div>
-
-            <label className="text-gray-400 mb-3 block">
-              Lot
-            </label>
-
-            <input
-              type="text"
-              name="lot"
-              value={form.lot}
-              onChange={
-                handleChange
-              }
-              placeholder="LOT-2025..."
+            <div
               className="
-                w-full
-                rounded-2xl
+                flex
+                items-center
+                gap-4
+
+                rounded-3xl
+
                 border
                 border-white/10
-                bg-white/[0.04]
-                px-5
-                py-4
-                outline-none
+
+                bg-black/20
+
+                px-6
+                py-6
               "
-            />
+            >
 
-          </div>
-
-          {/* DLC */}
-          <div>
-
-            <label className="text-gray-400 mb-3 block">
-              DLC
-            </label>
-
-            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4">
-
-              <Calendar className="text-cyan-300" />
+              <Truck className="text-cyan-300 w-7 h-7" />
 
               <input
-                type="date"
-                name="dlc"
-                value={form.dlc}
-                onChange={
-                  handleChange
+                value={supplier}
+                onChange={(e) =>
+                  setSupplier(
+                    e.target.value
+                  )
                 }
-                className="bg-transparent w-full outline-none"
-              />
+                placeholder="Nom fournisseur"
+                className="
+                  bg-transparent
+                  outline-none
+                  w-full
 
-            </div>
-
-          </div>
-
-          {/* TEMPERATURE */}
-          <div>
-
-            <label className="text-gray-400 mb-3 block">
-              Température réception
-            </label>
-
-            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4">
-
-              <Thermometer className="text-cyan-300" />
-
-              <input
-                type="text"
-                name="temperature"
-                value={
-                  form.temperature
-                }
-                onChange={
-                  handleChange
-                }
-                placeholder="4°C"
-                className="bg-transparent w-full outline-none"
+                  text-2xl
+                "
               />
 
             </div>
@@ -496,119 +234,234 @@ export default function NewDeliveryPage() {
           {/* QUANTITY */}
           <div>
 
-            <label className="text-gray-400 mb-3 block">
+            <label className="text-gray-400 text-sm block mb-3">
               Quantité
             </label>
 
-            <input
-              type="number"
-              name="quantity"
-              value={form.quantity}
-              onChange={
-                handleChange
-              }
+            <div
               className="
-                w-full
-                rounded-2xl
+                flex
+                items-center
+                justify-between
+
+                rounded-3xl
+
                 border
                 border-white/10
-                bg-white/[0.04]
-                px-5
-                py-4
-                outline-none
-              "
-            />
 
-          </div>
+                bg-black/20
 
-          {/* UNIT */}
-          <div>
-
-            <label className="text-gray-400 mb-3 block">
-              Unité
-            </label>
-
-            <select
-              name="unit"
-              value={form.unit}
-              onChange={
-                handleChange
-              }
-              className="
-                w-full
-                rounded-2xl
-                border
-                border-white/10
-                bg-white/[0.04]
-                px-5
-                py-4
-                outline-none
+                px-6
+                py-5
               "
             >
 
-              <option>
-                pièce
-              </option>
+              <button
+                onClick={() =>
+                  setQuantity(
+                    Math.max(
+                      1,
+                      quantity - 1
+                    )
+                  )
+                }
+                className="
+                  w-16
+                  h-16
 
-              <option>
-                kg
-              </option>
+                  rounded-2xl
 
-              <option>
-                litre
-              </option>
+                  bg-red-500/20
 
-              <option>
-                carton
-              </option>
+                  text-red-300
+                  text-4xl
+                  font-black
 
-            </select>
+                  active:scale-95
+                "
+              >
+
+                -
+
+              </button>
+
+              <div className="text-5xl font-black">
+
+                {quantity}
+
+              </div>
+
+              <button
+                onClick={() =>
+                  setQuantity(
+                    quantity + 1
+                  )
+                }
+                className="
+                  w-16
+                  h-16
+
+                  rounded-2xl
+
+                  bg-green-500/20
+
+                  text-green-300
+                  text-4xl
+                  font-black
+
+                  active:scale-95
+                "
+              >
+
+                +
+
+              </button>
+
+            </div>
+
+          </div>
+
+          {/* DLC */}
+          <div>
+
+            <label className="text-gray-400 text-sm block mb-3">
+              DLC
+            </label>
+
+            <div
+              className="
+                flex
+                items-center
+                gap-4
+
+                rounded-3xl
+
+                border
+                border-white/10
+
+                bg-black/20
+
+                px-6
+                py-6
+              "
+            >
+
+              <Calendar className="text-cyan-300 w-7 h-7" />
+
+              <input
+                type="date"
+                value={dlc}
+                onChange={(e) =>
+                  setDlc(
+                    e.target.value
+                  )
+                }
+                className="
+                  bg-transparent
+                  outline-none
+                  w-full
+
+                  text-2xl
+                "
+              />
+
+            </div>
+
+          </div>
+
+          {/* BATCH */}
+          <div className="xl:col-span-2">
+
+            <label className="text-gray-400 text-sm block mb-3">
+              Numéro de lot
+            </label>
+
+            <div
+              className="
+                flex
+                items-center
+                gap-4
+
+                rounded-3xl
+
+                border
+                border-white/10
+
+                bg-black/20
+
+                px-6
+                py-6
+              "
+            >
+
+              <Package className="text-cyan-300 w-7 h-7" />
+
+              <input
+                value={batch}
+                onChange={(e) =>
+                  setBatch(
+                    e.target.value
+                  )
+                }
+                placeholder="Lot produit"
+                className="
+                  bg-transparent
+                  outline-none
+                  w-full
+
+                  text-2xl
+                "
+              />
+
+            </div>
 
           </div>
 
         </div>
 
-        {/* BUTTON */}
+        {/* SAVE BUTTON */}
         <button
-          onClick={handleSubmit}
+          onClick={saveDelivery}
           disabled={loading}
           className="
             mt-10
 
+            w-full
+
             flex
             items-center
             justify-center
-            gap-3
+            gap-4
 
-            rounded-2xl
+            rounded-3xl
 
             bg-cyan-500
 
-            px-8
-            py-5
+            py-7
 
             text-black
+            text-2xl
             font-black
 
-            hover:scale-[1.02]
+            hover:scale-[1.01]
 
             transition-all
           "
         >
 
-          <Save />
+          <Save className="w-7 h-7" />
 
           {
             loading
 
-              ? "Ajout..."
+              ? "Enregistrement..."
 
               : "Valider la livraison"
           }
 
         </button>
 
-      </div>
+      </motion.div>
 
     </main>
   );

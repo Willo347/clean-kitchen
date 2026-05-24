@@ -9,6 +9,8 @@ import {
   Calendar,
   FileText,
   Snowflake,
+  Plus,
+  Minus,
 } from "lucide-react";
 
 import jsPDF from "jspdf";
@@ -33,6 +35,15 @@ export default function TemperaturesPage() {
     fetchTemperatures();
 
   }, []);
+
+  useEffect(() => {
+
+    fetchTemperatures();
+
+  }, [
+    startDate,
+    endDate,
+  ]);
 
   const fetchTemperatures =
     async () => {
@@ -81,14 +92,35 @@ export default function TemperaturesPage() {
       }
     };
 
-  useEffect(() => {
+  const updateTemperature =
+    async (
+      id: string,
+      currentTemp: number,
+      action: "plus" | "minus"
+    ) => {
 
-    fetchTemperatures();
+      const newTemp =
+        action === "plus"
 
-  }, [
-    startDate,
-    endDate,
-  ]);
+          ? currentTemp + 1
+
+          : currentTemp - 1;
+
+      await supabase
+        .from(
+          "temperature_logs"
+        )
+        .update({
+          temperature:
+            newTemp,
+        })
+        .eq(
+          "id",
+          id
+        );
+
+      fetchTemperatures();
+    };
 
   const exportPDF = () => {
 
@@ -174,27 +206,27 @@ export default function TemperaturesPage() {
 
   return (
 
-    <main className="min-h-screen p-10 text-white">
+    <main className="min-h-screen p-6 md:p-10 text-white">
 
       {/* HEADER */}
-      <div className="mb-12">
+      <div className="mb-10">
 
         <div className="flex items-center gap-4 mb-4">
 
           <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
 
           <p className="text-cyan-400 font-semibold tracking-widest uppercase">
-            TEMPERATURE MONITORING
+            TABLET MODE
           </p>
 
         </div>
 
-        <h1 className="text-7xl font-black">
+        <h1 className="text-5xl md:text-7xl font-black">
           Températures HACCP
         </h1>
 
-        <p className="text-gray-400 mt-5 text-xl">
-          Surveillance chaîne du froid
+        <p className="text-gray-400 mt-4 text-lg md:text-xl">
+          Contrôle rapide chaîne du froid
         </p>
 
       </div>
@@ -206,8 +238,8 @@ export default function TemperaturesPage() {
           border
           border-white/10
           bg-white/[0.04]
-          p-7
-          mb-10
+          p-6
+          mb-8
         "
       >
 
@@ -215,7 +247,7 @@ export default function TemperaturesPage() {
 
           <div className="flex flex-col md:flex-row gap-5 w-full">
 
-            {/* START DATE */}
+            {/* START */}
             <div className="flex-1">
 
               <label className="text-sm text-gray-400 mb-2 block">
@@ -236,11 +268,11 @@ export default function TemperaturesPage() {
                   bg-black/20
 
                   px-5
-                  py-4
+                  py-5
                 "
               >
 
-                <Calendar className="text-cyan-300 w-5 h-5" />
+                <Calendar className="text-cyan-300" />
 
                 <input
                   type="date"
@@ -254,6 +286,7 @@ export default function TemperaturesPage() {
                     bg-transparent
                     outline-none
                     w-full
+                    text-lg
                   "
                 />
 
@@ -261,7 +294,7 @@ export default function TemperaturesPage() {
 
             </div>
 
-            {/* END DATE */}
+            {/* END */}
             <div className="flex-1">
 
               <label className="text-sm text-gray-400 mb-2 block">
@@ -282,11 +315,11 @@ export default function TemperaturesPage() {
                   bg-black/20
 
                   px-5
-                  py-4
+                  py-5
                 "
               >
 
-                <Calendar className="text-cyan-300 w-5 h-5" />
+                <Calendar className="text-cyan-300" />
 
                 <input
                   type="date"
@@ -300,6 +333,7 @@ export default function TemperaturesPage() {
                     bg-transparent
                     outline-none
                     w-full
+                    text-lg
                   "
                 />
 
@@ -317,14 +351,15 @@ export default function TemperaturesPage() {
               items-center
               gap-3
 
-              px-7
-              py-4
+              px-8
+              py-5
 
               rounded-2xl
 
               bg-cyan-500
 
               text-black
+              text-lg
               font-black
 
               hover:scale-105
@@ -333,7 +368,7 @@ export default function TemperaturesPage() {
             "
           >
 
-            <FileText className="w-5 h-5" />
+            <FileText />
 
             Export PDF
 
@@ -344,13 +379,11 @@ export default function TemperaturesPage() {
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-7 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
-        {/* TOTAL */}
         <motion.div
           whileHover={{
-            scale: 1.03,
-            y: -5,
+            scale: 1.02,
           }}
           className="
             rounded-3xl
@@ -361,19 +394,13 @@ export default function TemperaturesPage() {
           "
         >
 
-          <div className="flex items-center justify-between mb-8">
-
-            <Thermometer className="text-cyan-300" />
-
-            <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
-
-          </div>
+          <Thermometer className="text-cyan-300 mb-6 w-10 h-10" />
 
           <p className="text-cyan-200">
             Relevés
           </p>
 
-          <h2 className="text-6xl font-black mt-4">
+          <h2 className="text-5xl font-black mt-4">
 
             {temperatures.length}
 
@@ -381,11 +408,9 @@ export default function TemperaturesPage() {
 
         </motion.div>
 
-        {/* AVERAGE */}
         <motion.div
           whileHover={{
-            scale: 1.03,
-            y: -5,
+            scale: 1.02,
           }}
           className="
             rounded-3xl
@@ -396,19 +421,13 @@ export default function TemperaturesPage() {
           "
         >
 
-          <div className="flex items-center justify-between mb-8">
-
-            <Snowflake className="text-green-300" />
-
-            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
-
-          </div>
+          <Snowflake className="text-green-300 mb-6 w-10 h-10" />
 
           <p className="text-green-200">
-            Température moyenne
+            Moyenne
           </p>
 
-          <h2 className="text-6xl font-black mt-4">
+          <h2 className="text-5xl font-black mt-4">
 
             {averageTemp}°C
 
@@ -416,11 +435,9 @@ export default function TemperaturesPage() {
 
         </motion.div>
 
-        {/* CRITICAL */}
         <motion.div
           whileHover={{
-            scale: 1.03,
-            y: -5,
+            scale: 1.02,
           }}
           className="
             rounded-3xl
@@ -431,19 +448,13 @@ export default function TemperaturesPage() {
           "
         >
 
-          <div className="flex items-center justify-between mb-8">
-
-            <Thermometer className="text-red-300" />
-
-            <div className="w-3 h-3 rounded-full bg-red-400 animate-pulse" />
-
-          </div>
+          <Thermometer className="text-red-300 mb-6 w-10 h-10" />
 
           <p className="text-red-200">
-            Températures critiques
+            Critiques
           </p>
 
-          <h2 className="text-6xl font-black mt-4">
+          <h2 className="text-5xl font-black mt-4">
 
             {criticalTemps.length}
 
@@ -453,184 +464,158 @@ export default function TemperaturesPage() {
 
       </div>
 
-      {/* TABLE */}
-      <div
-        className="
-          rounded-3xl
-          border
-          border-white/10
-          bg-white/[0.04]
-          p-8
-        "
-      >
+      {/* TEMPERATURE CARDS */}
+      <div className="space-y-6">
 
-        <div className="flex items-center justify-between mb-8">
+        {temperatures.map(
+          (
+            item,
+            index
+          ) => (
 
-          <h2 className="text-3xl font-black">
-            Historique températures
-          </h2>
+            <motion.div
+              key={index}
+              whileHover={{
+                scale: 1.01,
+              }}
+              className={`
+                rounded-3xl
+                border
+                p-8
 
-          <div
-            className="
-              bg-cyan-500/10
-              border
-              border-cyan-500/20
-              px-5
-              py-2
-              rounded-2xl
-              text-cyan-300
-              text-sm
-              font-semibold
-            "
-          >
-            LIVE MONITORING
-          </div>
+                ${
+                  item.temperature >= 8
 
-        </div>
+                    ? "border-red-500/20 bg-red-500/10"
 
-        <div className="space-y-5">
+                    : "border-white/10 bg-white/[0.04]"
+                }
+              `}
+            >
 
-          {temperatures.map(
-            (
-              item,
-              index
-            ) => (
+              <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
 
-              <motion.div
-                key={index}
-                whileHover={{
-                  scale: 1.01,
-                }}
-                className={`
-                  flex
-                  items-center
-                  justify-between
+                {/* INFO */}
+                <div>
 
-                  rounded-2xl
-                  border
-                  p-5
+                  <h2 className="text-4xl font-black">
 
-                  ${
-                    item.temperature >= 8
+                    {
+                      item.equipment ||
+                      "Équipement"
+                    }
 
-                      ? "border-red-500/10 bg-red-500/5"
+                  </h2>
 
-                      : "border-white/10 bg-white/[0.03]"
-                  }
-                `}
-              >
+                  <p className="text-gray-400 mt-3 text-lg">
 
-                <div className="flex items-center gap-5">
+                    {
+                      new Date(
+                        item.created_at
+                      ).toLocaleString()
+                    }
 
+                  </p>
+
+                </div>
+
+                {/* TABLET CONTROLS */}
+                <div className="flex items-center gap-6">
+
+                  {/* MINUS */}
+                  <button
+                    onClick={() =>
+                      updateTemperature(
+                        item.id,
+                        item.temperature,
+                        "minus"
+                      )
+                    }
+                    className="
+                      w-20
+                      h-20
+
+                      rounded-3xl
+
+                      bg-red-500/20
+
+                      flex
+                      items-center
+                      justify-center
+
+                      active:scale-95
+
+                      transition-all
+                    "
+                  >
+
+                    <Minus className="w-10 h-10 text-red-300" />
+
+                  </button>
+
+                  {/* TEMP */}
                   <div
                     className={`
-                      p-4
-                      rounded-2xl
+                      px-10
+                      py-6
+
+                      rounded-3xl
+
+                      text-5xl
+                      font-black
 
                       ${
                         item.temperature >= 8
 
-                          ? "bg-red-500/20"
+                          ? "bg-red-500/20 text-red-300"
 
-                          : "bg-cyan-500/20"
+                          : "bg-cyan-500/20 text-cyan-300"
                       }
                     `}
                   >
 
-                    <Thermometer
-                      className={`
-                        ${
-                          item.temperature >= 8
-
-                            ? "text-red-300"
-
-                            : "text-cyan-300"
-                        }
-                      `}
-                    />
+                    {item.temperature}°C
 
                   </div>
 
-                  <div>
-
-                    <h3 className="text-xl font-bold">
-
-                      {
-                        item.equipment ||
-                        "Équipement"
-                      }
-
-                    </h3>
-
-                    <p className="text-gray-400 mt-1">
-
-                      {
-                        new Date(
-                          item.created_at
-                        ).toLocaleString()
-                      }
-
-                    </p>
-
-                  </div>
-
-                </div>
-
-                <div
-                  className={`
-                    px-5
-                    py-3
-
-                    rounded-2xl
-
-                    text-2xl
-                    font-black
-
-                    ${
-                      item.temperature >= 8
-
-                        ? "bg-red-500/20 text-red-300"
-
-                        : "bg-cyan-500/20 text-cyan-300"
+                  {/* PLUS */}
+                  <button
+                    onClick={() =>
+                      updateTemperature(
+                        item.id,
+                        item.temperature,
+                        "plus"
+                      )
                     }
-                  `}
-                >
+                    className="
+                      w-20
+                      h-20
 
-                  {item.temperature}°C
+                      rounded-3xl
+
+                      bg-green-500/20
+
+                      flex
+                      items-center
+                      justify-center
+
+                      active:scale-95
+
+                      transition-all
+                    "
+                  >
+
+                    <Plus className="w-10 h-10 text-green-300" />
+
+                  </button>
 
                 </div>
 
-              </motion.div>
-            )
-          )}
+              </div>
 
-          {temperatures.length === 0 && (
-
-            <div
-              className="
-                flex
-                flex-col
-                items-center
-                justify-center
-                py-20
-              "
-            >
-
-              <Thermometer className="w-16 h-16 text-cyan-300 mb-6" />
-
-              <h3 className="text-3xl font-black mb-3">
-                Aucun relevé
-              </h3>
-
-              <p className="text-gray-400">
-                Aucun historique disponible
-              </p>
-
-            </div>
-
-          )}
-
-        </div>
+            </motion.div>
+          )
+        )}
 
       </div>
 

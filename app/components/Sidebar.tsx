@@ -2,87 +2,99 @@
 
 import Link from "next/link";
 
+import { usePathname } from "next/navigation";
+
 import {
   LayoutDashboard,
   Thermometer,
-  Refrigerator,
-  ClipboardList,
-  Bell,
-  ShieldCheck,
-  Users,
-  Settings,
-  Sparkles,
   Boxes,
+  Truck,
+  ShieldAlert,
+  ClipboardList,
 } from "lucide-react";
 
-const menuItems = [
-  {
-    name: "Dashboard",
-    href: "/",
-    icon: LayoutDashboard,
-  },
-
-  {
-    name: "Marchandises",
-    href: "/stocks",
-    icon: Boxes,
-  },
-
-  {
-    name: "Relevés",
-    href: "/temperatures",
-    icon: Thermometer,
-  },
-
-  {
-    name: "Équipements",
-    href: "/equipments",
-    icon: Refrigerator,
-  },
-
-  {
-    name: "PMS / Nettoyage",
-    href: "/cleaning",
-    icon: Sparkles,
-  },
-
-  {
-    name: "Contrôles",
-    href: "/controls",
-    icon: ClipboardList,
-  },
-
-  {
-    name: "Employés",
-    href: "/employees",
-    icon: Users,
-  },
-
-  {
-    name: "Alertes",
-    href: "/alerts",
-    icon: Bell,
-  },
-
-  {
-    name: "HACCP",
-    href: "/haccp",
-    icon: ShieldCheck,
-  },
-
-  {
-    name: "Paramètres",
-    href: "/settings",
-    icon: Settings,
-  },
-];
+import { motion } from "framer-motion";
 
 export default function Sidebar() {
 
+  const pathname =
+    usePathname();
+
+  const links = [
+
+    {
+      label:
+        "Dashboard",
+
+      href: "/",
+
+      icon:
+        LayoutDashboard,
+    },
+
+    {
+      label:
+        "Températures",
+
+      href:
+        "/temperatures",
+
+      icon:
+        Thermometer,
+    },
+
+    {
+      label:
+        "Stocks",
+
+      href:
+        "/stocks",
+
+      icon:
+        Boxes,
+    },
+
+    {
+      label:
+        "Livraisons",
+
+      href:
+        "/deliveries/new",
+
+      icon:
+        Truck,
+    },
+
+    {
+      label:
+        "Traçabilité",
+
+      href:
+        "/traceability",
+
+      icon:
+        ClipboardList,
+    },
+
+    {
+      label:
+        "Alertes",
+
+      href:
+        "/alerts",
+
+      icon:
+        ShieldAlert,
+    },
+  ];
+
   return (
+
     <aside
       className="
-        w-[320px]
+        w-full
+        xl:w-[320px]
+
         min-h-screen
 
         border-r
@@ -91,64 +103,35 @@ export default function Sidebar() {
         bg-[#071120]
 
         p-6
-
-        flex
-        flex-col
-
-        overflow-y-auto
       "
     >
 
       {/* LOGO */}
-      <div
-        className="
-          rounded-3xl
+      <div className="mb-10">
 
-          border
-          border-white/10
-
-          bg-white/[0.04]
-
-          p-7
-
-          mb-10
-        "
-      >
-
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-4">
 
           <div
             className="
-              w-16
-              h-16
+              w-5
+              h-5
 
-              rounded-2xl
+              rounded-full
 
-              bg-gradient-to-br
-              from-cyan-400
-              to-blue-500
+              bg-cyan-400
 
-              flex
-              items-center
-              justify-center
-
-              text-3xl
-              font-black
+              animate-pulse
             "
-          >
-            CK
-          </div>
+          />
 
           <div>
 
-            <h1 className="text-4xl font-black leading-none">
-              Clean
-              <br />
-              Kitchen
+            <h1 className="text-3xl font-black text-white">
+              CLEAN KITCHEN
             </h1>
 
-            <p className="text-gray-400 mt-2">
-              HACCP Monitoring
+            <p className="text-cyan-400 text-sm tracking-widest uppercase mt-1">
+              HACCP SYSTEM
             </p>
 
           </div>
@@ -157,127 +140,139 @@ export default function Sidebar() {
 
       </div>
 
-      {/* STATUS */}
-      <div
-        className="
-          rounded-3xl
+      {/* NAVIGATION */}
+      <nav className="space-y-4">
 
-          border
-          border-green-500/20
+        {links.map(
+          (
+            link,
+            index
+          ) => {
 
-          bg-green-500/10
+            const isActive =
+              pathname ===
+              link.href;
 
-          p-6
+            const Icon =
+              link.icon;
 
-          mb-8
-        "
-      >
+            return (
 
-        <div className="flex items-center gap-3">
-
-          <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
-
-          <div>
-
-            <p className="text-green-300 font-bold">
-              SYSTEM ONLINE
-            </p>
-
-            <p className="text-green-200/70 text-sm">
-              Monitoring actif
-            </p>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* MENU */}
-      <div className="space-y-4">
-
-        {menuItems.map((item, index) => {
-
-          const Icon = item.icon;
-
-          return (
-            <Link
-              key={index}
-              href={item.href}
-              className="
-                group
-
-                flex
-                items-center
-                gap-5
-
-                rounded-3xl
-
-                border
-                border-white/10
-
-                bg-white/[0.03]
-
-                px-6
-                py-6
-
-                hover:border-cyan-500/30
-                hover:bg-cyan-500/10
-
-                transition-all
-              "
-            >
-
-              <div
-                className="
-                  rounded-2xl
-
-                  bg-white/[0.05]
-
-                  p-4
-
-                  group-hover:bg-cyan-500/20
-
-                  transition-all
-                "
+              <Link
+                key={index}
+                href={
+                  link.href
+                }
               >
 
-                <Icon
-                  className="
-                    w-6
-                    h-6
+                <motion.div
 
-                    text-white/80
+                  whileHover={{
+                    scale: 1.02,
+                    x: 4,
+                  }}
 
-                    group-hover:text-cyan-300
-                  "
-                />
+                  whileTap={{
+                    scale: 0.98,
+                  }}
 
-              </div>
+                  className={`
+                    flex
+                    items-center
+                    gap-5
 
-              <span
-                className="
-                  text-2xl
-                  font-bold
+                    rounded-3xl
 
-                  text-white/90
+                    px-6
+                    py-6
 
-                  group-hover:text-cyan-300
+                    transition-all
 
-                  transition-all
-                "
-              >
-                {item.name}
-              </span>
+                    ${
+                      isActive
 
-            </Link>
-          );
-        })}
+                        ? `
+                          bg-cyan-500/20
+                          border
+                          border-cyan-500/20
+                        `
 
-      </div>
+                        : `
+                          bg-white/[0.03]
+                          border
+                          border-white/5
+                        `
+                    }
+                  `}
+                >
+
+                  <div
+                    className={`
+                      p-4
+                      rounded-2xl
+
+                      ${
+                        isActive
+
+                          ? `
+                            bg-cyan-500/20
+                            text-cyan-300
+                          `
+
+                          : `
+                            bg-white/[0.05]
+                            text-gray-300
+                          `
+                      }
+                    `}
+                  >
+
+                    <Icon className="w-7 h-7" />
+
+                  </div>
+
+                  <div>
+
+                    <p
+                      className={`
+                        text-xl
+                        font-black
+
+                        ${
+                          isActive
+
+                            ? "text-cyan-300"
+
+                            : "text-white"
+                        }
+                      `}
+                    >
+
+                      {
+                        link.label
+                      }
+
+                    </p>
+
+                    <p className="text-gray-500 text-sm mt-1">
+
+                      Navigation rapide
+
+                    </p>
+
+                  </div>
+
+                </motion.div>
+
+              </Link>
+            );
+          }
+        )}
+
+      </nav>
 
       {/* FOOTER */}
-      <div className="mt-auto pt-8">
+      <div className="mt-10">
 
         <div
           className="
@@ -288,16 +283,20 @@ export default function Sidebar() {
 
             bg-cyan-500/10
 
-            p-5
+            p-6
           "
         >
 
-          <p className="text-cyan-300 font-bold">
-            Clean Kitchen AI
+          <p className="text-cyan-300 text-sm font-semibold uppercase tracking-widest mb-3">
+            SYSTEM STATUS
           </p>
 
-          <p className="text-cyan-200/70 text-sm mt-1">
-            Surveillance intelligente HACCP active
+          <h2 className="text-3xl font-black text-white">
+            HACCP ACTIVE
+          </h2>
+
+          <p className="text-cyan-100/70 mt-3">
+            Tous les systèmes fonctionnent normalement.
           </p>
 
         </div>
