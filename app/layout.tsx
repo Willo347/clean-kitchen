@@ -4,6 +4,10 @@ import "./globals.css";
 import Sidebar from "./components/Sidebar";
 
 import { Toaster } from "sonner";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "Clean Kitchen",
@@ -17,7 +21,7 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang="fr">
+    <html lang="fr" className={cn("font-sans", geist.variable)}>
 
       <body className="bg-[#070B14] text-white overflow-hidden">
 
