@@ -123,24 +123,24 @@ export default function TraceabilityPage() {
 
       lot:
         lot.trim() === ""
-          ? "Non renseigné"
+          ? ""
           : lot,
 
       supplier:
         supplier.trim() === ""
-          ? "Non renseigné"
+          ? ""
           : supplier,
 
       temperature:
         temperature.trim() === ""
-          ? "--"
+          ? ""
           : temperature.includes("°C")
             ? temperature
             : `${temperature}°C`,
 
       dlc:
         dlc.trim() === ""
-          ? "--"
+          ? ""
           : dlc,
 
       image_url: imageUrl,
@@ -268,11 +268,14 @@ export default function TraceabilityPage() {
         <div
           className="
             grid
-            grid-cols-7
+            grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_80px]
+
             border-b
             border-white/10
+
             px-8
             py-6
+
             text-gray-400
             font-semibold
           "
@@ -303,17 +306,20 @@ export default function TraceabilityPage() {
             }}
             className="
               grid
-              grid-cols-7
+              grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_80px]
+
               items-center
+
               px-8
               py-6
+
               border-b
               border-white/5
             "
           >
 
             {/* PRODUCT */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 min-w-0">
 
               {item.image_url ? (
 
@@ -327,12 +333,13 @@ export default function TraceabilityPage() {
                     rounded-2xl
                     border
                     border-white/10
+                    flex-shrink-0
                   "
                 />
 
               ) : (
 
-                <div className="bg-cyan-500/20 p-3 rounded-2xl">
+                <div className="bg-cyan-500/20 p-3 rounded-2xl flex-shrink-0">
 
                   <Package className="w-5 h-5 text-cyan-300" />
 
@@ -340,13 +347,13 @@ export default function TraceabilityPage() {
 
               )}
 
-              <div>
+              <div className="min-w-0">
 
-                <p className="font-bold text-lg">
+                <p className="font-bold text-lg truncate">
                   {item.product}
                 </p>
 
-                <p className="text-gray-500 text-sm">
+                <p className="text-gray-500 text-sm truncate">
                   {item.category || "Produit alimentaire"}
                 </p>
 
@@ -355,16 +362,16 @@ export default function TraceabilityPage() {
             </div>
 
             {/* LOT */}
-            <div>
+            <div className="truncate">
               {item.lot}
             </div>
 
             {/* SUPPLIER */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 truncate">
 
-              <Truck className="w-5 h-5 text-cyan-300" />
+              <Truck className="w-5 h-5 text-cyan-300 flex-shrink-0" />
 
-              <span>
+              <span className="truncate">
                 {item.supplier}
               </span>
 
@@ -373,7 +380,7 @@ export default function TraceabilityPage() {
             {/* TEMP */}
             <div className="flex items-center gap-3">
 
-              <Thermometer className="w-5 h-5 text-cyan-300" />
+              <Thermometer className="w-5 h-5 text-cyan-300 flex-shrink-0" />
 
               <span>
                 {item.temperature}
@@ -382,7 +389,7 @@ export default function TraceabilityPage() {
             </div>
 
             {/* DLC */}
-            <div>
+            <div className="truncate">
               {item.dlc}
             </div>
 
@@ -451,341 +458,6 @@ export default function TraceabilityPage() {
         ))}
 
       </div>
-
-      {/* MODAL */}
-      {open && (
-
-        <div
-          className="
-            fixed
-            inset-0
-
-            bg-black/70
-            backdrop-blur-sm
-
-            flex
-            items-center
-            justify-center
-
-            z-50
-
-            p-4
-          "
-        >
-
-          <motion.div
-            initial={{
-              opacity: 0,
-              scale: 0.9,
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-            }}
-            className="
-              w-full
-              max-w-3xl
-
-              max-h-[90vh]
-              overflow-y-auto
-
-              rounded-3xl
-
-              border
-              border-white/10
-
-              bg-[#071120]
-
-              p-8
-            "
-          >
-
-            {/* TOP */}
-            <div className="flex items-center justify-between mb-8">
-
-              <div>
-
-                <h2 className="text-4xl font-black">
-                  Ajouter produit
-                </h2>
-
-                <p className="text-gray-400 mt-2">
-                  Sélection rapide catégorie produit
-                </p>
-
-              </div>
-
-              <button
-                onClick={() => setOpen(false)}
-                className="
-                  rounded-2xl
-                  bg-white/10
-                  p-3
-                "
-              >
-
-                <X />
-
-              </button>
-
-            </div>
-
-            {/* PHOTO */}
-            <label
-              className="
-                flex
-                flex-col
-                items-center
-                justify-center
-
-                border-2
-                border-dashed
-                border-white/10
-
-                rounded-3xl
-
-                p-10
-
-                cursor-pointer
-
-                hover:border-cyan-400
-
-                transition-all
-
-                mb-8
-              "
-            >
-
-              <Camera className="w-12 h-12 text-cyan-300 mb-4" />
-
-              <p className="text-lg font-bold">
-                Importer une photo
-              </p>
-
-              <p className="text-gray-400 mt-2 text-sm">
-                JPG, PNG ou photo téléphone
-              </p>
-
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-
-                  const file =
-                    e.target.files?.[0];
-
-                  if (file) {
-
-                    setImageFile(file);
-
-                    setImagePreview(
-                      URL.createObjectURL(file)
-                    );
-                  }
-                }}
-              />
-
-            </label>
-
-            {/* PREVIEW */}
-            {imagePreview && (
-
-              <div className="mb-8">
-
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="
-                    w-full
-                    max-h-72
-                    object-cover
-
-                    rounded-3xl
-
-                    border
-                    border-white/10
-                  "
-                />
-
-              </div>
-
-            )}
-
-            {/* CATEGORIES */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
-
-              {categories.map((category) => (
-
-                <button
-                  key={category.name}
-                  onClick={() =>
-                    setSelectedCategory(
-                      category.name
-                    )
-                  }
-                  className={`
-                    rounded-2xl
-                    border
-                    p-6
-                    text-left
-                    transition-all
-
-                    ${
-                      selectedCategory ===
-                      category.name
-
-                        ? "border-cyan-400 bg-cyan-500/20"
-
-                        : "border-white/10 bg-white/[0.03]"
-                    }
-                  `}
-                >
-
-                  <div className="text-4xl mb-4">
-                    {category.emoji}
-                  </div>
-
-                  <p className="text-xl font-bold">
-                    {category.name}
-                  </p>
-
-                </button>
-
-              ))}
-
-            </div>
-
-            {/* FORM */}
-            {selectedCategory && (
-
-              <div className="space-y-5">
-
-                <input
-                  type="text"
-                  placeholder="Nom produit *"
-                  value={productName}
-                  onChange={(e) =>
-                    setProductName(e.target.value)
-                  }
-                  className="
-                    w-full
-                    rounded-2xl
-                    bg-white/[0.05]
-                    border
-                    border-white/10
-                    px-5
-                    py-4
-                    outline-none
-                  "
-                />
-
-                <input
-                  type="text"
-                  placeholder="Numéro lot"
-                  value={lot}
-                  onChange={(e) =>
-                    setLot(e.target.value)
-                  }
-                  className="
-                    w-full
-                    rounded-2xl
-                    bg-white/[0.05]
-                    border
-                    border-white/10
-                    px-5
-                    py-4
-                    outline-none
-                  "
-                />
-
-                <input
-                  type="text"
-                  placeholder="Fournisseur"
-                  value={supplier}
-                  onChange={(e) =>
-                    setSupplier(e.target.value)
-                  }
-                  className="
-                    w-full
-                    rounded-2xl
-                    bg-white/[0.05]
-                    border
-                    border-white/10
-                    px-5
-                    py-4
-                    outline-none
-                  "
-                />
-
-                <input
-                  type="text"
-                  placeholder="Température réception"
-                  value={temperature}
-                  onChange={(e) =>
-                    setTemperature(e.target.value)
-                  }
-                  className="
-                    w-full
-                    rounded-2xl
-                    bg-white/[0.05]
-                    border
-                    border-white/10
-                    px-5
-                    py-4
-                    outline-none
-                  "
-                />
-
-                <input
-                  type="text"
-                  placeholder="DLC"
-                  value={dlc}
-                  onChange={(e) =>
-                    setDlc(e.target.value)
-                  }
-                  className="
-                    w-full
-                    rounded-2xl
-                    bg-white/[0.05]
-                    border
-                    border-white/10
-                    px-5
-                    py-4
-                    outline-none
-                  "
-                />
-
-                <button
-                  onClick={addProduct}
-                  className="
-                    w-full
-
-                    rounded-2xl
-
-                    bg-cyan-500
-
-                    py-4
-
-                    text-black
-                    font-bold
-                    text-lg
-                  "
-                >
-
-                  Ajouter produit
-
-                </button>
-
-              </div>
-
-            )}
-
-          </motion.div>
-
-        </div>
-
-      )}
 
     </main>
   );
