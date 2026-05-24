@@ -1,234 +1,351 @@
 "use client";
 
+import { useState } from "react";
+
 import { motion } from "framer-motion";
 
 import {
   Refrigerator,
-  Thermometer,
-  Wifi,
-  ShieldCheck,
-  AlertTriangle,
+  Plus,
   Snowflake,
+  Thermometer,
 } from "lucide-react";
 
-const equipments = [
-  {
-    id: 1,
-    name: "Chambre froide",
-    temp: "4°C",
-    status: "Stable",
-    online: true,
-    alert: false,
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const equipmentTypes = {
+  frigo: {
+    label: "Frigo",
+    min: 0,
+    max: 4,
   },
-  {
-    id: 2,
-    name: "Congélateur",
-    temp: "-18°C",
-    status: "Optimal",
-    online: true,
-    alert: false,
+  chambre_froide: {
+    label: "Chambre froide",
+    min: 0,
+    max: 3,
   },
-  {
-    id: 3,
-    name: "Frigo réserve",
-    temp: "12°C",
-    status: "Alerte",
-    online: true,
-    alert: true,
+  congelateur: {
+    label: "Congélateur",
+    min: -25,
+    max: -18,
   },
-];
+};
 
 export default function EquipmentsPage() {
+
+  const [selectedType, setSelectedType] =
+    useState<keyof typeof equipmentTypes | "">("");
+
+  const currentType =
+    selectedType
+      ? equipmentTypes[selectedType]
+      : null;
 
   return (
     <main className="min-h-screen p-10 text-white">
 
       {/* HEADER */}
-      <div className="mb-12">
+      <div className="flex items-center justify-between mb-12">
 
-        <div className="flex items-center gap-4 mb-4">
+        <div>
 
-          <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
+          <div className="flex items-center gap-4 mb-4">
 
-          <p className="text-cyan-400 font-semibold tracking-widest uppercase">
-            EQUIPMENT MONITORING
+            <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
+
+            <p className="text-cyan-400 font-semibold tracking-widest uppercase">
+              EQUIPMENT MANAGEMENT
+            </p>
+
+          </div>
+
+          <h1 className="text-7xl font-black tracking-tight">
+            Équipements
+          </h1>
+
+          <p className="text-gray-400 mt-5 text-xl">
+            Gestion intelligente des équipements HACCP
           </p>
 
         </div>
 
-        <h1 className="text-7xl font-black tracking-tight">
-          Équipements
-        </h1>
+        {/* ADD BUTTON */}
+        <Dialog>
 
-        <p className="text-gray-400 mt-5 text-xl">
-          Surveillance temps réel des équipements HACCP
-        </p>
+          <DialogTrigger asChild>
+
+            <button
+              className="
+                flex
+                items-center
+                gap-3
+
+                rounded-2xl
+
+                bg-gradient-to-r
+                from-cyan-500
+                to-blue-500
+
+                px-6
+                py-4
+
+                font-bold
+
+                shadow-lg
+                shadow-cyan-500/20
+
+                hover:scale-105
+
+                transition-all
+              "
+            >
+
+              <Plus className="w-5 h-5" />
+
+              Ajouter un équipement
+
+            </button>
+
+          </DialogTrigger>
+
+          <DialogContent
+            className="
+              border
+              border-white/10
+
+              bg-[#0B1220]
+
+              text-white
+
+              rounded-3xl
+            "
+          >
+
+            <DialogHeader>
+
+              <DialogTitle className="text-3xl font-black mb-6">
+                Nouvel équipement
+              </DialogTitle>
+
+            </DialogHeader>
+
+            <div className="space-y-6">
+
+              {/* NAME */}
+              <div>
+
+                <label className="text-sm text-gray-400 mb-3 block">
+                  Nom de l’équipement
+                </label>
+
+                <input
+                  placeholder="Ex: Frigo réserve"
+                  className="
+                    w-full
+
+                    rounded-2xl
+
+                    border
+                    border-white/10
+
+                    bg-white/[0.04]
+
+                    px-5
+                    py-4
+
+                    outline-none
+
+                    focus:border-cyan-500/40
+                  "
+                />
+
+              </div>
+
+              {/* TYPE */}
+              <div>
+
+                <label className="text-sm text-gray-400 mb-3 block">
+                  Type d’équipement
+                </label>
+
+                <Select
+                  onValueChange={(value) =>
+                    setSelectedType(
+                      value as keyof typeof equipmentTypes
+                    )
+                  }
+                >
+
+                  <SelectTrigger
+                    className="
+                      rounded-2xl
+
+                      border-white/10
+
+                      bg-white/[0.04]
+
+                      h-14
+                    "
+                  >
+
+                    <SelectValue placeholder="Choisir un type" />
+
+                  </SelectTrigger>
+
+                  <SelectContent
+                    className="
+                      bg-[#0B1220]
+                      border-white/10
+                      text-white
+                    "
+                  >
+
+                    <SelectItem value="frigo">
+                      Frigo
+                    </SelectItem>
+
+                    <SelectItem value="chambre_froide">
+                      Chambre froide
+                    </SelectItem>
+
+                    <SelectItem value="congelateur">
+                      Congélateur
+                    </SelectItem>
+
+                  </SelectContent>
+
+                </Select>
+
+              </div>
+
+              {/* AUTO TEMPS */}
+              {currentType && (
+
+                <motion.div
+                  initial={{
+                    opacity: 0,
+                    y: 10,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                  }}
+                  className="
+                    rounded-2xl
+
+                    border
+                    border-cyan-500/20
+
+                    bg-cyan-500/10
+
+                    p-5
+                  "
+                >
+
+                  <div className="flex items-center gap-4 mb-4">
+
+                    <div className="bg-cyan-500/20 p-3 rounded-2xl">
+
+                      <Thermometer className="text-cyan-300" />
+
+                    </div>
+
+                    <div>
+
+                      <p className="font-bold text-cyan-300">
+                        Configuration automatique HACCP
+                      </p>
+
+                      <p className="text-cyan-200/70 text-sm">
+                        Températures recommandées
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <div className="flex items-center gap-8">
+
+                    <div>
+
+                      <p className="text-gray-400 text-sm">
+                        Température minimum
+                      </p>
+
+                      <h3 className="text-3xl font-black mt-2">
+                        {currentType.min}°C
+                      </h3>
+
+                    </div>
+
+                    <div>
+
+                      <p className="text-gray-400 text-sm">
+                        Température maximum
+                      </p>
+
+                      <h3 className="text-3xl font-black mt-2">
+                        {currentType.max}°C
+                      </h3>
+
+                    </div>
+
+                  </div>
+
+                </motion.div>
+
+              )}
+
+              {/* SAVE */}
+              <button
+                className="
+                  w-full
+
+                  rounded-2xl
+
+                  bg-gradient-to-r
+                  from-cyan-500
+                  to-blue-500
+
+                  py-4
+
+                  font-bold
+
+                  hover:scale-[1.02]
+
+                  transition-all
+                "
+              >
+                Enregistrer l’équipement
+              </button>
+
+            </div>
+
+          </DialogContent>
+
+        </Dialog>
 
       </div>
 
-      {/* TOP STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-7 mb-10">
-
-        {/* TOTAL */}
-        <motion.div
-          whileHover={{
-            scale: 1.03,
-            y: -5,
-          }}
-          className="
-            rounded-3xl
-            border
-            border-cyan-500/20
-            bg-gradient-to-br
-            from-cyan-500/20
-            to-blue-900/10
-            p-7
-          "
-        >
-
-          <div className="flex items-center justify-between mb-8">
-
-            <div className="bg-cyan-500/20 p-4 rounded-2xl">
-
-              <Refrigerator className="text-cyan-300" />
-
-            </div>
-
-            <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
-
-          </div>
-
-          <p className="text-cyan-200">
-            Équipements actifs
-          </p>
-
-          <h2 className="text-6xl font-black mt-4">
-            12
-          </h2>
-
-        </motion.div>
-
-        {/* ONLINE */}
-        <motion.div
-          whileHover={{
-            scale: 1.03,
-            y: -5,
-          }}
-          className="
-            rounded-3xl
-            border
-            border-green-500/20
-            bg-gradient-to-br
-            from-green-500/20
-            to-emerald-900/10
-            p-7
-          "
-        >
-
-          <div className="flex items-center justify-between mb-8">
-
-            <div className="bg-green-500/20 p-4 rounded-2xl">
-
-              <Wifi className="text-green-300" />
-
-            </div>
-
-            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
-
-          </div>
-
-          <p className="text-green-200">
-            Connectés
-          </p>
-
-          <h2 className="text-6xl font-black mt-4">
-            11
-          </h2>
-
-        </motion.div>
-
-        {/* ALERT */}
-        <motion.div
-          whileHover={{
-            scale: 1.03,
-            y: -5,
-          }}
-          className="
-            rounded-3xl
-            border
-            border-red-500/20
-            bg-gradient-to-br
-            from-red-500/20
-            to-red-900/10
-            p-7
-          "
-        >
-
-          <div className="flex items-center justify-between mb-8">
-
-            <div className="bg-red-500/20 p-4 rounded-2xl">
-
-              <AlertTriangle className="text-red-300" />
-
-            </div>
-
-            <div className="w-3 h-3 rounded-full bg-red-400 animate-pulse" />
-
-          </div>
-
-          <p className="text-red-200">
-            En anomalie
-          </p>
-
-          <h2 className="text-6xl font-black mt-4">
-            1
-          </h2>
-
-        </motion.div>
-
-        {/* HACCP */}
-        <motion.div
-          whileHover={{
-            scale: 1.03,
-            y: -5,
-          }}
-          className="
-            rounded-3xl
-            border
-            border-blue-500/20
-            bg-gradient-to-br
-            from-blue-500/20
-            to-cyan-900/10
-            p-7
-          "
-        >
-
-          <div className="flex items-center justify-between mb-8">
-
-            <div className="bg-blue-500/20 p-4 rounded-2xl">
-
-              <ShieldCheck className="text-blue-300" />
-
-            </div>
-
-            <div className="w-3 h-3 rounded-full bg-blue-400 animate-pulse" />
-
-          </div>
-
-          <p className="text-blue-200">
-            HACCP Status
-          </p>
-
-          <h2 className="text-5xl font-black mt-4">
-            OK
-          </h2>
-
-        </motion.div>
-
-      </div>
-
-      {/* EQUIPMENT LIST */}
-      <div
+      {/* EQUIPMENT CARD */}
+      <motion.div
+        whileHover={{
+          scale: 1.01,
+        }}
         className="
           rounded-3xl
 
@@ -243,170 +360,51 @@ export default function EquipmentsPage() {
         "
       >
 
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between">
 
-          <h2 className="text-3xl font-black">
-            Équipements surveillés
-          </h2>
+          <div className="flex items-center gap-5">
 
-          <div
-            className="
-              bg-cyan-500/10
-              border
-              border-cyan-500/20
+            <div
+              className="
+                bg-cyan-500/20
+                p-5
+                rounded-3xl
+              "
+            >
 
-              px-5
-              py-2
+              <Snowflake className="text-cyan-300 w-8 h-8" />
 
-              rounded-2xl
+            </div>
 
-              text-cyan-300
-              text-sm
-              font-semibold
-            "
-          >
-            LIVE SYSTEM
+            <div>
+
+              <h2 className="text-3xl font-black">
+                Chambre froide
+              </h2>
+
+              <p className="text-gray-400 mt-2">
+                Surveillance HACCP active
+              </p>
+
+            </div>
+
+          </div>
+
+          <div className="text-right">
+
+            <p className="text-gray-400 mb-2">
+              Température actuelle
+            </p>
+
+            <h2 className="text-5xl font-black">
+              4°C
+            </h2>
+
           </div>
 
         </div>
 
-        <div className="space-y-5">
-
-          {equipments.map((equipment) => (
-
-            <motion.div
-              key={equipment.id}
-              whileHover={{
-                scale: 1.01,
-              }}
-              className={`
-                flex
-                items-center
-                justify-between
-
-                rounded-2xl
-
-                border
-
-                p-5
-
-                ${
-                  equipment.alert
-                    ? `
-                      border-red-500/20
-                      bg-red-500/5
-                    `
-                    : `
-                      border-white/10
-                      bg-white/[0.03]
-                    `
-                }
-              `}
-            >
-
-              <div className="flex items-center gap-5">
-
-                <div
-                  className={`
-                    p-4
-                    rounded-2xl
-
-                    ${
-                      equipment.alert
-                        ? "bg-red-500/20"
-                        : "bg-cyan-500/20"
-                    }
-                  `}
-                >
-
-                  <Snowflake
-                    className={
-                      equipment.alert
-                        ? "text-red-400"
-                        : "text-cyan-300"
-                    }
-                  />
-
-                </div>
-
-                <div>
-
-                  <h3 className="text-2xl font-bold">
-                    {equipment.name}
-                  </h3>
-
-                  <p className="text-gray-400 mt-1">
-                    Surveillance active HACCP
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div className="flex items-center gap-10">
-
-                <div className="text-center">
-
-                  <p className="text-gray-400 text-sm mb-2">
-                    Température
-                  </p>
-
-                  <p className="text-3xl font-black">
-                    {equipment.temp}
-                  </p>
-
-                </div>
-
-                <div className="text-center">
-
-                  <p className="text-gray-400 text-sm mb-2">
-                    Status
-                  </p>
-
-                  <p
-                    className={`font-bold ${
-                      equipment.alert
-                        ? "text-red-400"
-                        : "text-green-400"
-                    }`}
-                  >
-                    {equipment.status}
-                  </p>
-
-                </div>
-
-                <div className="flex items-center gap-3">
-
-                  <div
-                    className={`
-                      w-3
-                      h-3
-                      rounded-full
-
-                      ${
-                        equipment.online
-                          ? "bg-green-400"
-                          : "bg-red-400"
-                      }
-                    `}
-                  />
-
-                  <span className="text-gray-300">
-                    {equipment.online
-                      ? "Online"
-                      : "Offline"}
-                  </span>
-
-                </div>
-
-              </div>
-
-            </motion.div>
-          ))}
-
-        </div>
-
-      </div>
+      </motion.div>
 
     </main>
   );
