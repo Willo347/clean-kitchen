@@ -3,673 +3,358 @@
 import { useEffect, useState } from "react";
 
 import {
-  Boxes,
+  Snowflake,
   AlertTriangle,
-  Package,
-  ShieldCheck,
-  Clock3,
-  Thermometer,
-  Bell,
+  CheckCircle2,
+  Activity,
 } from "lucide-react";
-
-import { motion } from "framer-motion";
-
-import Link from "next/link";
 
 import { supabase } from "@/lib/supabase";
 
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  BarChart,
-  Bar,
-} from "recharts";
-
 export default function DashboardPage() {
 
-  const [products, setProducts] =
-    useState<any[]>([]);
+  const [equipmentCount, setEquipmentCount] =
+    useState(0);
 
-  const [movements, setMovements] =
-    useState<any[]>([]);
+  const [alertCount, setAlertCount] =
+    useState(0);
 
-  const [alerts, setAlerts] =
-    useState<any[]>([]);
+  const [onlineCount, setOnlineCount] =
+    useState(0);
 
-  const [
-    openNotifications,
-    setOpenNotifications,
-  ] = useState(false);
+  const [averageTemp, setAverageTemp] =
+    useState<number | null>(null);
+
+  async function loadDashboard() {
+
+    // EQUIPMENTS
+    const { data: equipments } = await supabase
+      .from("equipments")
+      .select("*");
+
+    if (equipments) {
+
+      setEquipmentCount(equipments.length);
+
+      setOnlineCount(equipments.length);
+    }
+
+    // TEMPERATURES
+    const { data: logs } = await supabase
+      .from("temperature_logs")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (logs && logs.length > 0) {
+
+      const latestTemps: Record<number, number> = {};
+
+      logs.forEach((log: any) => {
+
+        if (
+          log.equipment_id &&
+          latestTemps[log.equipment_id] === undefined
+        ) {
+          latestTemps[log.equipment_id] =
+            log.temperature;
+        }
+
+      });
+
+      const temps =
+        Object.values(latestTemps);
+
+      // ALERTS
+      let alerts = 0;
+
+      equipments?.forEach((equipment: any) => {
+
+        const temp =
+          latestTemps[equipment.id];
+
+        if (
+          temp !== undefined &&
+          (
+            temp < equipment.temp_min ||
+            temp > equipment.temp_max
+          )
+        ) {
+          alerts++;
+        }
+
+      });
+
+      setAlertCount(alerts);
+
+      // AVERAGE
+      const avg =
+        temps.reduce((a, b) => a + b, 0) /
+        temps.length;
+
+      setAverageTemp(avg);
+    }
+  }
 
   useEffect(() => {
 
-    fetchDashboard();
+    loadDashboard();
 
   }, []);
 
-  const fetchDashboard =
-    async () => {
-
-      const {
-        data: productsData,
-      } =
-        await supabase
-          .from(
-            "traceability_products"
-          )
-          .select("*");
-
-      const {
-        data: movementsData,
-      } =
-        await supabase
-          .from(
-            "stock_movements"
-          )
-          .select("*")
-          .order(
-            "created_at",
-            {
-              ascending: false,
-            }
-          )
-          .limit(10);
-
-      if (productsData) {
-
-        setProducts(
-          productsData
-        );
-
-        generateAlerts(
-          productsData
-        );
-      }
-
-      if (movementsData) {
-
-        setMovements(
-          movementsData
-        );
-      }
-    };
-
-  const generateAlerts =
-    (
-      data: any[]
-    ) => {
-
-      const generated: any[] =
-        [];
-
-      const today =
-        new Date();
-
-      data.forEach((item) => {
-
-        if (item.dlc) {
-
-          const dlcDate =
-            new Date(item.dlc);
-
-          const diffDays =
-            Math.ceil(
-              (
-                dlcDate.getTime() -
-                today.getTime()
-              ) /
-                (
-                  1000 *
-                  60 *
-                  60 *
-                  24
-                )
-            );
-
-          if (diffDays <= 0) {
-
-            generated.push({
-              type:
-                "Critique",
-
-              product:
-                item.product,
-
-              message:
-                "Produit périmé",
-            });
-
-          } else if (
-            diffDays <= 3
-          ) {
-
-            generated.push({
-              type:
-                "Attention",
-
-              product:
-                item.product,
-
-              message:
-                "DLC proche",
-            });
-          }
-        }
-
-        if (
-          (item.quantity || 0) <= 2
-        ) {
-
-          generated.push({
-            type:
-              "Stock faible",
-
-            product:
-              item.product,
-
-            message:
-              "Stock faible",
-          });
-        }
-      });
-
-      setAlerts(
-        generated
-      );
-    };
-
-  const totalProducts =
-    products.length;
-
-  const totalQuantity =
-    products.reduce(
-      (
-        acc,
-        item
-      ) =>
-        acc +
-        (item.quantity || 0),
-      0
-    );
-
-  const criticalAlerts =
-    alerts.filter(
-      (a) =>
-        a.type ===
-        "Critique"
-    );
-
-  /* CHART DATA */
-  const stockChartData =
-    products.slice(0, 6).map(
-      (item) => ({
-        name:
-          item.product,
-        stock:
-          item.quantity || 0,
-      })
-    );
-
-  const alertsChartData = [
-    {
-      name: "Critiques",
-      value:
-        criticalAlerts.length,
-    },
-    {
-      name: "Alertes",
-      value:
-        alerts.length,
-    },
-  ];
-
   return (
 
-    <main className="min-h-screen p-10 text-white">
+    <div className="p-10">
 
       {/* HEADER */}
+
       <div className="mb-12">
 
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-3 mb-4">
 
-          <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
+          <div className="w-4 h-4 rounded-full bg-cyan-400" />
 
-          <p className="text-cyan-400 font-semibold tracking-widest uppercase">
-            CLEAN KITCHEN AI
-          </p>
+          <span className="text-cyan-400 tracking-[0.25em] text-sm font-semibold uppercase">
+            HACCP CONTROL CENTER
+          </span>
 
         </div>
 
-        <div className="flex items-start justify-between">
+        <h1 className="text-7xl font-black text-white mb-4">
+          Dashboard
+        </h1>
 
-          <div>
+        <p className="text-white/50 text-2xl">
+          Supervision intelligente des opérations HACCP
+        </p>
 
-            <h1 className="text-7xl font-black">
-              Dashboard HACCP
-            </h1>
+      </div>
 
-            <p className="text-gray-400 mt-5 text-xl">
-              Monitoring intelligent restauration
-            </p>
+      {/* STATS */}
 
-          </div>
+      <div className="grid grid-cols-2 gap-8">
 
-          {/* BELL */}
-          <div className="relative">
+        {/* EQUIPMENTS */}
 
-            <button
-              onClick={() =>
-                setOpenNotifications(
-                  !openNotifications
-                )
-              }
+        <div
+          className="
+            rounded-[36px]
+            border
+            border-white/10
+            bg-white/[0.03]
+            backdrop-blur-xl
+            p-8
+          "
+        >
+
+          <div className="flex items-center justify-between mb-8">
+
+            <div>
+
+              <p className="text-white/50 text-xl mb-3">
+                Équipements
+              </p>
+
+              <h2 className="text-6xl font-black text-white">
+                {equipmentCount}
+              </h2>
+
+            </div>
+
+            <div
               className="
-                relative
-
-                rounded-2xl
-
-                border
-                border-red-500/20
-
-                bg-red-500/10
-
-                p-4
+                w-24
+                h-24
+                rounded-3xl
+                bg-cyan-500/20
+                flex
+                items-center
+                justify-center
               "
             >
 
-              <Bell className="text-red-300" />
+              <Snowflake
+                size={42}
+                className="text-cyan-300"
+              />
 
-              {alerts.length > 0 && (
-
-                <div
-                  className="
-                    absolute
-                    -top-2
-                    -right-2
-
-                    w-7
-                    h-7
-
-                    rounded-full
-
-                    bg-red-500
-
-                    flex
-                    items-center
-                    justify-center
-
-                    text-xs
-                    font-black
-                  "
-                >
-
-                  {alerts.length}
-
-                </div>
-
-              )}
-
-            </button>
+            </div>
 
           </div>
+
+          <p className="text-white/40 text-lg">
+            Équipements connectés au système HACCP
+          </p>
 
         </div>
 
-      </div>
+        {/* ALERTS */}
 
-      {/* KPI */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-7 mb-10">
-
-        <motion.div
-          whileHover={{
-            scale: 1.03,
-            y: -5,
-          }}
+        <div
           className="
-            rounded-3xl
-            border
-            border-white/10
-            bg-white/[0.04]
-            p-7
-          "
-        >
-
-          <div className="flex items-center justify-between mb-8">
-
-            <Boxes className="text-cyan-300" />
-
-            <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
-
-          </div>
-
-          <p className="text-gray-400">
-            Produits
-          </p>
-
-          <h2 className="text-6xl font-black mt-4">
-
-            {totalProducts}
-
-          </h2>
-
-        </motion.div>
-
-        <motion.div
-          whileHover={{
-            scale: 1.03,
-            y: -5,
-          }}
-          className="
-            rounded-3xl
-            border
-            border-white/10
-            bg-white/[0.04]
-            p-7
-          "
-        >
-
-          <div className="flex items-center justify-between mb-8">
-
-            <Package className="text-green-300" />
-
-            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
-
-          </div>
-
-          <p className="text-gray-400">
-            Quantité totale
-          </p>
-
-          <h2 className="text-6xl font-black mt-4">
-
-            {totalQuantity}
-
-          </h2>
-
-        </motion.div>
-
-        <motion.div
-          whileHover={{
-            scale: 1.03,
-            y: -5,
-          }}
-          className="
-            rounded-3xl
+            rounded-[36px]
             border
             border-red-500/20
-            bg-red-500/10
-            p-7
+            bg-red-500/[0.06]
+            backdrop-blur-xl
+            p-8
           "
         >
 
           <div className="flex items-center justify-between mb-8">
 
-            <AlertTriangle className="text-red-300" />
+            <div>
 
-            <div className="w-3 h-3 rounded-full bg-red-400 animate-pulse" />
+              <p className="text-red-300/70 text-xl mb-3">
+                Alertes HACCP
+              </p>
+
+              <h2 className="text-6xl font-black text-red-300">
+                {alertCount}
+              </h2>
+
+            </div>
+
+            <div
+              className="
+                w-24
+                h-24
+                rounded-3xl
+                bg-red-500/20
+                flex
+                items-center
+                justify-center
+              "
+            >
+
+              <AlertTriangle
+                size={42}
+                className="text-red-300"
+              />
+
+            </div>
 
           </div>
 
-          <p className="text-red-200">
-            Alertes critiques
+          <p className="text-red-200/50 text-lg">
+            Températures hors conformité
           </p>
 
-          <h2 className="text-6xl font-black mt-4">
+        </div>
 
-            {criticalAlerts.length}
+        {/* ONLINE */}
 
-          </h2>
-
-        </motion.div>
-
-        <motion.div
-          whileHover={{
-            scale: 1.03,
-            y: -5,
-          }}
+        <div
           className="
-            rounded-3xl
+            rounded-[36px]
             border
-            border-cyan-500/20
-            bg-cyan-500/10
-            p-7
+            border-green-500/20
+            bg-green-500/[0.06]
+            backdrop-blur-xl
+            p-8
           "
         >
 
           <div className="flex items-center justify-between mb-8">
 
-            <ShieldCheck className="text-cyan-300" />
+            <div>
 
-            <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
+              <p className="text-green-300/70 text-xl mb-3">
+                Système Online
+              </p>
+
+              <h2 className="text-6xl font-black text-green-300">
+                {onlineCount}
+              </h2>
+
+            </div>
+
+            <div
+              className="
+                w-24
+                h-24
+                rounded-3xl
+                bg-green-500/20
+                flex
+                items-center
+                justify-center
+              "
+            >
+
+              <CheckCircle2
+                size={42}
+                className="text-green-300"
+              />
+
+            </div>
 
           </div>
 
-          <p className="text-cyan-200">
-            Système HACCP
+          <p className="text-green-200/50 text-lg">
+            Équipements opérationnels
           </p>
 
-          <h2 className="text-4xl font-black mt-6">
-            ACTIF
-          </h2>
-
-        </motion.div>
-
-      </div>
-
-      {/* CHARTS */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
-
-        {/* STOCK CHART */}
-        <div
-          className="
-            rounded-3xl
-            border
-            border-white/10
-            bg-white/[0.04]
-            p-8
-          "
-        >
-
-          <h2 className="text-3xl font-black mb-8">
-            Évolution stock
-          </h2>
-
-          <div className="h-[320px]">
-
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-            >
-
-              <LineChart
-                data={
-                  stockChartData
-                }
-              >
-
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-
-                <XAxis dataKey="name" />
-
-                <YAxis />
-
-                <Tooltip />
-
-                <Line
-                  type="monotone"
-                  dataKey="stock"
-                  stroke="#06b6d4"
-                  strokeWidth={4}
-                />
-
-              </LineChart>
-
-            </ResponsiveContainer>
-
-          </div>
-
         </div>
 
-        {/* ALERTS CHART */}
+        {/* TEMP */}
+
         <div
           className="
-            rounded-3xl
+            rounded-[36px]
             border
-            border-white/10
-            bg-white/[0.04]
+            border-blue-500/20
+            bg-blue-500/[0.06]
+            backdrop-blur-xl
             p-8
           "
         >
 
-          <h2 className="text-3xl font-black mb-8">
-            Analyse alertes
-          </h2>
+          <div className="flex items-center justify-between mb-8">
 
-          <div className="h-[320px]">
+            <div>
 
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
+              <p className="text-blue-300/70 text-xl mb-3">
+                Température Moyenne
+              </p>
+
+              <h2 className="text-6xl font-black text-blue-300">
+
+                {averageTemp !== null
+                  ? averageTemp.toFixed(1)
+                  : "--"}°C
+
+              </h2>
+
+            </div>
+
+            <div
+              className="
+                w-24
+                h-24
+                rounded-3xl
+                bg-blue-500/20
+                flex
+                items-center
+                justify-center
+              "
             >
 
-              <BarChart
-                data={
-                  alertsChartData
-                }
-              >
+              <Activity
+                size={42}
+                className="text-blue-300"
+              />
 
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-
-                <XAxis dataKey="name" />
-
-                <YAxis />
-
-                <Tooltip />
-
-                <Bar
-                  dataKey="value"
-                  fill="#ef4444"
-                  radius={[
-                    10,
-                    10,
-                    0,
-                    0,
-                  ]}
-                />
-
-              </BarChart>
-
-            </ResponsiveContainer>
+            </div>
 
           </div>
+
+          <p className="text-blue-200/50 text-lg">
+            Analyse temps réel HACCP
+          </p>
 
         </div>
 
       </div>
 
-      {/* QUICK ACCESS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        <Link href="/stocks">
-
-          <div
-            className="
-              rounded-3xl
-              border
-              border-white/10
-              bg-white/[0.04]
-              p-7
-              hover:scale-[1.02]
-              transition-all
-              cursor-pointer
-            "
-          >
-
-            <p className="text-5xl mb-5">
-              📦
-            </p>
-
-            <h2 className="text-2xl font-black mb-3">
-              Stocks
-            </h2>
-
-            <p className="text-gray-400">
-              Gestion marchandises
-            </p>
-
-          </div>
-
-        </Link>
-
-        <Link href="/deliveries/new">
-
-          <div
-            className="
-              rounded-3xl
-              border
-              border-cyan-500/20
-              bg-cyan-500/10
-              p-7
-              hover:scale-[1.02]
-              transition-all
-              cursor-pointer
-            "
-          >
-
-            <p className="text-5xl mb-5">
-              🚚
-            </p>
-
-            <h2 className="text-2xl font-black mb-3">
-              Nouvelle livraison
-            </h2>
-
-            <p className="text-cyan-100/70">
-              Réception fournisseur
-            </p>
-
-          </div>
-
-        </Link>
-
-        <Link href="/alerts">
-
-          <div
-            className="
-              rounded-3xl
-              border
-              border-red-500/20
-              bg-red-500/10
-              p-7
-              hover:scale-[1.02]
-              transition-all
-              cursor-pointer
-            "
-          >
-
-            <p className="text-5xl mb-5">
-              🚨
-            </p>
-
-            <h2 className="text-2xl font-black mb-3">
-              Alertes
-            </h2>
-
-            <p className="text-red-200">
-              Surveillance HACCP
-            </p>
-
-          </div>
-
-        </Link>
-
-      </div>
-
-    </main>
+    </div>
   );
 }

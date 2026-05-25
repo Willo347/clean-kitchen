@@ -2,82 +2,39 @@
 
 import { useEffect, useState } from "react";
 
-import { motion } from "framer-motion";
-
 import {
+  Pencil,
+  Trash2,
   Plus,
   Snowflake,
-  Thermometer,
   Wifi,
   AlertTriangle,
-  CheckCircle2,
-  Trash2,
-  Pencil,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+type Equipment = {
+  id: number;
+  name: string;
+  zone: string;
+  type: string;
+  temp_min: number;
+  temp_max: number;
+};
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const equipmentTypes = {
-  frigo: {
-    label: "Frigo",
-    min: 0,
-    max: 4,
-  },
-
-  chambre_froide: {
-    label: "Chambre froide",
-    min: 0,
-    max: 4,
-  },
-
-  congelateur: {
-    label: "Congélateur",
-    min: -25,
-    max: -18,
-  },
+type TemperatureLog = {
+  equipment_id: number;
+  temperature: number;
 };
 
 export default function EquipmentsPage() {
 
-  const [selectedType, setSelectedType] =
-    useState<keyof typeof equipmentTypes | "">("");
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [temperatures, setTemperatures] = useState<
+    Record<number, number>
+  >({});
 
-  const [equipmentName, setEquipmentName] =
-    useState("");
-
-  const [equipments, setEquipments] =
-    useState<any[]>([]);
-
-  const [editingEquipment, setEditingEquipment] =
-    useState<any | null>(null);
-
-  const [editName, setEditName] =
-    useState("");
-
-  const [editZone, setEditZone] =
-    useState("");
-
-  useEffect(() => {
-    fetchEquipments();
-  }, []);
-
-  async function fetchEquipments() {
+  async function loadEquipments() {
 
     const { data, error } = await supabase
       .from("equipments")
@@ -89,521 +46,222 @@ export default function EquipmentsPage() {
     }
   }
 
-  const currentType =
-    selectedType
-      ? equipmentTypes[selectedType]
-      : null;
+  async function loadTemperatures() {
 
-  async function addEquipment() {
+    const { data, error } = await supabase
+      .from("temperature_logs")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    if (!equipmentName || !currentType) return;
+    if (!error && data) {
 
-    const { error } = await supabase
-      .from("equipments")
-      .insert([
-        {
-          name: equipmentName,
-          type: selectedType,
-          zone: "Cuisine",
-          temp_min: currentType.min,
-          temp_max: currentType.max,
-        },
-      ]);
+      const latestTemps: Record<number, number> = {};
 
-    if (!error) {
+      data.forEach((log: any) => {
 
-      setEquipmentName("");
-      setSelectedType("");
+        if (
+          log.equipment_id &&
+          latestTemps[log.equipment_id] === undefined
+        ) {
+          latestTemps[log.equipment_id] = log.temperature;
+        }
 
-      fetchEquipments();
+      });
+
+      setTemperatures(latestTemps);
     }
   }
 
   async function deleteEquipment(id: number) {
 
-    const confirmDelete = confirm(
-      "Supprimer cet équipement ?"
-    );
-
-    if (!confirmDelete) return;
-
-    const { error } = await supabase
+    await supabase
       .from("equipments")
       .delete()
       .eq("id", id);
 
-    if (!error) {
-      fetchEquipments();
-    }
+    loadEquipments();
   }
 
-  async function updateEquipment() {
+  async function addEquipment() {
 
-    if (!editingEquipment) return;
+    const name = prompt("Nom équipement");
+    if (!name) return;
 
-    const { error } = await supabase
+    const zone = prompt("Zone");
+    if (!zone) return;
+
+    const type = prompt("Type");
+    if (!type) return;
+
+    await supabase
       .from("equipments")
-      .update({
-        name: editName,
-        zone: editZone,
-      })
-      .eq("id", editingEquipment.id);
+      .insert({
+        name,
+        zone,
+        type,
+        temp_min: 0,
+        temp_max: 4,
+      });
 
-    if (!error) {
-
-      setEditingEquipment(null);
-
-      fetchEquipments();
-    }
+    loadEquipments();
   }
+
+  useEffect(() => {
+
+    loadEquipments();
+    loadTemperatures();
+
+  }, []);
 
   return (
-    <main className="min-h-screen p-10 text-white">
+
+    <div className="p-10">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-12">
+
+      <div className="flex items-start justify-between mb-10">
 
         <div>
 
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-3 mb-3">
 
-            <div className="w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
+            <div className="w-4 h-4 rounded-full bg-cyan-400" />
 
-            <p className="text-cyan-400 font-semibold tracking-widest uppercase">
-              EQUIPMENT MANAGEMENT
-            </p>
+            <span className="text-cyan-400 tracking-[0.25em] text-sm font-semibold uppercase">
+              Equipment Management
+            </span>
 
           </div>
 
-          <h1 className="text-7xl font-black tracking-tight">
+          <h1 className="text-7xl font-black text-white mb-4">
             Équipements
           </h1>
 
-          <p className="text-gray-400 mt-5 text-xl">
+          <p className="text-white/50 text-2xl">
             Gestion intelligente des équipements HACCP
           </p>
 
         </div>
 
-        {/* ADD BUTTON */}
-        <Dialog>
-
-          <DialogTrigger asChild>
-
-            <button
-              className="
-                flex
-                items-center
-                gap-3
-
-                rounded-2xl
-
-                bg-gradient-to-r
-                from-cyan-500
-                to-blue-500
-
-                px-6
-                py-4
-
-                font-bold
-
-                shadow-lg
-                shadow-cyan-500/20
-
-                hover:scale-105
-
-                transition-all
-              "
-            >
-
-              <Plus className="w-5 h-5" />
-
-              Ajouter un équipement
-
-            </button>
-
-          </DialogTrigger>
-
-          <DialogContent
-            className="
-              border
-              border-white/10
-
-              bg-[#0B1220]
-
-              text-white
-
-              rounded-3xl
-            "
-          >
-
-            <DialogHeader>
-
-              <DialogTitle className="text-3xl font-black mb-6">
-                Nouvel équipement
-              </DialogTitle>
-
-            </DialogHeader>
-
-            <div className="space-y-6">
-
-              {/* NAME */}
-              <div>
-
-                <label className="text-sm text-gray-400 mb-3 block">
-                  Nom de l’équipement
-                </label>
-
-                <input
-                  value={equipmentName}
-                  onChange={(e) =>
-                    setEquipmentName(e.target.value)
-                  }
-                  placeholder="Ex: Frigo réserve"
-                  className="
-                    w-full
-
-                    rounded-2xl
-
-                    border
-                    border-white/10
-
-                    bg-white/[0.04]
-
-                    px-5
-                    py-4
-
-                    outline-none
-
-                    focus:border-cyan-500/40
-                  "
-                />
-
-              </div>
-
-              {/* TYPE */}
-              <div>
-
-                <label className="text-sm text-gray-400 mb-3 block">
-                  Type d’équipement
-                </label>
-
-                <Select
-                  value={selectedType}
-                  onValueChange={(value) =>
-                    setSelectedType(
-                      value as keyof typeof equipmentTypes
-                    )
-                  }
-                >
-
-                  <SelectTrigger
-                    className="
-                      rounded-2xl
-                      border-white/10
-                      bg-white/[0.04]
-                      h-14
-                    "
-                  >
-
-                    <SelectValue placeholder="Choisir un type" />
-
-                  </SelectTrigger>
-
-                  <SelectContent
-                    className="
-                      bg-[#0B1220]
-                      border-white/10
-                      text-white
-                    "
-                  >
-
-                    <SelectItem value="frigo">
-                      Frigo
-                    </SelectItem>
-
-                    <SelectItem value="chambre_froide">
-                      Chambre froide
-                    </SelectItem>
-
-                    <SelectItem value="congelateur">
-                      Congélateur
-                    </SelectItem>
-
-                  </SelectContent>
-
-                </Select>
-
-              </div>
-
-              {/* AUTO TEMP */}
-              {currentType && (
-
-                <motion.div
-                  initial={{
-                    opacity: 0,
-                    y: 10,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                  }}
-                  className="
-                    rounded-2xl
-
-                    border
-                    border-cyan-500/20
-
-                    bg-cyan-500/10
-
-                    p-5
-                  "
-                >
-
-                  <div className="flex items-center gap-4 mb-4">
-
-                    <div className="bg-cyan-500/20 p-3 rounded-2xl">
-
-                      <Thermometer className="text-cyan-300" />
-
-                    </div>
-
-                    <div>
-
-                      <p className="font-bold text-cyan-300">
-                        Configuration HACCP
-                      </p>
-
-                      <p className="text-cyan-200/70 text-sm">
-                        Températures automatiques
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <div className="flex gap-10">
-
-                    <div>
-
-                      <p className="text-gray-400 text-sm">
-                        Min
-                      </p>
-
-                      <h3 className="text-3xl font-black mt-2">
-                        {currentType.min}°C
-                      </h3>
-
-                    </div>
-
-                    <div>
-
-                      <p className="text-gray-400 text-sm">
-                        Max
-                      </p>
-
-                      <h3 className="text-3xl font-black mt-2">
-                        {currentType.max}°C
-                      </h3>
-
-                    </div>
-
-                  </div>
-
-                </motion.div>
-
-              )}
-
-              {/* SAVE */}
-              <button
-                onClick={addEquipment}
-                className="
-                  w-full
-
-                  rounded-2xl
-
-                  bg-gradient-to-r
-                  from-cyan-500
-                  to-blue-500
-
-                  py-4
-
-                  font-bold
-
-                  hover:scale-[1.02]
-
-                  transition-all
-                "
-              >
-                Enregistrer l’équipement
-              </button>
-
-            </div>
-
-          </DialogContent>
-
-        </Dialog>
+        <button
+          onClick={addEquipment}
+          className="
+            px-8
+            py-5
+            rounded-3xl
+            bg-gradient-to-r
+            from-cyan-500
+            to-blue-500
+            text-white
+            font-bold
+            text-xl
+            shadow-[0_0_40px_rgba(0,200,255,0.35)]
+            hover:scale-105
+            transition
+            flex
+            items-center
+            gap-3
+          "
+        >
+          <Plus size={24} />
+          Ajouter un équipement
+        </button>
 
       </div>
 
-      {/* EQUIPMENT LIST */}
-      <div className="space-y-6">
+      {/* LIST */}
 
-        {equipments.map((equipment, index) => {
+      <div className="space-y-8">
 
-          const critical =
-            equipment.temp_max > 4;
+        {equipments.map((equipment) => {
+
+          const currentTemp =
+            temperatures[equipment.id];
+
+          const isAlert =
+            currentTemp !== undefined &&
+            (
+              currentTemp < equipment.temp_min ||
+              currentTemp > equipment.temp_max
+            );
 
           return (
 
-            <motion.div
-              key={index}
-              initial={{
-                opacity: 0,
-                y: 20,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              whileHover={{
-                scale: 1.01,
-              }}
-              className={`
-                rounded-3xl
-
+            <div
+              key={equipment.id}
+              className="
+                relative
+                overflow-hidden
+                rounded-[36px]
                 border
-
-                backdrop-blur-2xl
-
+                border-white/10
+                bg-white/[0.03]
+                backdrop-blur-xl
                 p-8
-
-                ${
-                  critical
-                    ? `
-                      border-red-500/20
-                      bg-red-500/5
-                    `
-                    : `
-                      border-white/10
-                      bg-white/[0.04]
-                    `
-                }
-              `}
+              "
             >
 
               <div className="flex items-center justify-between">
 
                 {/* LEFT */}
-                <div className="flex items-center gap-5">
+
+                <div className="flex items-center gap-6">
 
                   <div
-                    className={`
-                      p-5
+                    className="
+                      w-24
+                      h-24
                       rounded-3xl
-
-                      ${
-                        critical
-                          ? "bg-red-500/20"
-                          : "bg-cyan-500/20"
-                      }
-                    `}
+                      bg-cyan-500/20
+                      flex
+                      items-center
+                      justify-center
+                    "
                   >
-
                     <Snowflake
-                      className={`
-                        w-8
-                        h-8
-
-                        ${
-                          critical
-                            ? "text-red-300"
-                            : "text-cyan-300"
-                        }
-                      `}
+                      size={42}
+                      className="text-cyan-300"
                     />
-
                   </div>
 
                   <div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4 mb-3">
 
-                      <h2 className="text-3xl font-black">
+                      <h2 className="text-5xl font-black text-white">
                         {equipment.name}
                       </h2>
 
-                      {critical ? (
-
-                        <div
-                          className="
-                            flex
-                            items-center
-                            gap-2
-
-                            bg-red-500/20
-
-                            px-3
-                            py-1
-
-                            rounded-full
-
-                            text-red-300
-                            text-sm
-                            font-semibold
-                          "
-                        >
-
-                          <AlertTriangle className="w-4 h-4" />
-
-                          Critique
-
-                        </div>
-
-                      ) : (
-
-                        <div
-                          className="
-                            flex
-                            items-center
-                            gap-2
-
-                            bg-green-500/20
-
-                            px-3
-                            py-1
-
-                            rounded-full
-
-                            text-green-300
-                            text-sm
-                            font-semibold
-                          "
-                        >
-
-                          <CheckCircle2 className="w-4 h-4" />
-
-                          Stable
-
-                        </div>
-
-                      )}
+                      <div
+                        className={`
+                          px-4
+                          py-2
+                          rounded-full
+                          text-lg
+                          font-bold
+                          ${
+                            isAlert
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-green-500/20 text-green-400"
+                          }
+                        `}
+                      >
+                        {isAlert ? "ALERTE" : "Stable"}
+                      </div>
 
                     </div>
 
-                    <p className="text-gray-400 mt-3">
+                    <p className="text-white/50 text-2xl mb-4">
                       Zone : {equipment.zone}
                     </p>
 
-                    <div className="flex items-center gap-6 mt-4">
+                    <div className="flex items-center gap-2 text-cyan-300">
 
-                      <div className="flex items-center gap-2 text-cyan-300">
+                      <Wifi size={18} />
 
-                        <Wifi className="w-4 h-4" />
-
+                      <span className="text-lg">
                         Online
-
-                      </div>
+                      </span>
 
                     </div>
 
@@ -612,220 +270,80 @@ export default function EquipmentsPage() {
                 </div>
 
                 {/* RIGHT */}
-                <div className="flex items-center gap-6">
 
-                  {/* ACTIONS */}
-                  <div className="flex gap-3">
+                <div className="flex items-center gap-8">
 
-                    {/* EDIT */}
-                    <Dialog>
+                  {isAlert && (
+                    <AlertTriangle
+                      size={42}
+                      className="text-red-400"
+                    />
+                  )}
 
-                      <DialogTrigger asChild>
+                  <div className="flex gap-4">
 
-                        <button
-                          onClick={() => {
+                    <button
+                      className="
+                        w-16
+                        h-16
+                        rounded-2xl
+                        border
+                        border-white/10
+                        bg-white/[0.03]
+                        flex
+                        items-center
+                        justify-center
+                      "
+                    >
+                      <Pencil className="text-cyan-300" />
+                    </button>
 
-                            setEditingEquipment(equipment);
-
-                            setEditName(equipment.name);
-
-                            setEditZone(equipment.zone);
-                          }}
-                          className="
-                            w-14
-                            h-14
-
-                            rounded-2xl
-
-                            bg-white/[0.05]
-
-                            border
-                            border-white/10
-
-                            flex
-                            items-center
-                            justify-center
-
-                            hover:bg-cyan-500/20
-
-                            transition-all
-                          "
-                        >
-
-                          <Pencil className="w-5 h-5 text-cyan-300" />
-
-                        </button>
-
-                      </DialogTrigger>
-
-                      <DialogContent
-                        className="
-                          border
-                          border-white/10
-
-                          bg-[#0B1220]
-
-                          text-white
-
-                          rounded-3xl
-                        "
-                      >
-
-                        <DialogHeader>
-
-                          <DialogTitle className="text-3xl font-black mb-6">
-                            Modifier équipement
-                          </DialogTitle>
-
-                        </DialogHeader>
-
-                        <div className="space-y-6">
-
-                          {/* NAME */}
-                          <div>
-
-                            <label className="text-sm text-gray-400 mb-3 block">
-                              Nom
-                            </label>
-
-                            <input
-                              value={editName}
-                              onChange={(e) =>
-                                setEditName(e.target.value)
-                              }
-                              className="
-                                w-full
-
-                                rounded-2xl
-
-                                border
-                                border-white/10
-
-                                bg-white/[0.04]
-
-                                px-5
-                                py-4
-
-                                outline-none
-                              "
-                            />
-
-                          </div>
-
-                          {/* ZONE */}
-                          <div>
-
-                            <label className="text-sm text-gray-400 mb-3 block">
-                              Zone
-                            </label>
-
-                            <input
-                              value={editZone}
-                              onChange={(e) =>
-                                setEditZone(e.target.value)
-                              }
-                              className="
-                                w-full
-
-                                rounded-2xl
-
-                                border
-                                border-white/10
-
-                                bg-white/[0.04]
-
-                                px-5
-                                py-4
-
-                                outline-none
-                              "
-                            />
-
-                          </div>
-
-                          {/* SAVE */}
-                          <button
-                            onClick={updateEquipment}
-                            className="
-                              w-full
-
-                              rounded-2xl
-
-                              bg-gradient-to-r
-                              from-cyan-500
-                              to-blue-500
-
-                              py-4
-
-                              font-bold
-
-                              hover:scale-[1.02]
-
-                              transition-all
-                            "
-                          >
-                            Enregistrer
-                          </button>
-
-                        </div>
-
-                      </DialogContent>
-
-                    </Dialog>
-
-                    {/* DELETE */}
                     <button
                       onClick={() =>
                         deleteEquipment(equipment.id)
                       }
                       className="
-                        w-14
-                        h-14
-
+                        w-16
+                        h-16
                         rounded-2xl
-
-                        bg-red-500/10
-
                         border
                         border-red-500/20
-
+                        bg-red-500/10
                         flex
                         items-center
                         justify-center
-
-                        hover:bg-red-500/20
-
-                        transition-all
                       "
                     >
-
-                      <Trash2 className="w-5 h-5 text-red-300" />
-
+                      <Trash2 className="text-red-300" />
                     </button>
 
                   </div>
 
-                  {/* TEMP */}
                   <div className="text-right">
 
-                    <p className="text-gray-400 mb-3">
-                      Température HACCP
+                    <p className="text-white/50 text-xl mb-3">
+                      Température live
                     </p>
 
-                    <h2
+                    <div
                       className={`
-                        text-5xl
+                        text-6xl
                         font-black
-
                         ${
-                          critical
-                            ? "text-red-300"
+                          isAlert
+                            ? "text-red-400"
                             : "text-white"
                         }
                       `}
                     >
+                      {currentTemp ?? "--"}°C
+                    </div>
+
+                    <p className="text-white/40 text-lg mt-2">
+                      HACCP :
+                      {" "}
                       {equipment.temp_min}°C → {equipment.temp_max}°C
-                    </h2>
+                    </p>
 
                   </div>
 
@@ -833,12 +351,14 @@ export default function EquipmentsPage() {
 
               </div>
 
-            </motion.div>
+            </div>
+
           );
+
         })}
 
       </div>
 
-    </main>
+    </div>
   );
 }
