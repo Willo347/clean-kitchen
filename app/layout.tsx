@@ -5,6 +5,7 @@ import Sidebar from "./components/Sidebar";
 
 import { Toaster } from "sonner";
 import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -23,9 +24,12 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang="fr" className={geist.variable}>
+    <html
+      lang="fr"
+      className={cn("font-sans", geist.variable)}
+    >
 
-      <body className="bg-[#070B14] text-white overflow-hidden font-sans">
+      <body className="bg-[#070B14] text-white overflow-hidden">
 
         {/* GLOBAL BACKGROUND */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -139,13 +143,23 @@ export default function RootLayout({
         </div>
 
         {/* APP */}
-        <div className="relative z-10 flex h-screen">
+        <div className="relative z-10 h-screen">
 
           {/* SIDEBAR */}
           <Sidebar />
 
           {/* CONTENT */}
-          <main className="flex-1 overflow-y-auto">
+          <main
+            className="
+              ml-[270px]
+
+              h-screen
+              overflow-y-auto
+
+              px-10
+              py-10
+            "
+          >
 
             <div
               className="
