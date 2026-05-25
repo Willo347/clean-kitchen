@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { motion } from "framer-motion";
 
@@ -11,7 +11,11 @@ import {
   Wifi,
   AlertTriangle,
   CheckCircle2,
+  Trash2,
+  Pencil,
 } from "lucide-react";
+
+import { supabase } from "@/lib/supabase";
 
 import {
   Dialog,
@@ -58,68 +62,71 @@ export default function EquipmentsPage() {
     useState("");
 
   const [equipments, setEquipments] =
-    useState([
-      {
-        name: "Chambre froide",
-        temp: "4°C",
-        status: "Stable",
-        type: "chambre_froide",
-        online: true,
-        critical: false,
-      },
+    useState<any[]>([]);
 
-      {
-        name: "Frigo réserve",
-        temp: "3°C",
-        status: "Optimal",
-        type: "frigo",
-        online: true,
-        critical: false,
-      },
+  useEffect(() => {
+    fetchEquipments();
+  }, []);
 
-      {
-        name: "Congélateur viande",
-        temp: "-20°C",
-        status: "Stable",
-        type: "congelateur",
-        online: true,
-        critical: false,
-      },
+  async function fetchEquipments() {
 
-      {
-        name: "Frigo desserts",
-        temp: "8°C",
-        status: "Critique",
-        type: "frigo",
-        online: true,
-        critical: true,
-      },
-    ]);
+    const { data, error } = await supabase
+      .from("equipments")
+      .select("*")
+      .order("id", { ascending: true });
+
+    if (!error && data) {
+      setEquipments(data);
+    }
+  }
 
   const currentType =
     selectedType
       ? equipmentTypes[selectedType]
       : null;
 
-  const addEquipment = () => {
+  async function addEquipment() {
 
     if (!equipmentName || !currentType) return;
 
-    setEquipments((prev) => [
-      ...prev,
-      {
-        name: equipmentName,
-        temp: `${currentType.max}°C`,
-        status: "Nouveau",
-        type: selectedType,
-        online: true,
-        critical: false,
-      },
-    ]);
+    const { error } = await supabase
+      .from("equipments")
+      .insert([
+        {
+          name: equipmentName,
+          type: selectedType,
+          zone: "Cuisine",
+          temp_min: currentType.min,
+          temp_max: currentType.max,
+        },
+      ]);
 
-    setEquipmentName("");
-    setSelectedType("");
-  };
+    if (!error) {
+
+      setEquipmentName("");
+      setSelectedType("");
+
+      fetchEquipments();
+    }
+  }
+
+  async function deleteEquipment(id: number) {
+
+    const confirmDelete = confirm(
+      "Supprimer cet équipement ?"
+    );
+
+    if (!confirmDelete) return;
+
+    const { error } = await supabase
+      .from("equipments")
+      .delete()
+      .eq("id", id);
+
+    if (!error) {
+      fetchEquipments();
+    }
+  }
 
   return (
     <main className="min-h-screen p-10 text-white">
@@ -413,195 +420,264 @@ export default function EquipmentsPage() {
       {/* EQUIPMENT LIST */}
       <div className="space-y-6">
 
-        {equipments.map((equipment, index) => (
+        {equipments.map((equipment, index) => {
 
-          <motion.div
-            key={index}
-            initial={{
-              opacity: 0,
-              y: 20,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            whileHover={{
-              scale: 1.01,
-            }}
-            className={`
-              rounded-3xl
+          const critical =
+            equipment.temp_max > 4;
 
-              border
+          return (
 
-              backdrop-blur-2xl
+            <motion.div
+              key={index}
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              whileHover={{
+                scale: 1.01,
+              }}
+              className={`
+                rounded-3xl
 
-              p-8
+                border
 
-              ${
-                equipment.critical
-                  ? `
-                    border-red-500/20
-                    bg-red-500/5
-                  `
-                  : `
-                    border-white/10
-                    bg-white/[0.04]
-                  `
-              }
-            `}
-          >
+                backdrop-blur-2xl
 
-            <div className="flex items-center justify-between">
+                p-8
 
-              {/* LEFT */}
-              <div className="flex items-center gap-5">
+                ${
+                  critical
+                    ? `
+                      border-red-500/20
+                      bg-red-500/5
+                    `
+                    : `
+                      border-white/10
+                      bg-white/[0.04]
+                    `
+                }
+              `}
+            >
 
-                <div
-                  className={`
-                    p-5
-                    rounded-3xl
+              <div className="flex items-center justify-between">
 
-                    ${
-                      equipment.critical
-                        ? "bg-red-500/20"
-                        : "bg-cyan-500/20"
-                    }
-                  `}
-                >
+                {/* LEFT */}
+                <div className="flex items-center gap-5">
 
-                  <Snowflake
+                  <div
                     className={`
-                      w-8
-                      h-8
+                      p-5
+                      rounded-3xl
 
                       ${
-                        equipment.critical
-                          ? "text-red-300"
-                          : "text-cyan-300"
+                        critical
+                          ? "bg-red-500/20"
+                          : "bg-cyan-500/20"
                       }
                     `}
-                  />
+                  >
+
+                    <Snowflake
+                      className={`
+                        w-8
+                        h-8
+
+                        ${
+                          critical
+                            ? "text-red-300"
+                            : "text-cyan-300"
+                        }
+                      `}
+                    />
+
+                  </div>
+
+                  <div>
+
+                    <div className="flex items-center gap-3">
+
+                      <h2 className="text-3xl font-black">
+                        {equipment.name}
+                      </h2>
+
+                      {critical ? (
+
+                        <div
+                          className="
+                            flex
+                            items-center
+                            gap-2
+
+                            bg-red-500/20
+
+                            px-3
+                            py-1
+
+                            rounded-full
+
+                            text-red-300
+                            text-sm
+                            font-semibold
+                          "
+                        >
+
+                          <AlertTriangle className="w-4 h-4" />
+
+                          Critique
+
+                        </div>
+
+                      ) : (
+
+                        <div
+                          className="
+                            flex
+                            items-center
+                            gap-2
+
+                            bg-green-500/20
+
+                            px-3
+                            py-1
+
+                            rounded-full
+
+                            text-green-300
+                            text-sm
+                            font-semibold
+                          "
+                        >
+
+                          <CheckCircle2 className="w-4 h-4" />
+
+                          Stable
+
+                        </div>
+
+                      )}
+
+                    </div>
+
+                    <p className="text-gray-400 mt-3">
+                      Zone : {equipment.zone}
+                    </p>
+
+                    <div className="flex items-center gap-6 mt-4">
+
+                      <div className="flex items-center gap-2 text-cyan-300">
+
+                        <Wifi className="w-4 h-4" />
+
+                        Online
+
+                      </div>
+
+                    </div>
+
+                  </div>
 
                 </div>
 
-                <div>
+                {/* RIGHT */}
+                <div className="flex items-center gap-6">
 
-                  <div className="flex items-center gap-3">
+                  {/* ACTIONS */}
+                  <div className="flex gap-3">
 
-                    <h2 className="text-3xl font-black">
-                      {equipment.name}
+                    {/* EDIT */}
+                    <button
+                      className="
+                        w-14
+                        h-14
+
+                        rounded-2xl
+
+                        bg-white/[0.05]
+
+                        border
+                        border-white/10
+
+                        flex
+                        items-center
+                        justify-center
+
+                        hover:bg-cyan-500/20
+
+                        transition-all
+                      "
+                    >
+
+                      <Pencil className="w-5 h-5 text-cyan-300" />
+
+                    </button>
+
+                    {/* DELETE */}
+                    <button
+                      onClick={() =>
+                        deleteEquipment(equipment.id)
+                      }
+                      className="
+                        w-14
+                        h-14
+
+                        rounded-2xl
+
+                        bg-red-500/10
+
+                        border
+                        border-red-500/20
+
+                        flex
+                        items-center
+                        justify-center
+
+                        hover:bg-red-500/20
+
+                        transition-all
+                      "
+                    >
+
+                      <Trash2 className="w-5 h-5 text-red-300" />
+
+                    </button>
+
+                  </div>
+
+                  {/* TEMP */}
+                  <div className="text-right">
+
+                    <p className="text-gray-400 mb-3">
+                      Température HACCP
+                    </p>
+
+                    <h2
+                      className={`
+                        text-5xl
+                        font-black
+
+                        ${
+                          critical
+                            ? "text-red-300"
+                            : "text-white"
+                        }
+                      `}
+                    >
+                      {equipment.temp_min}°C → {equipment.temp_max}°C
                     </h2>
 
-                    {equipment.critical ? (
-
-                      <div
-                        className="
-                          flex
-                          items-center
-                          gap-2
-
-                          bg-red-500/20
-
-                          px-3
-                          py-1
-
-                          rounded-full
-
-                          text-red-300
-                          text-sm
-                          font-semibold
-                        "
-                      >
-
-                        <AlertTriangle className="w-4 h-4" />
-
-                        Critique
-
-                      </div>
-
-                    ) : (
-
-                      <div
-                        className="
-                          flex
-                          items-center
-                          gap-2
-
-                          bg-green-500/20
-
-                          px-3
-                          py-1
-
-                          rounded-full
-
-                          text-green-300
-                          text-sm
-                          font-semibold
-                        "
-                      >
-
-                        <CheckCircle2 className="w-4 h-4" />
-
-                        Stable
-
-                      </div>
-
-                    )}
-
-                  </div>
-
-                  <p className="text-gray-400 mt-3">
-                    Surveillance HACCP active
-                  </p>
-
-                  <div className="flex items-center gap-6 mt-4">
-
-                    <div className="flex items-center gap-2 text-cyan-300">
-
-                      <Wifi className="w-4 h-4" />
-
-                      Online
-
-                    </div>
-
-                    <div className="text-gray-500 text-sm">
-                      Mise à jour il y a 12 sec
-                    </div>
-
                   </div>
 
                 </div>
 
               </div>
 
-              {/* RIGHT */}
-              <div className="text-right">
-
-                <p className="text-gray-400 mb-3">
-                  Température actuelle
-                </p>
-
-                <h2
-                  className={`
-                    text-6xl
-                    font-black
-
-                    ${
-                      equipment.critical
-                        ? "text-red-300"
-                        : "text-white"
-                    }
-                  `}
-                >
-                  {equipment.temp}
-                </h2>
-
-              </div>
-
-            </div>
-
-          </motion.div>
-        ))}
+            </motion.div>
+          );
+        })}
 
       </div>
 
