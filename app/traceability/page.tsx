@@ -124,26 +124,71 @@ export default function TraceabilityPage() {
         "Lot",
         "DLC",
         "Fournisseur",
+        "Statut",
       ]],
 
       body:
         products.map(
           (
             item
-          ) => [
+          ) => {
 
-            item.product ||
-              "-",
+            const dlcDate =
+              item.dlc
+                ? new Date(item.dlc)
+                : null;
 
-            item.batch ||
-              "-",
+            const today =
+              new Date();
 
-            item.dlc ||
-              "-",
+            const diffTime =
+              dlcDate
+                ? dlcDate.getTime() -
+                  today.getTime()
+                : 0;
 
-            item.supplier ||
-              "-",
-          ]
+            const diffDays =
+              Math.ceil(
+                diffTime /
+                (1000 * 60 * 60 * 24)
+              );
+
+            let status =
+              "OK";
+
+            if (
+              diffDays <= 3
+            ) {
+
+              status =
+                "Bientôt périmé";
+            }
+
+            if (
+              diffDays < 0
+            ) {
+
+              status =
+                "PÉRIMÉ";
+            }
+
+            return [
+
+              item.product ||
+                "-",
+
+              item.batch ||
+                "-",
+
+              item.dlc ||
+                "-",
+
+              item.supplier ||
+                "-",
+
+              status,
+            ];
+          }
         ),
     });
 
@@ -207,14 +252,10 @@ export default function TraceabilityPage() {
                   flex
                   items-center
                   gap-3
-
                   rounded-2xl
-
                   border
                   border-white/10
-
                   bg-black/20
-
                   px-5
                   py-4
                 "
@@ -253,14 +294,10 @@ export default function TraceabilityPage() {
                   flex
                   items-center
                   gap-3
-
                   rounded-2xl
-
                   border
                   border-white/10
-
                   bg-black/20
-
                   px-5
                   py-4
                 "
@@ -296,19 +333,13 @@ export default function TraceabilityPage() {
               flex
               items-center
               gap-3
-
               px-7
               py-4
-
               rounded-2xl
-
               bg-cyan-500
-
               text-black
               font-black
-
               hover:scale-105
-
               transition-all
             "
           >
@@ -326,7 +357,6 @@ export default function TraceabilityPage() {
       {/* STATS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-7 mb-10">
 
-        {/* PRODUCTS */}
         <motion.div
           whileHover={{
             scale: 1.03,
@@ -361,7 +391,6 @@ export default function TraceabilityPage() {
 
         </motion.div>
 
-        {/* SYSTEM */}
         <motion.div
           whileHover={{
             scale: 1.03,
@@ -437,95 +466,138 @@ export default function TraceabilityPage() {
             (
               item,
               index
-            ) => (
+            ) => {
 
-              <motion.div
-                key={index}
-                whileHover={{
-                  scale: 1.01,
-                }}
-                className="
-                  flex
-                  items-center
-                  justify-between
+              const dlcDate =
+                item.dlc
+                  ? new Date(item.dlc)
+                  : null;
 
-                  rounded-2xl
+              const today =
+                new Date();
 
-                  border
-                  border-white/10
+              const diffTime =
+                dlcDate
+                  ? dlcDate.getTime() -
+                    today.getTime()
+                  : 0;
 
-                  bg-white/[0.03]
+              const diffDays =
+                Math.ceil(
+                  diffTime /
+                  (1000 * 60 * 60 * 24)
+                );
 
-                  p-5
-                "
-              >
+              let status =
+                "OK";
 
-                <div>
+              let statusColor =
+                "bg-green-500/20 text-green-300";
 
-                  <h3 className="text-2xl font-black">
+              if (
+                diffDays <= 3
+              ) {
 
-                    {
-                      item.product ||
-                      "-"
-                    }
+                status =
+                  "Bientôt périmé";
 
-                  </h3>
+                statusColor =
+                  "bg-orange-500/20 text-orange-300";
+              }
 
-                  <p className="text-gray-400 mt-2">
+              if (
+                diffDays < 0
+              ) {
 
-                    Lot :
-                    {" "}
-                    {
-                      item.batch ||
-                      "-"
-                    }
+                status =
+                  "PÉRIMÉ";
 
-                  </p>
+                statusColor =
+                  "bg-red-500/20 text-red-300";
+              }
 
-                  <p className="text-gray-400 mt-1">
+              return (
 
-                    DLC :
-                    {" "}
-                    {
-                      item.dlc ||
-                      "-"
-                    }
-
-                  </p>
-
-                  <p className="text-gray-400 mt-1">
-
-                    Fournisseur :
-                    {" "}
-                    {
-                      item.supplier ||
-                      "-"
-                    }
-
-                  </p>
-
-                </div>
-
-                <div
+                <motion.div
+                  key={index}
+                  whileHover={{
+                    scale: 1.01,
+                  }}
                   className="
-                    px-5
-                    py-3
-
+                    flex
+                    items-center
+                    justify-between
                     rounded-2xl
-
-                    bg-cyan-500/10
-
-                    text-cyan-300
-                    font-bold
+                    border
+                    border-white/10
+                    bg-white/[0.03]
+                    p-5
                   "
                 >
 
-                  HACCP
+                  <div>
 
-                </div>
+                    <h3 className="text-2xl font-black">
 
-              </motion.div>
-            )
+                      {
+                        item.product ||
+                        "-"
+                      }
+
+                    </h3>
+
+                    <p className="text-gray-400 mt-2">
+
+                      Lot :
+                      {" "}
+                      {
+                        item.batch ||
+                        "-"
+                      }
+
+                    </p>
+
+                    <p className="text-gray-400 mt-1">
+
+                      DLC :
+                      {" "}
+                      {
+                        item.dlc ||
+                        "-"
+                      }
+
+                    </p>
+
+                    <p className="text-gray-400 mt-1">
+
+                      Fournisseur :
+                      {" "}
+                      {
+                        item.supplier ||
+                        "-"
+                      }
+
+                    </p>
+
+                  </div>
+
+                  <div
+                    className={`
+                      px-5
+                      py-3
+                      rounded-2xl
+                      font-bold
+                      ${statusColor}
+                    `}
+                  >
+
+                    {status}
+
+                  </div>
+
+                </motion.div>
+              );
+            }
           )}
 
           {products.length === 0 && (
@@ -536,7 +608,6 @@ export default function TraceabilityPage() {
                 flex-col
                 items-center
                 justify-center
-
                 py-20
               "
             >

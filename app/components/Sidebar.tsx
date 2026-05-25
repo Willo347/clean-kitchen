@@ -16,7 +16,6 @@ import {
   Activity,
   Users,
   Settings,
-  Sparkles,
 } from "lucide-react";
 
 const menuItems = [
@@ -63,8 +62,8 @@ const menuItems = [
   },
 
   {
-    name: "HACCP",
-    href: "/haccp",
+    name: "PMS entretien",
+    href: "/pms-entretien",
     icon: ShieldCheck,
   },
 
@@ -92,6 +91,7 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
+
     <aside
       className="
         fixed
@@ -109,37 +109,38 @@ export default function Sidebar() {
         bg-[#081120]/85
         backdrop-blur-3xl
 
-        p-5
+        px-4
+        py-5
 
         z-50
       "
     >
 
       {/* LOGO */}
-      <div className="mb-8">
+      <div
+        className="
+          flex
+          justify-center
+          items-center
 
-        <div className="flex items-center gap-2 mb-4">
+          mb-8
+          mt-4
+        "
+      >
 
-          <Sparkles className="w-4 h-4 text-cyan-400" />
-
-          <p className="text-cyan-400 font-bold tracking-[0.2em] uppercase text-xs">
-            HACCP SYSTEM
-          </p>
-
-        </div>
-
-        <h1
+        <img
+          src="/ck-logo-new.png"
+          alt="CK Logo"
           className="
-            text-5xl
-            font-black
-            leading-[0.9]
-            text-white
+            w-[390px]
+            max-w-none
+
+            h-auto
+            object-contain
+
+            scale-[1.15]
           "
-        >
-          CLEAN
-          <br />
-          KITCHEN
-        </h1>
+        />
 
       </div>
 

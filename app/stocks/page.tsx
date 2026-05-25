@@ -88,15 +88,18 @@ export default function StocksPage() {
     };
 
   const filteredProducts =
-    products.filter(
-      (item) =>
+    products.filter((item) => {
 
-        item.product
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
-          )
-    );
+      const productName =
+        item.product ||
+        "Produit inconnu";
+
+      return productName
+        .toLowerCase()
+        .includes(
+          search.toLowerCase()
+        );
+    });
 
   const lowStock =
     filteredProducts.filter(
@@ -284,7 +287,8 @@ export default function StocksPage() {
                   <h2 className="text-4xl font-black">
 
                     {
-                      item.product
+                      item.product ||
+                      "Produit inconnu"
                     }
 
                   </h2>
