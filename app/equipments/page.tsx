@@ -64,6 +64,15 @@ export default function EquipmentsPage() {
   const [equipments, setEquipments] =
     useState<any[]>([]);
 
+  const [editingEquipment, setEditingEquipment] =
+    useState<any | null>(null);
+
+  const [editName, setEditName] =
+    useState("");
+
+  const [editZone, setEditZone] =
+    useState("");
+
   useEffect(() => {
     fetchEquipments();
   }, []);
@@ -124,6 +133,26 @@ export default function EquipmentsPage() {
       .eq("id", id);
 
     if (!error) {
+      fetchEquipments();
+    }
+  }
+
+  async function updateEquipment() {
+
+    if (!editingEquipment) return;
+
+    const { error } = await supabase
+      .from("equipments")
+      .update({
+        name: editName,
+        zone: editZone,
+      })
+      .eq("id", editingEquipment.id);
+
+    if (!error) {
+
+      setEditingEquipment(null);
+
       fetchEquipments();
     }
   }
@@ -589,31 +618,160 @@ export default function EquipmentsPage() {
                   <div className="flex gap-3">
 
                     {/* EDIT */}
-                    <button
-                      className="
-                        w-14
-                        h-14
+                    <Dialog>
 
-                        rounded-2xl
+                      <DialogTrigger asChild>
 
-                        bg-white/[0.05]
+                        <button
+                          onClick={() => {
 
-                        border
-                        border-white/10
+                            setEditingEquipment(equipment);
 
-                        flex
-                        items-center
-                        justify-center
+                            setEditName(equipment.name);
 
-                        hover:bg-cyan-500/20
+                            setEditZone(equipment.zone);
+                          }}
+                          className="
+                            w-14
+                            h-14
 
-                        transition-all
-                      "
-                    >
+                            rounded-2xl
 
-                      <Pencil className="w-5 h-5 text-cyan-300" />
+                            bg-white/[0.05]
 
-                    </button>
+                            border
+                            border-white/10
+
+                            flex
+                            items-center
+                            justify-center
+
+                            hover:bg-cyan-500/20
+
+                            transition-all
+                          "
+                        >
+
+                          <Pencil className="w-5 h-5 text-cyan-300" />
+
+                        </button>
+
+                      </DialogTrigger>
+
+                      <DialogContent
+                        className="
+                          border
+                          border-white/10
+
+                          bg-[#0B1220]
+
+                          text-white
+
+                          rounded-3xl
+                        "
+                      >
+
+                        <DialogHeader>
+
+                          <DialogTitle className="text-3xl font-black mb-6">
+                            Modifier équipement
+                          </DialogTitle>
+
+                        </DialogHeader>
+
+                        <div className="space-y-6">
+
+                          {/* NAME */}
+                          <div>
+
+                            <label className="text-sm text-gray-400 mb-3 block">
+                              Nom
+                            </label>
+
+                            <input
+                              value={editName}
+                              onChange={(e) =>
+                                setEditName(e.target.value)
+                              }
+                              className="
+                                w-full
+
+                                rounded-2xl
+
+                                border
+                                border-white/10
+
+                                bg-white/[0.04]
+
+                                px-5
+                                py-4
+
+                                outline-none
+                              "
+                            />
+
+                          </div>
+
+                          {/* ZONE */}
+                          <div>
+
+                            <label className="text-sm text-gray-400 mb-3 block">
+                              Zone
+                            </label>
+
+                            <input
+                              value={editZone}
+                              onChange={(e) =>
+                                setEditZone(e.target.value)
+                              }
+                              className="
+                                w-full
+
+                                rounded-2xl
+
+                                border
+                                border-white/10
+
+                                bg-white/[0.04]
+
+                                px-5
+                                py-4
+
+                                outline-none
+                              "
+                            />
+
+                          </div>
+
+                          {/* SAVE */}
+                          <button
+                            onClick={updateEquipment}
+                            className="
+                              w-full
+
+                              rounded-2xl
+
+                              bg-gradient-to-r
+                              from-cyan-500
+                              to-blue-500
+
+                              py-4
+
+                              font-bold
+
+                              hover:scale-[1.02]
+
+                              transition-all
+                            "
+                          >
+                            Enregistrer
+                          </button>
+
+                        </div>
+
+                      </DialogContent>
+
+                    </Dialog>
 
                     {/* DELETE */}
                     <button
