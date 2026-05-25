@@ -2,7 +2,18 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 
+<<<<<<< HEAD
 import Sidebar from "@/app/components/Sidebar";
+=======
+import { Toaster } from "sonner";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+>>>>>>> ultimate-haccp-version
 
 export const metadata: Metadata = {
   title: "Clean Kitchen",
@@ -16,6 +27,13 @@ export default function RootLayout({
 }) {
 
   return (
+<<<<<<< HEAD
+=======
+    <html
+      lang="fr"
+      className={cn("font-sans", geist.variable)}
+    >
+>>>>>>> ultimate-haccp-version
 
     <html lang="fr">
 
@@ -125,6 +143,7 @@ export default function RootLayout({
         </div>
 
         {/* APP */}
+<<<<<<< HEAD
         <div
           className="
             relative
@@ -135,6 +154,9 @@ export default function RootLayout({
             h-screen
           "
         >
+=======
+        <div className="relative z-10 h-screen">
+>>>>>>> ultimate-haccp-version
 
           {/* SIDEBAR */}
           <Sidebar />
@@ -142,7 +164,19 @@ export default function RootLayout({
           {/* CONTENT */}
           <main
             className="
+<<<<<<< HEAD
               flex-1
+=======
+              ml-[270px]
+
+              h-screen
+              overflow-y-auto
+
+              px-10
+              py-10
+            "
+          >
+>>>>>>> ultimate-haccp-version
 
               overflow-y-auto
 
