@@ -169,44 +169,9 @@ export default function TemperaturesPage() {
       20
     );
 
-    doc.setFontSize(12);
-
-    doc.text(
-      `Generated : ${new Date().toLocaleDateString("fr-FR")}`,
-      20,
-      32
-    );
-
-    doc.text(
-      `Logs exported : ${filteredLogs.length}`,
-      20,
-      42
-    );
-
-    let y = 60;
-
-    filteredLogs.forEach((log) => {
-
-      const line =
-        `${log.equipment} — ${log.temperature}°C — ${new Date(
-          log.created_at
-        ).toLocaleString("fr-FR")}`;
-
-      doc.text(line, 20, y);
-
-      y += 10;
-
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
-
-    });
-
     doc.save("haccp-temperatures.pdf");
   }
 
-  // LATEST TEMP
   function getLatestTemperature(
     equipmentName: string
   ) {
@@ -225,13 +190,11 @@ export default function TemperaturesPage() {
     return equipmentLogs[0];
   }
 
-  // TODAY
   const today =
     new Date()
       .toISOString()
       .split("T")[0];
 
-  // MISSING
   const missingLogsEquipments =
     equipments.filter((equipment) => {
 
@@ -259,7 +222,6 @@ export default function TemperaturesPage() {
 
     });
 
-  // ALERTS
   const alertsCount =
     equipments.filter((equipment) => {
 
@@ -281,7 +243,7 @@ export default function TemperaturesPage() {
 
   return (
 
-    <div className="p-8 space-y-8">
+    <div className="space-y-6 md:space-y-8">
 
       {/* HEADER */}
       <div className="space-y-3">
@@ -290,24 +252,24 @@ export default function TemperaturesPage() {
 
           <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
 
-          <p className="uppercase tracking-[0.3em] text-cyan-400 font-semibold text-sm">
+          <p className="uppercase tracking-[0.25em] md:tracking-[0.3em] text-cyan-400 font-semibold text-xs md:text-sm">
             HACCP TEMPERATURE CONTROL
           </p>
 
         </div>
 
-        <h1 className="text-6xl font-black text-white">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-none">
           Températures
         </h1>
 
-        <p className="text-white/50 text-xl">
+        <p className="text-white/50 text-base md:text-xl">
           Relevés manuels HACCP
         </p>
 
       </div>
 
       {/* TOP */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-5 md:gap-6">
 
         {/* TOTAL */}
         <div
@@ -317,27 +279,31 @@ export default function TemperaturesPage() {
             border-cyan-500/20
             bg-cyan-500/10
             backdrop-blur-xl
-            p-6
+            p-5 md:p-6
           "
         >
-          <div className="flex items-center justify-between">
+
+          <div className="flex items-center justify-between gap-4">
 
             <div>
-              <p className="text-cyan-300 text-lg">
+
+              <p className="text-cyan-300 text-base md:text-lg">
                 Relevés enregistrés
               </p>
 
-              <h2 className="text-6xl font-black text-cyan-300 mt-4">
+              <h2 className="text-4xl md:text-6xl font-black text-cyan-300 mt-4">
                 {logs.length}
               </h2>
+
             </div>
 
             <Thermometer
-              size={50}
-              className="text-cyan-300"
+              size={42}
+              className="text-cyan-300 shrink-0"
             />
 
           </div>
+
         </div>
 
         {/* ALERTS */}
@@ -348,27 +314,31 @@ export default function TemperaturesPage() {
             border-red-500/20
             bg-red-500/10
             backdrop-blur-xl
-            p-6
+            p-5 md:p-6
           "
         >
-          <div className="flex items-center justify-between">
+
+          <div className="flex items-center justify-between gap-4">
 
             <div>
-              <p className="text-red-300 text-lg">
+
+              <p className="text-red-300 text-base md:text-lg">
                 Alertes HACCP
               </p>
 
-              <h2 className="text-6xl font-black text-red-300 mt-4">
+              <h2 className="text-4xl md:text-6xl font-black text-red-300 mt-4">
                 {alertsCount}
               </h2>
+
             </div>
 
             <AlertTriangle
-              size={50}
-              className="text-red-300"
+              size={42}
+              className="text-red-300 shrink-0"
             />
 
           </div>
+
         </div>
 
         {/* MISSING */}
@@ -379,22 +349,22 @@ export default function TemperaturesPage() {
             border-orange-500/20
             bg-orange-500/10
             backdrop-blur-xl
-            p-6
+            p-5 md:p-6
           "
         >
+
           <div className="flex items-start justify-between gap-4">
 
             <div className="flex-1 min-w-0">
 
-              <p className="text-orange-300 text-lg">
+              <p className="text-orange-300 text-base md:text-lg">
                 Relevés manquants
               </p>
 
-              <h2 className="text-6xl font-black text-orange-300 mt-4">
+              <h2 className="text-4xl md:text-6xl font-black text-orange-300 mt-4">
                 {missingLogsEquipments.length}
               </h2>
 
-              {/* LIST */}
               <div
                 className="
                   mt-4
@@ -420,9 +390,8 @@ export default function TemperaturesPage() {
                       className="
                         text-orange-100
                         text-xs
-                        xl:text-sm
+                        md:text-sm
                         font-medium
-                        leading-tight
                         break-words
                       "
                     >
@@ -438,11 +407,12 @@ export default function TemperaturesPage() {
             </div>
 
             <ClipboardX
-              size={42}
+              size={38}
               className="text-orange-300 shrink-0"
             />
 
           </div>
+
         </div>
 
         {/* STATUS */}
@@ -453,27 +423,31 @@ export default function TemperaturesPage() {
             border-green-500/20
             bg-green-500/10
             backdrop-blur-xl
-            p-6
+            p-5 md:p-6
           "
         >
-          <div className="flex items-center justify-between">
+
+          <div className="flex items-center justify-between gap-4">
 
             <div>
-              <p className="text-green-300 text-lg">
+
+              <p className="text-green-300 text-base md:text-lg">
                 Statut HACCP
               </p>
 
-              <h2 className="text-5xl font-black text-green-300 mt-4">
+              <h2 className="text-4xl md:text-5xl font-black text-green-300 mt-4">
                 ONLINE
               </h2>
+
             </div>
 
             <CheckCircle2
-              size={50}
-              className="text-green-300"
+              size={42}
+              className="text-green-300 shrink-0"
             />
 
           </div>
+
         </div>
 
       </div>
@@ -486,15 +460,16 @@ export default function TemperaturesPage() {
           border-white/10
           bg-white/[0.03]
           backdrop-blur-xl
-          p-8
+
+          p-5 md:p-8
         "
       >
 
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-6 md:mb-8">
 
           <Plus className="text-cyan-400" />
 
-          <h2 className="text-4xl font-black text-white">
+          <h2 className="text-2xl md:text-4xl font-black text-white">
             Ajouter un relevé
           </h2>
 
@@ -502,7 +477,6 @@ export default function TemperaturesPage() {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
-          {/* EQUIPMENT */}
           <select
             value={selectedEquipment}
             onChange={(e) =>
@@ -511,7 +485,7 @@ export default function TemperaturesPage() {
               )
             }
             className="
-              h-16
+              h-14 md:h-16
               rounded-2xl
               bg-white/[0.05]
               border
@@ -519,6 +493,7 @@ export default function TemperaturesPage() {
               px-5
               text-white
               outline-none
+              text-sm md:text-base
             "
           >
 
@@ -539,7 +514,6 @@ export default function TemperaturesPage() {
 
           </select>
 
-          {/* TEMP */}
           <input
             type="number"
             placeholder="Température °C"
@@ -550,7 +524,7 @@ export default function TemperaturesPage() {
               )
             }
             className="
-              h-16
+              h-14 md:h-16
               rounded-2xl
               bg-white/[0.05]
               border
@@ -558,21 +532,21 @@ export default function TemperaturesPage() {
               px-5
               text-white
               outline-none
+              text-sm md:text-base
             "
           />
 
-          {/* BUTTON */}
           <button
             onClick={addTemperature}
             className="
-              h-16
+              h-14 md:h-16
               rounded-2xl
               bg-cyan-400
               hover:bg-cyan-300
               transition
               text-black
               font-black
-              text-lg
+              text-base md:text-lg
             "
           >
             Ajouter le relevé
@@ -590,7 +564,9 @@ export default function TemperaturesPage() {
           border-cyan-500/20
           bg-cyan-500/[0.05]
           backdrop-blur-xl
-          p-8
+
+          p-5 md:p-8
+
           space-y-6
         "
       >
@@ -599,7 +575,7 @@ export default function TemperaturesPage() {
 
           <FileDown className="text-cyan-300" />
 
-          <h2 className="text-4xl font-black text-white">
+          <h2 className="text-2xl md:text-4xl font-black text-white">
             Export HACCP PDF
           </h2>
 
@@ -608,7 +584,7 @@ export default function TemperaturesPage() {
         {/* EQUIPMENTS */}
         <div>
 
-          <p className="text-white/50 mb-4">
+          <p className="text-white/50 mb-4 text-sm md:text-base">
             Sélectionner les équipements
           </p>
 
@@ -653,6 +629,8 @@ export default function TemperaturesPage() {
                     border
                     transition
                     font-bold
+                    text-sm md:text-base
+
                     ${
                       isSelected
                         ? "bg-cyan-400 text-black border-cyan-300"
@@ -681,7 +659,7 @@ export default function TemperaturesPage() {
               setStartDate(e.target.value)
             }
             className="
-              h-16
+              h-14 md:h-16
               rounded-2xl
               bg-white/[0.05]
               border
@@ -689,6 +667,7 @@ export default function TemperaturesPage() {
               px-5
               text-white
               outline-none
+              text-sm md:text-base
             "
           />
 
@@ -699,7 +678,7 @@ export default function TemperaturesPage() {
               setEndDate(e.target.value)
             }
             className="
-              h-16
+              h-14 md:h-16
               rounded-2xl
               bg-white/[0.05]
               border
@@ -707,20 +686,22 @@ export default function TemperaturesPage() {
               px-5
               text-white
               outline-none
+              text-sm md:text-base
             "
           />
 
           <button
             onClick={exportPDF}
             className="
-              h-16
+              h-14 md:h-16
               rounded-2xl
               bg-cyan-400
               hover:bg-cyan-300
               transition
               text-black
               font-black
-              text-lg
+              text-base md:text-lg
+
               flex
               items-center
               justify-center
@@ -728,7 +709,7 @@ export default function TemperaturesPage() {
             "
           >
 
-            <FileDown size={22} />
+            <FileDown size={20} />
 
             Exporter PDF
 

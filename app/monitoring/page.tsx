@@ -88,76 +88,100 @@ export default function MonitoringPage() {
 
   async function fetchData() {
 
-    const { data: equipmentsData } = await supabase
-      .from("equipments")
-      .select("*")
-      .order("id");
+    const { data: equipmentsData } =
+      await supabase
+        .from("equipments")
+        .select("*")
+        .order("id");
 
-    const { data: logsData } = await supabase
-      .from("temperature_logs")
-      .select("*")
-      .order("created_at", {
-        ascending: true,
-      });
+    const { data: logsData } =
+      await supabase
+        .from("temperature_logs")
+        .select("*")
+        .order("created_at", {
+          ascending: true,
+        });
 
-    setEquipments(equipmentsData || []);
+    setEquipments(
+      equipmentsData || []
+    );
 
-    setLogs(logsData || []);
+    setLogs(
+      logsData || []
+    );
   }
 
   // LATEST TEMPS
-  const latestLogs = equipments.map((equipment) => {
+  const latestLogs =
+    equipments.map((equipment) => {
 
-    const equipmentLogs = logs.filter(
-      (log) =>
-        log.equipment?.toLowerCase().trim() ===
-        equipment.name.toLowerCase().trim()
-    );
+      const equipmentLogs =
+        logs.filter(
+          (log) =>
+            log.equipment
+              ?.toLowerCase()
+              .trim() ===
+            equipment.name
+              .toLowerCase()
+              .trim()
+        );
 
-    const latestLog =
-      equipmentLogs[equipmentLogs.length - 1];
+      const latestLog =
+        equipmentLogs[
+          equipmentLogs.length - 1
+        ];
 
-    return {
-      ...equipment,
-      currentTemp: latestLog?.temperature ?? null,
-    };
-  });
+      return {
+        ...equipment,
+        currentTemp:
+          latestLog?.temperature ?? null,
+      };
+    });
 
   // AVG TEMP
   const averageTemp =
     logs.length > 0
       ? (
           logs.reduce(
-            (acc, log) => acc + log.temperature,
+            (acc, log) =>
+              acc + log.temperature,
             0
           ) / logs.length
         ).toFixed(1)
       : "0";
 
   // ALERTS
-  const alertsCount = latestLogs.filter(
-    (eq) =>
-      eq.currentTemp !== null &&
-      (
-        eq.currentTemp < eq.temp_min ||
-        eq.currentTemp > eq.temp_max
-      )
-  ).length;
+  const alertsCount =
+    latestLogs.filter(
+      (eq) =>
+        eq.currentTemp !== null &&
+        (
+          eq.currentTemp < eq.temp_min ||
+          eq.currentTemp > eq.temp_max
+        )
+    ).length;
 
   // CHART
-  const chartData = logs.slice(-10).map((log) => ({
-    time: new Date(log.created_at).toLocaleTimeString(
-      "fr-FR",
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-      }
-    ),
-    temperature: log.temperature,
-  }));
+  const chartData =
+    logs.slice(-10).map((log) => ({
+      time:
+        new Date(
+          log.created_at
+        ).toLocaleTimeString(
+          "fr-FR",
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        ),
+
+      temperature:
+        log.temperature,
+    }));
 
   return (
-    <div className="p-8 space-y-8">
+
+    <div className="space-y-6 md:space-y-8">
 
       {/* HEADER */}
       <div className="space-y-3">
@@ -166,51 +190,57 @@ export default function MonitoringPage() {
 
           <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
 
-          <p className="text-cyan-400 tracking-[0.25em] uppercase font-semibold text-sm">
+          <p className="text-cyan-400 tracking-[0.18em] md:tracking-[0.25em] uppercase font-semibold text-[10px] md:text-sm">
             Live HACCP Monitoring
           </p>
 
         </div>
 
-        <h1 className="text-6xl xl:text-7xl font-black text-white">
+        <h1 className="text-4xl sm:text-5xl xl:text-7xl font-black text-white leading-none">
           Monitoring
         </h1>
 
-        <p className="text-white/50 text-xl">
+        <p className="text-white/50 text-base md:text-xl">
           Surveillance temps réel HACCP
         </p>
 
       </div>
 
       {/* TOP CARDS */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 md:gap-6">
 
         {/* AVG */}
         <div
           className="
             rounded-[30px]
+
             border
             border-cyan-500/20
+
             bg-cyan-500/10
             backdrop-blur-xl
-            p-6
+
+            p-5 md:p-6
+
             flex
             items-center
             justify-between
+
+            gap-4
           "
         >
 
-          <div>
+          <div className="min-w-0">
 
-            <p className="text-cyan-300 text-lg">
+            <p className="text-cyan-300 text-base md:text-lg">
               Température moyenne
             </p>
 
-            <h2 className="text-6xl font-black text-cyan-300 mt-4">
+            <h2 className="text-4xl md:text-6xl font-black text-cyan-300 mt-4 break-words">
               {averageTemp}°C
             </h2>
 
-            <p className="text-cyan-200/50 mt-4">
+            <p className="text-cyan-200/50 mt-4 text-sm md:text-base">
               Analyse HACCP
             </p>
 
@@ -218,18 +248,26 @@ export default function MonitoringPage() {
 
           <div
             className="
-              w-24
-              h-24
+              w-16
+              h-16
+
+              md:w-24
+              md:h-24
+
               rounded-[24px]
+
               bg-cyan-400/20
+
               flex
               items-center
               justify-center
+
+              shrink-0
             "
           >
 
             <Thermometer
-              size={42}
+              size={34}
               className="text-cyan-300"
             />
 
@@ -241,28 +279,34 @@ export default function MonitoringPage() {
         <div
           className="
             rounded-[30px]
+
             border
             border-red-500/20
+
             bg-red-500/10
             backdrop-blur-xl
-            p-6
+
+            p-5 md:p-6
+
             flex
             items-center
             justify-between
+
+            gap-4
           "
         >
 
-          <div>
+          <div className="min-w-0">
 
-            <p className="text-red-300 text-lg">
+            <p className="text-red-300 text-base md:text-lg">
               Alertes HACCP
             </p>
 
-            <h2 className="text-6xl font-black text-red-300 mt-4">
+            <h2 className="text-4xl md:text-6xl font-black text-red-300 mt-4">
               {alertsCount}
             </h2>
 
-            <p className="text-red-200/50 mt-4">
+            <p className="text-red-200/50 mt-4 text-sm md:text-base">
               Températures critiques
             </p>
 
@@ -270,18 +314,26 @@ export default function MonitoringPage() {
 
           <div
             className="
-              w-24
-              h-24
+              w-16
+              h-16
+
+              md:w-24
+              md:h-24
+
               rounded-[24px]
+
               bg-red-400/20
+
               flex
               items-center
               justify-center
+
+              shrink-0
             "
           >
 
             <AlertTriangle
-              size={42}
+              size={34}
               className="text-red-300"
             />
 
@@ -293,36 +345,42 @@ export default function MonitoringPage() {
         <div
           className="
             rounded-[30px]
+
             border
             border-green-500/20
+
             bg-green-500/10
             backdrop-blur-xl
-            p-6
+
+            p-5 md:p-6
+
             flex
             items-center
             justify-between
+
+            gap-4
           "
         >
 
-          <div>
+          <div className="min-w-0">
 
-            <p className="text-green-300 text-lg">
+            <p className="text-green-300 text-base md:text-lg">
               Système HACCP
             </p>
 
-            <h2 className="text-6xl font-black text-green-300 mt-4">
+            <h2 className="text-4xl md:text-6xl font-black text-green-300 mt-4 break-words">
               ONLINE
             </h2>
 
-            <p className="text-green-200/50 mt-4">
+            <p className="text-green-200/50 mt-4 text-sm md:text-base">
               Monitoring actif
             </p>
 
           </div>
 
           <Activity
-            size={54}
-            className="text-green-300"
+            size={42}
+            className="text-green-300 shrink-0"
           />
 
         </div>
@@ -333,23 +391,26 @@ export default function MonitoringPage() {
       <div
         className="
           rounded-[32px]
+
           border
           border-white/10
+
           bg-white/[0.03]
           backdrop-blur-xl
-          p-8
+
+          p-5 md:p-8
         "
       >
 
-        <h2 className="text-5xl font-black text-white">
+        <h2 className="text-3xl md:text-5xl font-black text-white">
           Températures Live
         </h2>
 
-        <p className="text-white/40 text-xl mt-3">
+        <p className="text-white/40 text-base md:text-xl mt-3">
           Historique des relevés HACCP
         </p>
 
-        <div className="h-[360px] mt-8">
+        <div className="h-[260px] md:h-[360px] mt-8">
 
           <ResponsiveContainer width="100%" height="100%">
 
@@ -384,10 +445,12 @@ export default function MonitoringPage() {
               <XAxis
                 dataKey="time"
                 stroke="#94a3b8"
+                fontSize={12}
               />
 
               <YAxis
                 stroke="#94a3b8"
+                fontSize={12}
               />
 
               <Tooltip />
@@ -396,7 +459,7 @@ export default function MonitoringPage() {
                 type="monotone"
                 dataKey="temperature"
                 stroke="#22d3ee"
-                strokeWidth={4}
+                strokeWidth={3}
                 fill="url(#colorTemp)"
               />
 
@@ -409,19 +472,19 @@ export default function MonitoringPage() {
       </div>
 
       {/* LIVE EQUIPMENTS */}
-      <div className="space-y-6">
+      <div className="space-y-5 md:space-y-6">
 
         <div className="flex items-center gap-3">
 
           <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
 
-          <h2 className="text-5xl font-black text-white">
+          <h2 className="text-3xl md:text-5xl font-black text-white">
             Équipements Live
           </h2>
 
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 md:gap-6">
 
           {latestLogs.map((equipment) => {
 
@@ -439,7 +502,9 @@ export default function MonitoringPage() {
                 href={`/monitoring/${equipment.id}`}
                 className="
                   block
+
                   hover:scale-[1.01]
+
                   transition
                   duration-300
                 "
@@ -448,35 +513,66 @@ export default function MonitoringPage() {
                 <div
                   className="
                     rounded-[28px]
+
                     border
                     border-white/10
+
                     bg-white/[0.03]
                     backdrop-blur-xl
+
                     p-5
+
                     overflow-hidden
                   "
                 >
 
-                  <div className="flex items-center justify-between gap-4">
+                  <div
+                    className="
+                      flex
+                      flex-col
+                      lg:flex-row
+                      lg:items-center
+                      lg:justify-between
+
+                      gap-5
+                    "
+                  >
 
                     {/* LEFT */}
-                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div
+                      className="
+                        flex
+                        items-center
+
+                        gap-4
+
+                        min-w-0
+                        flex-1
+                      "
+                    >
 
                       <div
                         className="
-                          w-20
-                          h-20
+                          w-16
+                          h-16
+
+                          md:w-20
+                          md:h-20
+
                           rounded-[22px]
+
                           bg-cyan-500/20
+
                           flex
                           items-center
                           justify-center
+
                           shrink-0
                         "
                       >
 
                         <Snowflake
-                          size={32}
+                          size={30}
                           className="text-cyan-300"
                         />
 
@@ -486,18 +582,29 @@ export default function MonitoringPage() {
 
                         <h3
                           className="
-                            text-3xl
+                            text-2xl
+                            md:text-3xl
+
                             font-black
+
                             text-white
+
                             leading-none
+
                             break-words
                           "
                         >
+
                           {equipment.name}
+
                         </h3>
 
-                        <p className="text-white/50 text-lg mt-3">
-                          Zone : {equipment.zone}
+                        <p className="text-white/50 text-sm md:text-lg mt-3 break-words">
+
+                          Zone :
+                          {" "}
+                          {equipment.zone}
+
                         </p>
 
                         <div className="flex items-center gap-3 mt-4">
@@ -506,7 +613,9 @@ export default function MonitoringPage() {
                             className={`
                               w-3
                               h-3
+
                               rounded-full
+
                               ${
                                 isAlert
                                   ? "bg-red-400"
@@ -517,8 +626,9 @@ export default function MonitoringPage() {
 
                           <span
                             className={`
-                              text-lg
+                              text-sm md:text-lg
                               font-bold
+
                               ${
                                 isAlert
                                   ? "text-red-400"
@@ -526,9 +636,11 @@ export default function MonitoringPage() {
                               }
                             `}
                           >
+
                             {isAlert
                               ? "ALERTE"
                               : "CONFORME"}
+
                           </span>
 
                         </div>
@@ -538,9 +650,9 @@ export default function MonitoringPage() {
                     </div>
 
                     {/* RIGHT */}
-                    <div className="text-right shrink-0">
+                    <div className="lg:text-right shrink-0">
 
-                      <p className="text-white/40 text-base">
+                      <p className="text-white/40 text-sm md:text-base">
                         Température HACCP
                       </p>
 
@@ -548,24 +660,34 @@ export default function MonitoringPage() {
 
                         <div
                           className="
-                            text-4xl
+                            text-3xl
+                            md:text-4xl
+
                             font-black
+
                             text-cyan-300
+
                             leading-none
                           "
                         >
+
                           {
                             equipment.currentTemp !== null
                               ? `${equipment.currentTemp}°C`
                               : "--°C"
                           }
+
                         </div>
 
                         <div
                           className="
-                            text-3xl
+                            text-2xl
+                            md:text-3xl
+
                             font-black
+
                             text-cyan-300
+
                             leading-none
                           "
                         >
@@ -574,13 +696,19 @@ export default function MonitoringPage() {
 
                         <div
                           className="
-                            text-4xl
+                            text-3xl
+                            md:text-4xl
+
                             font-black
+
                             text-cyan-300
+
                             leading-none
                           "
                         >
+
                           {equipment.temp_max}°C
+
                         </div>
 
                       </div>
@@ -601,5 +729,6 @@ export default function MonitoringPage() {
       </div>
 
     </div>
+
   );
 }

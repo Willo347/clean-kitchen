@@ -19,21 +19,24 @@ interface CleaningTask {
 
 export default function PMSEntretienPage() {
 
-  const [tasks, setTasks] = useState<CleaningTask[]>([
-    {
-      id: 1,
-      title: "Nettoyage chambre froide",
-      frequency: "Quotidien",
-      completed: false,
-    },
+  const [tasks, setTasks] =
+    useState<CleaningTask[]>([
+      {
+        id: 1,
+        title:
+          "Nettoyage chambre froide",
+        frequency: "Quotidien",
+        completed: false,
+      },
 
-    {
-      id: 2,
-      title: "Désinfection plan de travail",
-      frequency: "Quotidien",
-      completed: true,
-    },
-  ]);
+      {
+        id: 2,
+        title:
+          "Désinfection plan de travail",
+        frequency: "Quotidien",
+        completed: true,
+      },
+    ]);
 
   const [title, setTitle] =
     useState("");
@@ -74,7 +77,9 @@ export default function PMSEntretienPage() {
   }
 
   // TOGGLE
-  function toggleTask(id: number) {
+  function toggleTask(
+    id: number
+  ) {
 
     setTasks(
       tasks.map((task) =>
@@ -91,7 +96,7 @@ export default function PMSEntretienPage() {
 
   return (
 
-    <div className="p-8 space-y-8">
+    <div className="space-y-6 md:space-y-8">
 
       {/* HEADER */}
       <div className="space-y-3">
@@ -100,54 +105,57 @@ export default function PMSEntretienPage() {
 
           <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
 
-          <p className="uppercase tracking-[0.3em] text-cyan-400 font-semibold text-sm">
+          <p className="uppercase tracking-[0.2em] md:tracking-[0.3em] text-cyan-400 font-semibold text-[10px] md:text-sm">
             PMS HACCP
           </p>
 
         </div>
 
-        <h1 className="text-6xl font-black text-white">
+        <h1 className="text-4xl sm:text-5xl xl:text-7xl font-black text-white leading-none">
           PMS Entretien
         </h1>
 
-        <p className="text-white/50 text-xl">
+        <p className="text-white/50 text-base md:text-xl">
           Plan de nettoyage et entretien HACCP
         </p>
 
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 md:gap-6">
 
         {/* TOTAL */}
         <div
           className="
             rounded-[30px]
+
             border
             border-cyan-500/20
+
             bg-cyan-500/10
             backdrop-blur-xl
-            p-6
+
+            p-5 md:p-6
           "
         >
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
 
-            <div>
+            <div className="min-w-0">
 
-              <p className="text-cyan-300 text-lg">
+              <p className="text-cyan-300 text-base md:text-lg">
                 Tâches totales
               </p>
 
-              <h2 className="text-6xl font-black text-cyan-300 mt-4">
+              <h2 className="text-4xl md:text-6xl font-black text-cyan-300 mt-4">
                 {tasks.length}
               </h2>
 
             </div>
 
             <ClipboardList
-              size={50}
-              className="text-cyan-300"
+              size={42}
+              className="text-cyan-300 shrink-0"
             />
 
           </div>
@@ -158,31 +166,34 @@ export default function PMSEntretienPage() {
         <div
           className="
             rounded-[30px]
+
             border
             border-green-500/20
+
             bg-green-500/10
             backdrop-blur-xl
-            p-6
+
+            p-5 md:p-6
           "
         >
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
 
-            <div>
+            <div className="min-w-0">
 
-              <p className="text-green-300 text-lg">
+              <p className="text-green-300 text-base md:text-lg">
                 Tâches validées
               </p>
 
-              <h2 className="text-6xl font-black text-green-300 mt-4">
+              <h2 className="text-4xl md:text-6xl font-black text-green-300 mt-4">
                 {completedTasks}
               </h2>
 
             </div>
 
             <CheckCircle2
-              size={50}
-              className="text-green-300"
+              size={42}
+              className="text-green-300 shrink-0"
             />
 
           </div>
@@ -193,31 +204,34 @@ export default function PMSEntretienPage() {
         <div
           className="
             rounded-[30px]
+
             border
             border-orange-500/20
+
             bg-orange-500/10
             backdrop-blur-xl
-            p-6
+
+            p-5 md:p-6
           "
         >
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
 
-            <div>
+            <div className="min-w-0">
 
-              <p className="text-orange-300 text-lg">
+              <p className="text-orange-300 text-base md:text-lg">
                 Tâches en attente
               </p>
 
-              <h2 className="text-6xl font-black text-orange-300 mt-4">
+              <h2 className="text-4xl md:text-6xl font-black text-orange-300 mt-4">
                 {pendingTasks}
               </h2>
 
             </div>
 
             <AlertTriangle
-              size={50}
-              className="text-orange-300"
+              size={42}
+              className="text-orange-300 shrink-0"
             />
 
           </div>
@@ -230,19 +244,22 @@ export default function PMSEntretienPage() {
       <div
         className="
           rounded-[32px]
+
           border
           border-white/10
+
           bg-white/[0.03]
           backdrop-blur-xl
-          p-8
+
+          p-5 md:p-8
         "
       >
 
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-6 md:mb-8">
 
           <Plus className="text-cyan-400" />
 
-          <h2 className="text-4xl font-black text-white">
+          <h2 className="text-2xl md:text-4xl font-black text-white">
             Ajouter une tâche PMS
           </h2>
 
@@ -261,13 +278,20 @@ export default function PMSEntretienPage() {
               )
             }
             className="
-              h-16
+              h-14 md:h-16
+
               rounded-2xl
+
               bg-white/[0.05]
+
               border
               border-white/10
+
               px-5
+
               text-white
+              text-sm md:text-base
+
               outline-none
             "
           />
@@ -281,13 +305,20 @@ export default function PMSEntretienPage() {
               )
             }
             className="
-              h-16
+              h-14 md:h-16
+
               rounded-2xl
+
               bg-white/[0.05]
+
               border
               border-white/10
+
               px-5
+
               text-white
+              text-sm md:text-base
+
               outline-none
             "
           >
@@ -310,14 +341,19 @@ export default function PMSEntretienPage() {
           <button
             onClick={addTask}
             className="
-              h-16
+              h-14 md:h-16
+
               rounded-2xl
+
               bg-cyan-400
               hover:bg-cyan-300
+
               transition
+
               text-black
               font-black
-              text-lg
+
+              text-base md:text-lg
             "
           >
             Ajouter
@@ -336,65 +372,98 @@ export default function PMSEntretienPage() {
             key={task.id}
             className="
               rounded-[28px]
+
               border
               border-white/10
+
               bg-white/[0.03]
               backdrop-blur-xl
-              p-6
 
-              flex
-              items-center
-              justify-between
-              gap-6
+              p-5 md:p-6
             "
           >
 
-            <div>
+            <div
+              className="
+                flex
+                flex-col
+                lg:flex-row
+                lg:items-center
+                lg:justify-between
 
-              <h2 className="text-2xl font-black text-white">
-                {task.title}
-              </h2>
-
-              <p className="text-white/50 mt-2">
-                Fréquence : {task.frequency}
-              </p>
-
-            </div>
-
-            <button
-              onClick={() =>
-                toggleTask(task.id)
-              }
-              className={`
-                px-6
-                py-4
-                rounded-2xl
-                font-black
-                transition
-
-                ${
-                  task.completed
-                    ? `
-                      bg-green-500/20
-                      text-green-300
-                      border
-                      border-green-500/30
-                    `
-                    : `
-                      bg-orange-500/20
-                      text-orange-300
-                      border
-                      border-orange-500/30
-                    `
-                }
-              `}
+                gap-5
+              "
             >
 
-              {task.completed
-                ? "✔ Effectué"
-                : "En attente"}
+              {/* LEFT */}
+              <div className="min-w-0">
 
-            </button>
+                <div className="flex items-center gap-3 mb-3">
+
+                  <ShieldCheck className="text-cyan-300 shrink-0" />
+
+                  <h2 className="text-2xl md:text-3xl font-black text-white break-words">
+
+                    {task.title}
+
+                  </h2>
+
+                </div>
+
+                <p className="text-white/50 text-sm md:text-base break-words">
+
+                  Fréquence :
+                  {" "}
+                  {task.frequency}
+
+                </p>
+
+              </div>
+
+              {/* BUTTON */}
+              <button
+                onClick={() =>
+                  toggleTask(task.id)
+                }
+                className={`
+                  w-full
+                  lg:w-auto
+
+                  px-5 md:px-6
+                  py-4
+
+                  rounded-2xl
+
+                  text-sm md:text-base
+                  font-black
+
+                  transition
+
+                  ${
+                    task.completed
+                      ? `
+                        bg-green-500/20
+                        text-green-300
+                        border
+                        border-green-500/30
+                      `
+                      : `
+                        bg-orange-500/20
+                        text-orange-300
+                        border
+                        border-orange-500/30
+                      `
+                  }
+                `}
+              >
+
+                {task.completed
+                  ? "✔ Effectué"
+                  : "En attente"}
+
+              </button>
+
+            </div>
 
           </div>
 

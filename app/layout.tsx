@@ -146,18 +146,63 @@ export default function RootLayout({
         <div className="relative z-10 h-screen">
 
           {/* SIDEBAR */}
-          <Sidebar />
+          <div className="hidden lg:block">
+            <Sidebar />
+          </div>
+
+          {/* MOBILE HEADER */}
+          <div
+            className="
+              lg:hidden
+
+              fixed
+              top-0
+              left-0
+              right-0
+
+              z-50
+
+              border-b
+              border-white/10
+
+              bg-[#081120]/90
+              backdrop-blur-3xl
+
+              px-5
+              py-4
+            "
+          >
+
+            <div className="flex items-center justify-between">
+
+              <img
+                src="/ck-logo-new.png"
+                alt="CK Logo"
+                className="
+                  w-[170px]
+                  h-auto
+                  object-contain
+                "
+              />
+
+            </div>
+
+          </div>
 
           {/* CONTENT */}
           <main
             className="
-              ml-[270px]
+              lg:ml-[270px]
 
               h-screen
               overflow-y-auto
 
-              px-10
-              py-10
+              px-4
+              py-24
+
+              md:px-8
+              lg:px-10
+              lg:py-10
             "
           >
 
