@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+
 import "./globals.css";
 
 import Sidebar from "./components/Sidebar";
 
 import { Toaster } from "sonner";
+
 import { Geist } from "next/font/google";
+
 import { cn } from "@/lib/utils";
 
 const geist = Geist({
@@ -24,9 +27,13 @@ export default function RootLayout({
 }>) {
 
   return (
+
     <html
       lang="fr"
-      className={cn("font-sans", geist.variable)}
+      className={cn(
+        "font-sans",
+        geist.variable
+      )}
     >
 
       <body className="bg-[#070B14] text-white overflow-hidden">
@@ -146,48 +153,7 @@ export default function RootLayout({
         <div className="relative z-10 h-screen">
 
           {/* SIDEBAR */}
-          <div className="hidden lg:block">
-            <Sidebar />
-          </div>
-
-          {/* MOBILE HEADER */}
-          <div
-            className="
-              lg:hidden
-
-              fixed
-              top-0
-              left-0
-              right-0
-
-              z-50
-
-              border-b
-              border-white/10
-
-              bg-[#081120]/90
-              backdrop-blur-3xl
-
-              px-5
-              py-4
-            "
-          >
-
-            <div className="flex items-center justify-between">
-
-              <img
-                src="/ck-logo-new.png"
-                alt="CK Logo"
-                className="
-                  w-[170px]
-                  h-auto
-                  object-contain
-                "
-              />
-
-            </div>
-
-          </div>
+          <Sidebar />
 
           {/* CONTENT */}
           <main
@@ -198,11 +164,13 @@ export default function RootLayout({
               overflow-y-auto
 
               px-4
-              py-24
-
-              md:px-8
+              md:px-6
               lg:px-10
-              lg:py-10
+
+              pt-[100px]
+              lg:pt-10
+
+              pb-10
             "
           >
 
@@ -233,5 +201,6 @@ export default function RootLayout({
       </body>
 
     </html>
+
   );
 }
