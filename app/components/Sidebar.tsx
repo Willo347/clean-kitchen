@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import { usePathname } from "next/navigation";
 
+import { useState } from "react";
+
 import {
   LayoutDashboard,
   Thermometer,
@@ -16,6 +18,8 @@ import {
   Activity,
   Users,
   Settings,
+  Menu,
+  X,
 } from "lucide-react";
 
 const menuItems = [
@@ -90,162 +94,286 @@ export default function Sidebar() {
 
   const pathname = usePathname();
 
+  const [mobileOpen, setMobileOpen] =
+    useState(false);
+
   return (
 
-    <aside
-      className="
-        fixed
-        top-0
-        left-0
-
-        h-screen
-        w-[290px]
-
-        overflow-y-auto
-
-        border-r
-        border-white/10
-
-        bg-[#081120]/85
-        backdrop-blur-3xl
-
-        px-4
-        py-5
-
-        z-50
-      "
-    >
-
-      {/* LOGO */}
+    <>
+      {/* MOBILE TOPBAR */}
       <div
         className="
-          flex
-          justify-center
-          items-center
+          fixed
+          top-0
+          left-0
+          right-0
 
-          mb-8
-          mt-4
+          h-[80px]
+
+          px-5
+
+          flex
+          items-center
+          justify-between
+
+          bg-[#081120]/90
+          backdrop-blur-3xl
+
+          border-b
+          border-white/10
+
+          z-[60]
+
+          lg:hidden
         "
       >
 
+        {/* LOGO */}
         <img
           src="/ck-logo-new.png"
           alt="CK Logo"
           className="
-            w-[390px]
-            max-w-none
-
+            w-[150px]
             h-auto
             object-contain
-
-            scale-[1.15]
           "
         />
 
+        {/* BURGER */}
+        <button
+          onClick={() =>
+            setMobileOpen(
+              !mobileOpen
+            )
+          }
+          className="
+            w-12
+            h-12
+
+            rounded-2xl
+
+            border
+            border-white/10
+
+            bg-white/[0.04]
+
+            flex
+            items-center
+            justify-center
+          "
+        >
+
+          {mobileOpen ? (
+
+            <X className="text-white" />
+
+          ) : (
+
+            <Menu className="text-white" />
+
+          )}
+
+        </button>
+
       </div>
 
-      {/* MENU */}
-      <div className="space-y-4 pb-20">
+      {/* OVERLAY */}
+      {mobileOpen && (
 
-        {menuItems.map((item, index) => {
+        <div
+          onClick={() =>
+            setMobileOpen(false)
+          }
+          className="
+            fixed
+            inset-0
 
-          const Icon = item.icon;
+            bg-black/60
+            backdrop-blur-sm
 
-          const active =
-            pathname === item.href;
+            z-40
 
-          return (
+            lg:hidden
+          "
+        />
 
-            <Link
-              key={index}
-              href={item.href}
-            >
+      )}
 
-              <div
-                className={`
-                  group
+      {/* SIDEBAR */}
+      <aside
+        className={`
+          fixed
+          top-0
+          left-0
 
-                  flex
-                  items-center
-                  gap-4
+          h-screen
+          w-[290px]
 
-                  rounded-[28px]
+          overflow-y-auto
 
-                  border
+          border-r
+          border-white/10
 
-                  p-4
+          bg-[#081120]/95
+          backdrop-blur-3xl
 
-                  transition-all
-                  duration-300
+          px-4
+          py-5
 
-                  ${
-                    active
-                      ? `
-                        border-cyan-500/30
-                        bg-cyan-500/10
+          z-50
 
-                        shadow-[0_0_30px_rgba(6,182,212,0.12)]
-                      `
-                      : `
-                        border-white/10
-                        bg-white/[0.03]
+          transition-transform
+          duration-300
 
-                        hover:bg-white/[0.06]
-                        hover:border-cyan-500/20
-                      `
-                  }
-                `}
+          ${
+            mobileOpen
+              ? "translate-x-0"
+              : "-translate-x-full lg:translate-x-0"
+          }
+        `}
+      >
+
+        {/* LOGO DESKTOP */}
+        <div
+          className="
+            hidden
+            lg:flex
+
+            justify-center
+            items-center
+
+            mb-8
+            mt-4
+          "
+        >
+
+          <img
+            src="/ck-logo-new.png"
+            alt="CK Logo"
+            className="
+              w-[390px]
+              max-w-none
+
+              h-auto
+              object-contain
+
+              scale-[1.15]
+            "
+          />
+
+        </div>
+
+        {/* MOBILE SPACING */}
+        <div className="h-[90px] lg:hidden" />
+
+        {/* MENU */}
+        <div className="space-y-4 pb-20">
+
+          {menuItems.map((item, index) => {
+
+            const Icon = item.icon;
+
+            const active =
+              pathname === item.href;
+
+            return (
+
+              <Link
+                key={index}
+                href={item.href}
+                onClick={() =>
+                  setMobileOpen(false)
+                }
               >
 
-                {/* ICON */}
                 <div
                   className={`
-                    rounded-2xl
+                    group
+
+                    flex
+                    items-center
+                    gap-4
+
+                    rounded-[28px]
+
+                    border
+
                     p-4
 
                     transition-all
+                    duration-300
 
                     ${
                       active
                         ? `
-                          bg-cyan-500/20
-                          text-cyan-300
+                          border-cyan-500/30
+                          bg-cyan-500/10
+
+                          shadow-[0_0_30px_rgba(6,182,212,0.12)]
                         `
                         : `
-                          bg-white/[0.04]
-                          text-gray-400
+                          border-white/10
+                          bg-white/[0.03]
 
-                          group-hover:text-cyan-300
+                          hover:bg-white/[0.06]
+                          hover:border-cyan-500/20
                         `
                     }
                   `}
                 >
 
-                  <Icon className="w-6 h-6" />
+                  {/* ICON */}
+                  <div
+                    className={`
+                      rounded-2xl
+                      p-4
+
+                      transition-all
+
+                      ${
+                        active
+                          ? `
+                            bg-cyan-500/20
+                            text-cyan-300
+                          `
+                          : `
+                            bg-white/[0.04]
+                            text-gray-400
+
+                            group-hover:text-cyan-300
+                          `
+                      }
+                    `}
+                  >
+
+                    <Icon className="w-6 h-6" />
+
+                  </div>
+
+                  {/* TEXT */}
+                  <div>
+
+                    <h2 className="text-xl font-black text-white leading-none">
+                      {item.name}
+                    </h2>
+
+                    <p className="text-gray-500 text-xs mt-1">
+                      Navigation rapide
+                    </p>
+
+                  </div>
 
                 </div>
 
-                {/* TEXT */}
-                <div>
+              </Link>
 
-                  <h2 className="text-xl font-black text-white leading-none">
-                    {item.name}
-                  </h2>
+            );
+          })}
 
-                  <p className="text-gray-500 text-xs mt-1">
-                    Navigation rapide
-                  </p>
+        </div>
 
-                </div>
+      </aside>
 
-              </div>
-
-            </Link>
-          );
-        })}
-
-      </div>
-
-    </aside>
+    </>
   );
 }
