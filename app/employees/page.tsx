@@ -19,6 +19,7 @@ interface Employee {
   lastname: string;
   role: string;
   status: string;
+  pin_code: string;
   created_at: string;
 }
 
@@ -63,12 +64,18 @@ export default function EmployeesPage() {
 
     if (!role) return;
 
+    const pin_code =
+      prompt("Code PIN (4 chiffres)");
+
+    if (!pin_code) return;
+
     await supabase
       .from("employees")
       .insert({
         firstname,
         lastname,
         role,
+        pin_code,
         status: "ACTIF",
       });
 
@@ -382,6 +389,37 @@ export default function EmployeesPage() {
 
                     <span className="text-green-400 text-sm md:text-lg font-bold">
                       {employee.status}
+                    </span>
+
+                  </div>
+
+                  {/* PIN */}
+                  <div
+                    className="
+                      mt-3
+
+                      inline-flex
+                      items-center
+                      gap-2
+
+                      px-3
+                      py-2
+
+                      rounded-xl
+
+                      bg-cyan-500/10
+                      border
+                      border-cyan-500/20
+                    "
+                  >
+
+                    <ShieldCheck
+                      size={16}
+                      className="text-cyan-300"
+                    />
+
+                    <span className="text-cyan-300 text-xs md:text-sm font-bold">
+                      PIN configuré
                     </span>
 
                   </div>

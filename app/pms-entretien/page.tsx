@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { supabase } from "@/lib/supabase";
 
 import {
   ShieldCheck,
@@ -15,34 +17,124 @@ interface CleaningTask {
   title: string;
   frequency: string;
   completed: boolean;
+  validated_by?: string | null;
+  validated_at?: string | null;
 }
 
 export default function PMSEntretienPage() {
 
-  const [tasks, setTasks] =
-    useState<CleaningTask[]>([
-      {
-        id: 1,
-        title:
-          "Nettoyage chambre froide",
-        frequency: "Quotidien",
-        completed: false,
-      },
+  const [tasks, setTasks] = useState<CleaningTask[]>([]);
 
-      {
-        id: 2,
-        title:
-          "Désinfection plan de travail",
-        frequency: "Quotidien",
-        completed: true,
-      },
-    ]);
-
-  const [title, setTitle] =
-    useState("");
+  const [title, setTitle] = useState("");
 
   const [frequency, setFrequency] =
     useState("Quotidien");
+
+  const [loading, setLoading] =
+    useState(true);
+
+  // FETCH TASKS
+  async function fetchTasks() {
+
+    const { data, error } =
+      await supabase
+        .from("pms_tasks")
+        .select("*")
+        .order("created_at", {
+          ascending: false,
+        });
+
+    console.log("TASKS:", data);
+    console.log("TASKS ERROR:", error);
+
+    if (!error && data) {
+      setTasks(data);
+    }
+
+    setLoading(false);
+  }
+
+  // AUTO REFRESH
+  useEffect(() => {
+
+    fetchTasks();
+
+    const interval = setInterval(() => {
+      fetchTasks();
+    }, 2000);
+
+    return () =>
+      clearInterval(interval);
+
+  }, []);
+
+  // ADD TASK
+  async function addTask() {
+
+    if (!title.trim()) return;
+
+    const insertData = {
+      title: title.trim(),
+      frequency,
+      completed: false,
+    };
+
+    console.log(
+      "INSERT DATA:",
+      insertData
+    );
+
+    const { error } =
+      await supabase
+        .from("pms_tasks")
+        .insert([insertData]);
+
+    console.log(
+      "INSERT ERROR:",
+      error
+    );
+
+    if (error) {
+      alert("Erreur insertion PMS");
+      return;
+    }
+
+    setTitle("");
+    setFrequency("Quotidien");
+
+    fetchTasks();
+  }
+
+  // TOGGLE TASK
+  async function toggleTask(
+    task: CleaningTask
+  ) {
+
+    const { error } =
+      await supabase
+        .from("pms_tasks")
+        .update({
+          completed:
+            !task.completed,
+
+          validated_by:
+            !task.completed
+              ? "Manager"
+              : null,
+
+          validated_at:
+            !task.completed
+              ? new Date().toLocaleString(
+                  "fr-FR"
+                )
+              : null,
+        })
+        .eq("id", task.id);
+
+    if (!error) {
+      fetchTasks();
+    }
+  }
 
   // STATS
   const completedTasks =
@@ -54,45 +146,6 @@ export default function PMSEntretienPage() {
     tasks.filter(
       (task) => !task.completed
     ).length;
-
-  // ADD TASK
-  function addTask() {
-
-    if (!title) return;
-
-    const newTask: CleaningTask = {
-      id: Date.now(),
-      title,
-      frequency,
-      completed: false,
-    };
-
-    setTasks([
-      newTask,
-      ...tasks,
-    ]);
-
-    setTitle("");
-    setFrequency("Quotidien");
-  }
-
-  // TOGGLE
-  function toggleTask(
-    id: number
-  ) {
-
-    setTasks(
-      tasks.map((task) =>
-        task.id === id
-          ? {
-              ...task,
-              completed:
-                !task.completed,
-            }
-          : task
-      )
-    );
-  }
 
   return (
 
@@ -128,20 +181,17 @@ export default function PMSEntretienPage() {
         <div
           className="
             rounded-[30px]
-
             border
             border-cyan-500/20
-
             bg-cyan-500/10
             backdrop-blur-xl
-
             p-5 md:p-6
           "
         >
 
           <div className="flex items-center justify-between gap-4">
 
-            <div className="min-w-0">
+            <div>
 
               <p className="text-cyan-300 text-base md:text-lg">
                 Tâches totales
@@ -155,7 +205,7 @@ export default function PMSEntretienPage() {
 
             <ClipboardList
               size={42}
-              className="text-cyan-300 shrink-0"
+              className="text-cyan-300"
             />
 
           </div>
@@ -166,20 +216,17 @@ export default function PMSEntretienPage() {
         <div
           className="
             rounded-[30px]
-
             border
             border-green-500/20
-
             bg-green-500/10
             backdrop-blur-xl
-
             p-5 md:p-6
           "
         >
 
           <div className="flex items-center justify-between gap-4">
 
-            <div className="min-w-0">
+            <div>
 
               <p className="text-green-300 text-base md:text-lg">
                 Tâches validées
@@ -193,7 +240,7 @@ export default function PMSEntretienPage() {
 
             <CheckCircle2
               size={42}
-              className="text-green-300 shrink-0"
+              className="text-green-300"
             />
 
           </div>
@@ -204,20 +251,17 @@ export default function PMSEntretienPage() {
         <div
           className="
             rounded-[30px]
-
             border
             border-orange-500/20
-
             bg-orange-500/10
             backdrop-blur-xl
-
             p-5 md:p-6
           "
         >
 
           <div className="flex items-center justify-between gap-4">
 
-            <div className="min-w-0">
+            <div>
 
               <p className="text-orange-300 text-base md:text-lg">
                 Tâches en attente
@@ -231,7 +275,7 @@ export default function PMSEntretienPage() {
 
             <AlertTriangle
               size={42}
-              className="text-orange-300 shrink-0"
+              className="text-orange-300"
             />
 
           </div>
@@ -244,13 +288,10 @@ export default function PMSEntretienPage() {
       <div
         className="
           rounded-[32px]
-
           border
           border-white/10
-
           bg-white/[0.03]
           backdrop-blur-xl
-
           p-5 md:p-8
         "
       >
@@ -279,19 +320,13 @@ export default function PMSEntretienPage() {
             }
             className="
               h-14 md:h-16
-
               rounded-2xl
-
               bg-white/[0.05]
-
               border
               border-white/10
-
               px-5
-
               text-white
               text-sm md:text-base
-
               outline-none
             "
           />
@@ -306,19 +341,13 @@ export default function PMSEntretienPage() {
             }
             className="
               h-14 md:h-16
-
               rounded-2xl
-
               bg-white/[0.05]
-
               border
               border-white/10
-
               px-5
-
               text-white
               text-sm md:text-base
-
               outline-none
             "
           >
@@ -342,17 +371,12 @@ export default function PMSEntretienPage() {
             onClick={addTask}
             className="
               h-14 md:h-16
-
               rounded-2xl
-
               bg-cyan-400
               hover:bg-cyan-300
-
               transition
-
               text-black
               font-black
-
               text-base md:text-lg
             "
           >
@@ -366,108 +390,148 @@ export default function PMSEntretienPage() {
       {/* TASKS */}
       <div className="space-y-4">
 
-        {tasks.map((task) => (
+        {loading ? (
+
+          <div className="text-white/50">
+            Chargement...
+          </div>
+
+        ) : tasks.length === 0 ? (
 
           <div
-            key={task.id}
             className="
-              rounded-[28px]
-
+              rounded-3xl
               border
               border-white/10
-
               bg-white/[0.03]
-              backdrop-blur-xl
-
-              p-5 md:p-6
+              p-8
+              text-center
+              text-white/50
             "
           >
+            Aucune tâche PMS
+          </div>
+
+        ) : (
+
+          tasks.map((task) => (
 
             <div
+              key={task.id}
               className="
-                flex
-                flex-col
-                lg:flex-row
-                lg:items-center
-                lg:justify-between
-
-                gap-5
+                rounded-[28px]
+                border
+                border-white/10
+                bg-white/[0.03]
+                backdrop-blur-xl
+                p-5 md:p-6
               "
             >
 
-              {/* LEFT */}
-              <div className="min-w-0">
+              <div
+                className="
+                  flex
+                  flex-col
+                  lg:flex-row
+                  lg:items-center
+                  lg:justify-between
+                  gap-5
+                "
+              >
 
-                <div className="flex items-center gap-3 mb-3">
+                {/* LEFT */}
+                <div>
 
-                  <ShieldCheck className="text-cyan-300 shrink-0" />
+                  <div className="flex items-center gap-3 mb-3">
 
-                  <h2 className="text-2xl md:text-3xl font-black text-white break-words">
+                    <ShieldCheck className="text-cyan-300 shrink-0" />
 
-                    {task.title}
+                    <h2 className="text-2xl md:text-3xl font-black text-white break-words">
 
-                  </h2>
+                      {task.title}
+
+                    </h2>
+
+                  </div>
+
+                  <p className="text-white/50 text-sm md:text-base">
+
+                    Fréquence :
+                    {" "}
+                    {task.frequency}
+
+                  </p>
+
+                  {task.completed && (
+
+                    <div className="mt-4 space-y-1">
+
+                      <p className="text-green-300 text-sm">
+
+                        Validé par :
+                        {" "}
+                        {task.validated_by}
+
+                      </p>
+
+                      <p className="text-green-300/70 text-xs">
+
+                        {task.validated_at}
+
+                      </p>
+
+                    </div>
+
+                  )}
 
                 </div>
 
-                <p className="text-white/50 text-sm md:text-base break-words">
+                {/* BUTTON */}
+                <button
+                  onClick={() =>
+                    toggleTask(task)
+                  }
+                  className={`
+                    w-full
+                    lg:w-auto
+                    px-5 md:px-6
+                    py-4
+                    rounded-2xl
+                    text-sm md:text-base
+                    font-black
+                    transition
 
-                  Fréquence :
-                  {" "}
-                  {task.frequency}
+                    ${
+                      task.completed
+                        ? `
+                          bg-green-500/20
+                          text-green-300
+                          border
+                          border-green-500/30
+                        `
+                        : `
+                          bg-orange-500/20
+                          text-orange-300
+                          border
+                          border-orange-500/30
+                        `
+                    }
+                  `}
+                >
 
-                </p>
+                  {task.completed
+                    ? "✔ Effectué"
+                    : "En attente"}
+
+                </button>
 
               </div>
 
-              {/* BUTTON */}
-              <button
-                onClick={() =>
-                  toggleTask(task.id)
-                }
-                className={`
-                  w-full
-                  lg:w-auto
-
-                  px-5 md:px-6
-                  py-4
-
-                  rounded-2xl
-
-                  text-sm md:text-base
-                  font-black
-
-                  transition
-
-                  ${
-                    task.completed
-                      ? `
-                        bg-green-500/20
-                        text-green-300
-                        border
-                        border-green-500/30
-                      `
-                      : `
-                        bg-orange-500/20
-                        text-orange-300
-                        border
-                        border-orange-500/30
-                      `
-                  }
-                `}
-              >
-
-                {task.completed
-                  ? "✔ Effectué"
-                  : "En attente"}
-
-              </button>
-
             </div>
 
-          </div>
+          ))
 
-        ))}
+        )}
 
       </div>
 
