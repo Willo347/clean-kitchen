@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-
 import { usePathname } from "next/navigation";
-
 import { useState } from "react";
 
 import {
@@ -24,7 +22,7 @@ import {
 
 const menuItems = [
   {
-    name: "Dashboard",
+    name: "Tableau de bord",
     href: "/",
     icon: LayoutDashboard,
   },
@@ -128,16 +126,32 @@ export default function Sidebar() {
         "
       >
 
-        {/* LOGO */}
-        <img
-          src="/ck-logo-new.png"
-          alt="CK Logo"
-          className="
-            w-[150px]
-            h-auto
-            object-contain
-          "
-        />
+        {/* MOBILE LOGO */}
+        <div className="flex items-center gap-3">
+
+          <img
+            src="/ck-logo-new.png"
+            alt="Clean Kitchen Logo"
+            className="
+              w-[58px]
+              h-[58px]
+              object-contain
+            "
+          />
+
+          <div className="flex flex-col">
+
+            <h1 className="text-[15px] font-semibold tracking-wide">
+              Clean Kitchen
+            </h1>
+
+            <p className="text-cyan-300 text-[9px] uppercase tracking-[0.3em] mt-1">
+              Smart Kitchen
+            </p>
+
+          </div>
+
+        </div>
 
         {/* BURGER */}
         <button
@@ -147,8 +161,8 @@ export default function Sidebar() {
             )
           }
           className="
-            w-12
-            h-12
+            w-11
+            h-11
 
             rounded-2xl
 
@@ -165,11 +179,11 @@ export default function Sidebar() {
 
           {mobileOpen ? (
 
-            <X className="text-white" />
+            <X className="text-white w-5 h-5" />
 
           ) : (
 
-            <Menu className="text-white" />
+            <Menu className="text-white w-5 h-5" />
 
           )}
 
@@ -233,33 +247,54 @@ export default function Sidebar() {
         `}
       >
 
-        {/* LOGO DESKTOP */}
+        {/* DESKTOP LOGO */}
         <div
           className="
             hidden
             lg:flex
 
-            justify-center
+            flex-col
             items-center
 
-            mb-8
-            mt-4
+            pt-0
+            mb-2
           "
         >
 
           <img
             src="/ck-logo-new.png"
-            alt="CK Logo"
+            alt="Clean Kitchen Logo"
             className="
-              w-[390px]
+              w-[360px]
               max-w-none
 
               h-auto
               object-contain
 
-              scale-[1.15]
+              drop-shadow-[0_0_30px_rgba(6,182,212,0.35)]
+
+              -mb-6
             "
           />
+
+          <p
+            className="
+              text-cyan-300
+
+              text-[10px]
+
+              uppercase
+
+              tracking-[0.45em]
+
+              opacity-90
+
+              relative
+              -top-2
+            "
+          >
+            Smart Kitchen
+          </p>
 
         </div>
 
@@ -267,7 +302,7 @@ export default function Sidebar() {
         <div className="h-[90px] lg:hidden" />
 
         {/* MENU */}
-        <div className="space-y-4 pb-20">
+        <div className="space-y-2 pb-20 -mt-1">
 
           {menuItems.map((item, index) => {
 
@@ -294,29 +329,36 @@ export default function Sidebar() {
                     items-center
                     gap-4
 
-                    rounded-[28px]
+                    rounded-[24px]
 
                     border
 
-                    p-4
+                    p-3
+
+                    backdrop-blur-xl
 
                     transition-all
                     duration-300
 
+                    hover:scale-[1.01]
+
                     ${
                       active
                         ? `
-                          border-cyan-500/30
-                          bg-cyan-500/10
+                          border-cyan-500/20
 
-                          shadow-[0_0_30px_rgba(6,182,212,0.12)]
+                          bg-gradient-to-r
+                          from-cyan-500/15
+                          to-blue-500/10
+
+                          shadow-[0_0_30px_rgba(6,182,212,0.10)]
                         `
                         : `
                           border-white/10
                           bg-white/[0.03]
 
-                          hover:bg-white/[0.06]
-                          hover:border-cyan-500/20
+                          hover:bg-white/[0.05]
+                          hover:border-cyan-500/10
                         `
                     }
                   `}
@@ -326,14 +368,14 @@ export default function Sidebar() {
                   <div
                     className={`
                       rounded-2xl
-                      p-4
+                      p-3
 
                       transition-all
 
                       ${
                         active
                           ? `
-                            bg-cyan-500/20
+                            bg-cyan-500/15
                             text-cyan-300
                           `
                           : `
@@ -346,20 +388,30 @@ export default function Sidebar() {
                     `}
                   >
 
-                    <Icon className="w-6 h-6" />
+                    <Icon className="w-5 h-5" />
 
                   </div>
 
                   {/* TEXT */}
-                  <div>
+                  <div className="flex flex-col">
 
-                    <h2 className="text-xl font-black text-white leading-none">
+                    <h2 className="text-[15px] font-semibold tracking-wide text-white leading-none">
                       {item.name}
                     </h2>
 
-                    <p className="text-gray-500 text-xs mt-1">
-                      Navigation rapide
-                    </p>
+                    {active ? (
+
+                      <p className="text-cyan-300 text-[10px] uppercase tracking-[0.25em] mt-2">
+                        Smart Kitchen
+                      </p>
+
+                    ) : (
+
+                      <p className="text-[11px] text-white/35 mt-1">
+                        Vue système
+                      </p>
+
+                    )}
 
                   </div>
 
@@ -369,6 +421,55 @@ export default function Sidebar() {
 
             );
           })}
+
+        </div>
+
+        {/* FOOTER */}
+        <div
+          className="
+            mt-auto
+
+            rounded-3xl
+
+            border
+            border-white/10
+
+            bg-white/[0.03]
+
+            p-4
+
+            backdrop-blur-xl
+          "
+        >
+
+          <div className="flex items-center justify-between">
+
+            <div>
+
+              <h3 className="text-sm font-semibold">
+                Clean Kitchen
+              </h3>
+
+              <p className="text-xs text-white/40 mt-1">
+                Système opérationnel
+              </p>
+
+            </div>
+
+            <div
+              className="
+                w-3
+                h-3
+
+                rounded-full
+
+                bg-green-400
+
+                shadow-[0_0_15px_rgba(74,222,128,0.8)]
+              "
+            />
+
+          </div>
 
         </div>
 
