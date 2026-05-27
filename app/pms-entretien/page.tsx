@@ -6,12 +6,10 @@ import {
   ShieldCheck,
   CheckCircle2,
   Clock3,
-  BellRing,
   CalendarDays,
   Plus,
-  Sparkles,
-  Flame,
   X,
+  Trash2,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -24,12 +22,11 @@ type Task = {
   day_of_week?: string | null;
   validated_by?: string | null;
   validated_at?: string | null;
-  overdue?: boolean;
 };
 
 const ADMIN_PIN = "2405";
 
-const days = [
+const DAYS = [
   "Lundi",
   "Mardi",
   "Mercredi",
@@ -43,9 +40,6 @@ export default function PMSEntretienPage() {
 
   const [tasks, setTasks] =
     useState<Task[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
 
   const [authorized, setAuthorized] =
     useState(false);
@@ -62,39 +56,22 @@ export default function PMSEntretienPage() {
   const [frequency, setFrequency] =
     useState("Quotidien");
 
-  const [dayOfWeek, setDayOfWeek] =
-    useState("Lundi");
-
-  const [activeFilter, setActiveFilter] =
-    useState<
-      "today" |
-      "validated" |
-      "pending" |
-      "overdue" |
-      null
-    >(null);
-
   const [selectedDay, setSelectedDay] =
     useState("Lundi");
 
-  function getTodayFrench() {
+  const [showTodayPanel, setShowTodayPanel] =
+    useState(true);
 
-    return new Date()
-      .toLocaleDateString(
-        "fr-FR",
-        { weekday: "long" }
-      )
-      .replace(/^./, (c) =>
-        c.toUpperCase()
-      );
-  }
+  const [showValidationModal, setShowValidationModal] =
+    useState(false);
 
-  const todayName =
-    getTodayFrench();
+  const [selectedTask, setSelectedTask] =
+    useState<Task | null>(null);
+
+  const [employeeName, setEmployeeName] =
+    useState("");
 
   async function fetchTasks() {
-
-    setLoading(true);
 
     const { data } =
       await supabase
@@ -105,12 +82,8 @@ export default function PMSEntretienPage() {
         });
 
     if (data) {
-
       setTasks(data);
-
     }
-
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -125,122 +98,131 @@ export default function PMSEntretienPage() {
       title,
       frequency,
       status: "pending",
-      overdue: false,
     };
 
     if (
-      frequency !== "Quotidien"
+      frequency ===
+      "Hebdomadaire"
     ) {
       payload.day_of_week =
-        dayOfWeek;
+        selectedDay;
+    }
+
+    const { error } =
+      await supabase
+        .from("pms_tasks")
+        .insert([payload]);
+
+    if (!error) {
+
+      setTitle("");
+
+      fetchTasks();
+    }
+  }
+
+  async function validateTask() {
+
+    if (
+      !selectedTask ||
+      !employeeName
+    ) {
+      return;
     }
 
     await supabase
       .from("pms_tasks")
-      .insert([payload]);
+      .update({
+        status: "validated",
+        validated_by:
+          employeeName,
+        validated_at:
+          new Date().toISOString(),
+      })
+      .eq("id", selectedTask.id);
 
-    setTitle("");
+    setShowValidationModal(false);
+
+    setSelectedTask(null);
+
+    setEmployeeName("");
 
     fetchTasks();
   }
 
-  async function toggleTask(
-    task: Task
+  async function deleteTask(
+    taskId: string
   ) {
 
-    const validated =
-      task.status ===
-      "validated";
+    if (!authorized) return;
+
+    const confirmDelete =
+      confirm(
+        "Supprimer cette tâche ?"
+      );
+
+    if (!confirmDelete) return;
 
     await supabase
       .from("pms_tasks")
-      .update({
-        status: validated
-          ? "pending"
-          : "validated",
-        validated_at:
-          validated
-            ? null
-            : new Date().toISOString(),
-      })
-      .eq("id", task.id);
+      .delete()
+      .eq("id", taskId);
 
     fetchTasks();
   }
-
-  const todayTasks =
-    useMemo(() => {
-
-      return tasks.filter((task) => {
-
-        if (
-          task.frequency ===
-          "Quotidien"
-        ) {
-          return true;
-        }
-
-        return (
-          task.day_of_week ===
-          todayName
-        );
-      });
-
-    }, [tasks]);
-
-  const validatedTasks =
-    tasks.filter(
-      (t) =>
-        t.status ===
-        "validated"
-    );
-
-  const pendingTasks =
-    tasks.filter(
-      (t) =>
-        t.status !==
-        "validated"
-    );
-
-  const overdueTasks =
-    tasks.filter(
-      (t) =>
-        t.overdue === true
-    );
 
   const filteredTasks =
     useMemo(() => {
 
-      if (
-        activeFilter ===
+      return tasks.filter(
+        (task) => {
+
+          if (
+            task.frequency ===
+            "Quotidien"
+          ) {
+            return true;
+          }
+
+          if (
+            task.frequency ===
+              "Hebdomadaire" &&
+            task.day_of_week ===
+              selectedDay
+          ) {
+            return true;
+          }
+
+          return false;
+        }
+      );
+
+    }, [tasks, selectedDay]);
+
+  const validatedTasks =
+    filteredTasks.filter(
+      (task) =>
+        task.status ===
         "validated"
-      ) {
-        return validatedTasks;
+    );
+
+  const pendingTasks =
+    filteredTasks.filter(
+      (task) =>
+        task.status !==
+        "validated"
+    );
+
+  const frenchDate =
+    new Date().toLocaleDateString(
+      "fr-FR",
+      {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
       }
-
-      if (
-        activeFilter ===
-        "pending"
-      ) {
-        return pendingTasks;
-      }
-
-      if (
-        activeFilter ===
-        "overdue"
-      ) {
-        return overdueTasks;
-      }
-
-      return todayTasks;
-
-    }, [
-      activeFilter,
-      todayTasks,
-      validatedTasks,
-      pendingTasks,
-      overdueTasks,
-    ]);
+    );
 
   return (
 
@@ -250,48 +232,58 @@ export default function PMSEntretienPage() {
 
         {/* HEADER */}
 
-        <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
 
           <div>
 
-            <div className="flex items-center gap-2 text-cyan-400 uppercase tracking-[0.35em] text-xs font-semibold mb-4">
-              <ShieldCheck size={15} />
+            <div className="flex items-center gap-2 text-cyan-400 uppercase tracking-[0.35em] text-xs md:text-sm font-semibold mb-3">
+
+              <ShieldCheck size={16} />
+
               PMS HACCP
+
             </div>
 
             <h1 className="text-5xl md:text-7xl font-black leading-none">
-              PMS Entretien
+
+              PMS
+              <br />
+              Entretien
+
             </h1>
 
-            <p className="text-zinc-400 text-lg mt-5">
+            <p className="text-zinc-400 text-lg md:text-xl mt-4">
+
               Gestion HACCP des tâches cuisine
+
             </p>
 
           </div>
 
+          {/* TODAY BUTTON */}
+
           <button
             onClick={() =>
-              setActiveFilter(
-                activeFilter ===
-                  "today"
-                  ? null
-                  : "today"
+              setShowTodayPanel(
+                !showTodayPanel
               )
             }
             className="
               rounded-[32px]
               border border-pink-500/20
               bg-pink-500/10
-              p-6
-              min-w-[330px]
+              p-6 md:p-8
               text-left
-              hover:scale-[1.02]
+              hover:bg-pink-500/15
               transition
+              cursor-pointer
             "
           >
 
-            <div className="text-pink-300 uppercase tracking-[0.25em] text-xs font-bold mb-4">
+            <div className="text-pink-200 uppercase tracking-[0.3em] text-sm font-bold mb-5">
+
               Aujourd'hui
+
             </div>
 
             <div className="flex items-center gap-4">
@@ -300,24 +292,21 @@ export default function PMSEntretienPage() {
 
               <div>
 
-                <div className="text-4xl font-black">
-                  {new Date().toLocaleDateString(
-                    "fr-FR",
-                    {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    }
-                  )}
-                </div>
+                <h2 className="text-3xl md:text-5xl font-black leading-none capitalize">
 
-                <div className="text-zinc-300 mt-2">
+                  {frenchDate}
+
+                </h2>
+
+                <p className="text-zinc-300 text-lg md:text-2xl mt-5">
+
                   {
                     pendingTasks.length
-                  } tâche(s)
+                  }{" "}
+                  tâche(s)
                   restante(s)
-                </div>
+
+                </p>
 
               </div>
 
@@ -329,9 +318,9 @@ export default function PMSEntretienPage() {
 
         {/* DAYS */}
 
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="flex flex-wrap gap-3">
 
-          {days.map((day) => (
+          {DAYS.map((day) => (
 
             <button
               key={day}
@@ -339,11 +328,11 @@ export default function PMSEntretienPage() {
                 setSelectedDay(day)
               }
               className={`
-                px-5 py-3
+                px-6 py-4
                 rounded-2xl
-                whitespace-nowrap
+                text-lg md:text-xl
+                font-black
                 transition
-                font-semibold
 
                 ${
                   selectedDay === day
@@ -353,13 +342,15 @@ export default function PMSEntretienPage() {
                     `
                     : `
                       bg-white/5
-                      text-zinc-300
                       hover:bg-white/10
+                      text-white
                     `
                 }
               `}
             >
+
               {day}
+
             </button>
 
           ))}
@@ -368,21 +359,21 @@ export default function PMSEntretienPage() {
 
         {/* KPI */}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
           <button
             onClick={() =>
-              setActiveFilter(
-                "today"
+              setShowTodayPanel(
+                true
               )
             }
             className="
-              rounded-3xl
+              rounded-[32px]
               border border-cyan-500/20
               bg-cyan-500/10
               p-6
               text-left
-              hover:scale-[1.02]
+              hover:bg-cyan-500/15
               transition
             "
           >
@@ -391,19 +382,19 @@ export default function PMSEntretienPage() {
 
               <div>
 
-                <p className="text-cyan-300">
+                <p className="text-cyan-300 text-xl">
                   Tâches du jour
                 </p>
 
-                <h2 className="text-6xl font-black mt-4">
+                <h2 className="text-6xl font-black mt-5">
                   {
-                    todayTasks.length
+                    filteredTasks.length
                   }
                 </h2>
 
               </div>
 
-              <CalendarDays className="w-10 h-10 text-cyan-300" />
+              <CalendarDays className="w-12 h-12 text-cyan-300" />
 
             </div>
 
@@ -411,17 +402,17 @@ export default function PMSEntretienPage() {
 
           <button
             onClick={() =>
-              setActiveFilter(
-                "validated"
+              setShowTodayPanel(
+                true
               )
             }
             className="
-              rounded-3xl
+              rounded-[32px]
               border border-green-500/20
               bg-green-500/10
               p-6
               text-left
-              hover:scale-[1.02]
+              hover:bg-green-500/15
               transition
             "
           >
@@ -430,11 +421,11 @@ export default function PMSEntretienPage() {
 
               <div>
 
-                <p className="text-green-300">
+                <p className="text-green-300 text-xl">
                   Validées
                 </p>
 
-                <h2 className="text-6xl font-black mt-4">
+                <h2 className="text-6xl font-black mt-5">
                   {
                     validatedTasks.length
                   }
@@ -442,7 +433,7 @@ export default function PMSEntretienPage() {
 
               </div>
 
-              <CheckCircle2 className="w-10 h-10 text-green-300" />
+              <CheckCircle2 className="w-12 h-12 text-green-300" />
 
             </div>
 
@@ -450,17 +441,17 @@ export default function PMSEntretienPage() {
 
           <button
             onClick={() =>
-              setActiveFilter(
-                "pending"
+              setShowTodayPanel(
+                true
               )
             }
             className="
-              rounded-3xl
+              rounded-[32px]
               border border-orange-500/20
               bg-orange-500/10
               p-6
               text-left
-              hover:scale-[1.02]
+              hover:bg-orange-500/15
               transition
             "
           >
@@ -469,11 +460,11 @@ export default function PMSEntretienPage() {
 
               <div>
 
-                <p className="text-orange-300">
+                <p className="text-orange-300 text-xl">
                   À faire
                 </p>
 
-                <h2 className="text-6xl font-black mt-4">
+                <h2 className="text-6xl font-black mt-5">
                   {
                     pendingTasks.length
                   }
@@ -481,7 +472,7 @@ export default function PMSEntretienPage() {
 
               </div>
 
-              <Clock3 className="w-10 h-10 text-orange-300" />
+              <Clock3 className="w-12 h-12 text-orange-300" />
 
             </div>
 
@@ -489,94 +480,174 @@ export default function PMSEntretienPage() {
 
         </div>
 
-        {/* DASHBOARD */}
+        {/* TASKS PANEL */}
 
-        {activeFilter && (
+        {showTodayPanel && (
 
-          <div className="rounded-[32px] border border-white/10 bg-white/[0.03] p-6">
+          <div className="rounded-[32px] border border-white/10 bg-white/[0.03] p-6 md:p-8">
 
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-start justify-between mb-8">
 
               <div>
 
-                <h2 className="text-4xl font-black">
+                <h2 className="text-4xl md:text-6xl font-black">
 
-                  {activeFilter ===
-                    "today" &&
-                    "Tâches du jour"}
-
-                  {activeFilter ===
-                    "validated" &&
-                    "Tâches validées"}
-
-                  {activeFilter ===
-                    "pending" &&
-                    "Tâches à faire"}
-
-                  {activeFilter ===
-                    "overdue" &&
-                    "Tâches en retard"}
+                  Tâches du jour
 
                 </h2>
 
-                <p className="text-zinc-400 mt-2">
+                <p className="text-zinc-400 text-lg md:text-2xl mt-3">
+
                   {selectedDay}
+
                 </p>
 
               </div>
 
               <button
                 onClick={() =>
-                  setActiveFilter(
-                    null
+                  setShowTodayPanel(
+                    false
                   )
                 }
                 className="
                   w-14 h-14
-                  rounded-2xl
+                  rounded-3xl
                   bg-white/5
+                  hover:bg-white/10
                   flex items-center justify-center
                 "
               >
-                <X />
+
+                <X size={24} />
+
               </button>
 
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
 
               {filteredTasks.map(
                 (task) => (
 
-                <div
-                  key={task.id}
-                  className="
-                    rounded-3xl
-                    bg-black/30
-                    border border-white/5
-                    p-5
-                  "
-                >
+                  <div
+                    key={task.id}
+                    className="
+                      rounded-3xl
+                      bg-black/30
+                      border border-white/5
+                      p-5 md:p-6
+                    "
+                  >
 
-                  <div className="flex items-center justify-between gap-5">
+                    <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
 
-                    <div>
+                      <div className="min-w-0">
 
-                      <h3 className="text-3xl font-black">
-                        {task.title}
-                      </h3>
+                        <h3 className="text-3xl md:text-4xl font-black break-words">
 
-                      <div className="flex flex-wrap gap-2 mt-3">
+                          {task.title}
 
-                        <div className="px-3 py-1 rounded-full bg-white/5 text-sm">
-                          {task.frequency}
+                        </h3>
+
+                        <div className="flex flex-wrap gap-3 mt-4">
+
+                          <div className="px-4 py-2 rounded-full bg-white/5 text-zinc-300 text-sm md:text-base">
+
+                            {
+                              task.frequency
+                            }
+
+                          </div>
+
+                          {task.day_of_week && (
+
+                            <div className="px-4 py-2 rounded-full bg-white/5 text-zinc-300 text-sm md:text-base">
+
+                              {
+                                task.day_of_week
+                              }
+
+                            </div>
+
+                          )}
+
                         </div>
 
-                        {task.day_of_week && (
+                      </div>
 
-                          <div className="px-3 py-1 rounded-full bg-white/5 text-sm">
-                            {task.day_of_week}
-                          </div>
+                      <div className="flex items-center gap-4 flex-wrap">
+
+                        {task.status ===
+                        "validated" ? (
+
+                          <button
+                            className="
+                              px-5 py-3
+                              rounded-2xl
+                              bg-green-500/20
+                              text-green-300
+                              font-black
+                              text-lg
+                            "
+                          >
+
+                            VALIDÉE
+
+                          </button>
+
+                        ) : (
+
+                          <button
+                            onClick={() => {
+
+                              setSelectedTask(
+                                task
+                              );
+
+                              setShowValidationModal(
+                                true
+                              );
+                            }}
+                            className="
+                              px-5 py-3
+                              rounded-2xl
+                              bg-orange-500/20
+                              hover:bg-orange-500/30
+                              text-orange-300
+                              font-black
+                              text-lg
+                            "
+                          >
+
+                            À FAIRE
+
+                          </button>
+
+                        )}
+
+                        {authorized && (
+
+                          <button
+                            onClick={() =>
+                              deleteTask(
+                                task.id
+                              )
+                            }
+                            className="
+                              w-12 h-12
+                              rounded-2xl
+                              bg-red-500/10
+                              hover:bg-red-500/20
+                              text-red-400
+                              flex items-center justify-center
+                              transition
+                            "
+                          >
+
+                            <Trash2 size={20} />
+
+                          </button>
 
                         )}
 
@@ -584,45 +655,10 @@ export default function PMSEntretienPage() {
 
                     </div>
 
-                    <button
-                      onClick={() =>
-                        toggleTask(
-                          task
-                        )
-                      }
-                      className={`
-                        px-6 py-3
-                        rounded-2xl
-                        font-black
-                        transition
-
-                        ${
-                          task.status ===
-                          "validated"
-                            ? `
-                              bg-green-500/20
-                              text-green-300
-                            `
-                            : `
-                              bg-orange-500/20
-                              text-orange-300
-                            `
-                        }
-                      `}
-                    >
-
-                      {task.status ===
-                      "validated"
-                        ? "VALIDÉE"
-                        : "À FAIRE"}
-
-                    </button>
-
                   </div>
 
-                </div>
-
-              ))}
+                )
+              )}
 
             </div>
 
@@ -632,24 +668,32 @@ export default function PMSEntretienPage() {
 
         {/* ADD TASK */}
 
-        <div className="rounded-[32px] border border-white/10 bg-white/[0.03] p-6">
+        <div className="rounded-[32px] border border-white/10 bg-white/[0.03] p-6 md:p-8">
 
-          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
+          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
 
-            <div className="flex items-center gap-5">
+            <div className="flex items-center gap-5 min-w-0">
 
-              <div className="w-16 h-16 rounded-3xl bg-cyan-500/20 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-3xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+
                 <Plus className="text-cyan-300 w-8 h-8" />
+
               </div>
 
-              <div>
+              <div className="min-w-0">
 
-                <h2 className="text-5xl font-black leading-none">
-                  Ajouter une tâche PMS
+                <h2 className="text-3xl md:text-5xl font-black leading-[0.95] break-words">
+
+                  Ajouter une
+                  <br />
+                  tâche PMS
+
                 </h2>
 
-                <p className="text-zinc-400 mt-3">
+                <p className="text-zinc-400 text-base md:text-xl mt-3">
+
                   Accès administrateur sécurisé
+
                 </p>
 
               </div>
@@ -658,24 +702,26 @@ export default function PMSEntretienPage() {
 
             {!authorized ? (
 
-              <div className="flex gap-3">
+              <div className="flex flex-col md:flex-row gap-4 w-full xl:w-auto">
 
                 <input
                   type="password"
+                  placeholder="Code PIN"
                   value={pin}
                   onChange={(e) =>
                     setPin(
                       e.target.value
                     )
                   }
-                  placeholder="Code PIN"
                   className="
                     h-16
-                    rounded-2xl
+                    w-full md:w-[260px]
+                    rounded-3xl
                     bg-black/30
                     border border-white/10
-                    px-5
-                    min-w-[280px]
+                    px-6
+                    text-lg
+                    outline-none
                   "
                 />
 
@@ -700,16 +746,19 @@ export default function PMSEntretienPage() {
                   }}
                   className="
                     h-16
-                    px-10
-                    rounded-2xl
+                    px-8
+                    rounded-3xl
                     bg-cyan-400
                     hover:bg-cyan-300
                     transition
                     text-black
+                    text-lg
                     font-black
                   "
                 >
+
                   Déverrouiller
+
                 </button>
 
               </div>
@@ -724,16 +773,21 @@ export default function PMSEntretienPage() {
                 }
                 className="
                   h-16
-                  px-10
-                  rounded-2xl
+                  px-8
+                  rounded-3xl
                   bg-cyan-400
                   hover:bg-cyan-300
                   transition
                   text-black
+                  text-lg
                   font-black
                 "
               >
-                Nouvelle tâche
+
+                {showAddPanel
+                  ? "Fermer"
+                  : "Nouvelle tâche"}
+
               </button>
 
             )}
@@ -742,7 +796,7 @@ export default function PMSEntretienPage() {
 
           {showAddPanel && (
 
-            <div className="border-t border-white/10 mt-6 pt-6">
+            <div className="border-t border-white/10 mt-8 pt-8">
 
               <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
 
@@ -755,11 +809,13 @@ export default function PMSEntretienPage() {
                   }
                   placeholder="Nom tâche"
                   className="
-                    h-14
-                    rounded-2xl
+                    h-16
+                    rounded-3xl
                     bg-black/30
                     border border-white/10
-                    px-5
+                    px-6
+                    text-lg
+                    outline-none
                   "
                 />
 
@@ -771,13 +827,15 @@ export default function PMSEntretienPage() {
                     )
                   }
                   className="
-                    h-14
-                    rounded-2xl
+                    h-16
+                    rounded-3xl
                     bg-black/30
                     border border-white/10
-                    px-5
+                    px-6
+                    text-lg
                   "
                 >
+
                   <option>
                     Quotidien
                   </option>
@@ -792,52 +850,22 @@ export default function PMSEntretienPage() {
 
                 </select>
 
-                {frequency !==
-                  "Quotidien" && (
-
-                  <select
-                    value={dayOfWeek}
-                    onChange={(e) =>
-                      setDayOfWeek(
-                        e.target.value
-                      )
-                    }
-                    className="
-                      h-14
-                      rounded-2xl
-                      bg-black/30
-                      border border-white/10
-                      px-5
-                    "
-                  >
-
-                    {days.map((day) => (
-
-                      <option
-                        key={day}
-                      >
-                        {day}
-                      </option>
-
-                    ))}
-
-                  </select>
-
-                )}
-
                 <button
                   onClick={addTask}
                   className="
-                    h-14
-                    rounded-2xl
+                    h-16
+                    rounded-3xl
                     bg-cyan-400
                     hover:bg-cyan-300
                     transition
                     text-black
+                    text-lg
                     font-black
                   "
                 >
+
                   Ajouter
+
                 </button>
 
               </div>
@@ -849,6 +877,90 @@ export default function PMSEntretienPage() {
         </div>
 
       </div>
+
+      {/* MODAL */}
+
+      {showValidationModal &&
+        selectedTask && (
+
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+
+          <div className="w-full max-w-md rounded-[32px] border border-white/10 bg-[#071226] p-8">
+
+            <div className="flex items-center justify-between mb-6">
+
+              <div>
+
+                <h2 className="text-3xl font-black">
+
+                  Validation tâche
+
+                </h2>
+
+                <p className="text-zinc-400 mt-2">
+
+                  {selectedTask.title}
+
+                </p>
+
+              </div>
+
+              <button
+                onClick={() =>
+                  setShowValidationModal(false)
+                }
+                className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center"
+              >
+
+                <X />
+
+              </button>
+
+            </div>
+
+            <div className="space-y-4">
+
+              <input
+                value={employeeName}
+                onChange={(e) =>
+                  setEmployeeName(
+                    e.target.value
+                  )
+                }
+                placeholder="Nom employé"
+                className="
+                  w-full h-14
+                  rounded-2xl
+                  bg-black/30
+                  border border-white/10
+                  px-5
+                "
+              />
+
+              <button
+                onClick={validateTask}
+                className="
+                  w-full h-14
+                  rounded-2xl
+                  bg-cyan-400
+                  hover:bg-cyan-300
+                  transition
+                  text-black
+                  font-black
+                "
+              >
+
+                Valider la tâche
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
 
     </div>
   );
