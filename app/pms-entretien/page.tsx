@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 
 import {
   ShieldCheck,
@@ -10,9 +10,16 @@ import {
   Plus,
   X,
   Trash2,
+  Lock,
+  Unlock,
+  ChevronRight,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+
+// ─────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────
 
 type Task = {
   id: string;
@@ -23,6 +30,10 @@ type Task = {
   validated_by?: string | null;
   validated_at?: string | null;
 };
+
+// ─────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────
 
 const ADMIN_PIN = "2405";
 
@@ -36,932 +47,630 @@ const DAYS = [
   "Dimanche",
 ];
 
+const MONTHS_FR = [
+  "Janvier","Février","Mars","Avril","Mai","Juin",
+  "Juillet","Août","Septembre","Octobre","Novembre","Décembre",
+];
+
+// ─────────────────────────────────────────────
+// MAIN PAGE
+// ─────────────────────────────────────────────
+
 export default function PMSEntretienPage() {
 
-  const [tasks, setTasks] =
-    useState<Task[]>([]);
+  // ── State ──────────────────────────────────
 
-  const [authorized, setAuthorized] =
-    useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [authorized, setAuthorized] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState(false);
 
-  const [pin, setPin] =
-    useState("");
+  const [showAddPanel, setShowAddPanel] = useState(false);
+  const [title, setTitle] = useState("");
+  const [frequency, setFrequency] = useState("Quotidien");
+  const [selectedDay, setSelectedDay] = useState("Lundi");
 
-  const [showAddPanel, setShowAddPanel] =
-    useState(false);
+  const [showTodayPanel, setShowTodayPanel] = useState(true);
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [employeeName, setEmployeeName] = useState("");
 
-  const [title, setTitle] =
-    useState("");
+  // ── Init selected day to today ─────────────
 
-  const [frequency, setFrequency] =
-    useState("Quotidien");
+  useEffect(() => {
+    const dayIndex = new Date().getDay();
+    // getDay() : 0=Sun, 1=Mon...
+    const mapped = [6, 0, 1, 2, 3, 4, 5][dayIndex]; // convert to Mon=0
+    setSelectedDay(DAYS[mapped]);
+  }, []);
 
-  const [selectedDay, setSelectedDay] =
-    useState("Lundi");
+  // ── Fetch ──────────────────────────────────
 
-  const [showTodayPanel, setShowTodayPanel] =
-    useState(true);
-
-  const [showValidationModal, setShowValidationModal] =
-    useState(false);
-
-  const [selectedTask, setSelectedTask] =
-    useState<Task | null>(null);
-
-  const [employeeName, setEmployeeName] =
-    useState("");
-
-  async function fetchTasks() {
-
-    const { data } =
-      await supabase
-        .from("pms_tasks")
-        .select("*")
-        .order("created_at", {
-          ascending: false,
-        });
-
-    if (data) {
-      setTasks(data);
-    }
-  }
+  const fetchTasks = useCallback(async () => {
+    const { data } = await supabase
+      .from("pms_tasks")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data) setTasks(data);
+  }, []);
 
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [fetchTasks]);
+
+  // ── Add task ───────────────────────────────
 
   async function addTask() {
+    if (!title.trim()) return;
 
-    if (!title) return;
-
-    const payload: any = {
-      title,
+    const payload: Record<string, unknown> = {
+      title: title.trim(),
       frequency,
       status: "pending",
     };
 
-    if (
-      frequency ===
-      "Hebdomadaire"
-    ) {
-      payload.day_of_week =
-        selectedDay;
+    if (frequency === "Hebdomadaire") {
+      payload.day_of_week = selectedDay;
     }
 
-    const { error } =
-      await supabase
-        .from("pms_tasks")
-        .insert([payload]);
+    const { error } = await supabase
+      .from("pms_tasks")
+      .insert([payload]);
 
     if (!error) {
-
       setTitle("");
-
       fetchTasks();
     }
   }
 
-  async function validateTask() {
+  // ── Validate task ──────────────────────────
 
-    if (
-      !selectedTask ||
-      !employeeName
-    ) {
-      return;
-    }
+  async function validateTask() {
+    if (!selectedTask || !employeeName.trim()) return;
 
     await supabase
       .from("pms_tasks")
       .update({
         status: "validated",
-        validated_by:
-          employeeName,
-        validated_at:
-          new Date().toISOString(),
+        validated_by: employeeName.trim(),
+        validated_at: new Date().toISOString(),
       })
       .eq("id", selectedTask.id);
 
     setShowValidationModal(false);
-
     setSelectedTask(null);
-
     setEmployeeName("");
-
     fetchTasks();
   }
 
-  async function deleteTask(
-    taskId: string
-  ) {
+  // ── Delete task ────────────────────────────
 
+  async function deleteTask(taskId: string) {
     if (!authorized) return;
-
-    const confirmDelete =
-      confirm(
-        "Supprimer cette tâche ?"
-      );
-
-    if (!confirmDelete) return;
-
-    await supabase
-      .from("pms_tasks")
-      .delete()
-      .eq("id", taskId);
-
+    if (!confirm("Supprimer cette tâche ?")) return;
+    await supabase.from("pms_tasks").delete().eq("id", taskId);
     fetchTasks();
   }
 
-  const filteredTasks =
-    useMemo(() => {
+  // ── PIN check ──────────────────────────────
 
-      return tasks.filter(
-        (task) => {
+  function checkPin() {
+    if (pin === ADMIN_PIN) {
+      setAuthorized(true);
+      setPinError(false);
+      setPin("");
+    } else {
+      setPinError(true);
+      setTimeout(() => setPinError(false), 2000);
+    }
+  }
 
-          if (
-            task.frequency ===
-            "Quotidien"
-          ) {
-            return true;
-          }
+  // ── Filtered tasks ─────────────────────────
 
-          if (
-            task.frequency ===
-              "Hebdomadaire" &&
-            task.day_of_week ===
-              selectedDay
-          ) {
-            return true;
-          }
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      if (task.frequency === "Quotidien") return true;
+      if (task.frequency === "Hebdomadaire" && task.day_of_week === selectedDay) return true;
+      return false;
+    });
+  }, [tasks, selectedDay]);
 
-          return false;
-        }
-      );
+  const validatedTasks = filteredTasks.filter((t) => t.status === "validated");
+  const pendingTasks = filteredTasks.filter((t) => t.status !== "validated");
 
-    }, [tasks, selectedDay]);
+  // ── Date ───────────────────────────────────
 
-  const validatedTasks =
-    filteredTasks.filter(
-      (task) =>
-        task.status ===
-        "validated"
-    );
+  const now = new Date();
+  const dayNames = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
+  const todayLabel = `${dayNames[now.getDay()]} ${now.getDate()} ${MONTHS_FR[now.getMonth()]} ${now.getFullYear()}`;
 
-  const pendingTasks =
-    filteredTasks.filter(
-      (task) =>
-        task.status !==
-        "validated"
-    );
-
-  const frenchDate =
-    new Date().toLocaleDateString(
-      "fr-FR",
-      {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }
-    );
+  // ─────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────
 
   return (
+    <div className="min-h-screen bg-[#020817] text-white p-5">
+      <div className="mx-auto max-w-[1450px] rounded-[32px] border border-white/5 bg-[#030b1d] p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
 
-    <div className="min-h-screen bg-[#020617] text-white px-4 md:px-8 py-8">
+        {/* ── HEADER ─────────────────────────────── */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
 
-      <div className="max-w-7xl mx-auto space-y-8">
-
-        {/* HEADER */}
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
-
+          {/* Title */}
           <div>
-
-            <div className="flex items-center gap-2 text-cyan-400 uppercase tracking-[0.35em] text-xs md:text-sm font-semibold mb-3">
-
-              <ShieldCheck size={16} />
-
+            <div className="flex items-center gap-2 text-cyan-400 uppercase tracking-[0.32em] text-xs font-semibold mb-3">
+              <ShieldCheck size={14} />
               PMS HACCP
-
             </div>
-
-            <h1 className="text-5xl md:text-7xl font-black leading-none">
-
-              PMS
-              <br />
-              Entretien
-
+            <h1 className="text-[52px] font-black leading-[0.95] tracking-[-0.04em]">
+              PMS Entretien
             </h1>
-
-            <p className="text-zinc-400 text-lg md:text-xl mt-4">
-
+            <p className="text-white/40 text-base mt-2">
               Gestion HACCP des tâches cuisine
-
             </p>
-
           </div>
 
-          {/* TODAY BUTTON */}
-
+          {/* Today card */}
           <button
-            onClick={() =>
-              setShowTodayPanel(
-                !showTodayPanel
-              )
-            }
+            onClick={() => setShowTodayPanel(!showTodayPanel)}
             className="
-              rounded-[32px]
+              rounded-[24px]
               border border-pink-500/20
-              bg-pink-500/10
-              p-6 md:p-8
+              bg-gradient-to-br from-pink-500/15 to-purple-900/10
+              p-5
               text-left
-              hover:bg-pink-500/15
-              transition
-              cursor-pointer
+              hover:border-pink-500/40
+              hover:scale-[1.01]
+              transition-all
             "
           >
-
-            <div className="text-pink-200 uppercase tracking-[0.3em] text-sm font-bold mb-5">
-
-              Aujourd'hui
-
-            </div>
-
-            <div className="flex items-center gap-4">
-
-              <div className="w-5 h-5 rounded-full bg-red-400" />
-
+            <p className="text-pink-300 uppercase tracking-[0.28em] text-[10px] font-black mb-3">
+              AUJOURD'HUI
+            </p>
+            <div className="flex items-center justify-between gap-4">
               <div>
-
-                <h2 className="text-3xl md:text-5xl font-black leading-none capitalize">
-
-                  {frenchDate}
-
+                <h2 className="text-[22px] font-black leading-tight capitalize text-white">
+                  {todayLabel}
                 </h2>
-
-                <p className="text-zinc-300 text-lg md:text-2xl mt-5">
-
-                  {
-                    pendingTasks.length
-                  }{" "}
-                  tâche(s)
-                  restante(s)
-
+                <p className="text-white/50 text-sm mt-1">
+                  {pendingTasks.length} tâche(s) restante(s)
                 </p>
-
               </div>
-
+              <div className="flex items-center gap-2">
+                {pendingTasks.length > 0 && (
+                  <div className="w-3 h-3 rounded-full bg-red-400 animate-pulse" />
+                )}
+                <ChevronRight size={18} className="text-white/30" />
+              </div>
             </div>
-
           </button>
-
         </div>
 
-        {/* DAYS */}
-
-        <div className="flex flex-wrap gap-3">
-
+        {/* ── DAY SELECTOR ───────────────────────── */}
+        <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
-
             <button
               key={day}
-              onClick={() =>
-                setSelectedDay(day)
-              }
+              onClick={() => setSelectedDay(day)}
               className={`
-                px-6 py-4
+                px-5 py-2.5
                 rounded-2xl
-                text-lg md:text-xl
-                font-black
-                transition
-
+                text-sm font-black
+                transition-all
                 ${
                   selectedDay === day
-                    ? `
-                      bg-cyan-400
-                      text-black
-                    `
-                    : `
-                      bg-white/5
-                      hover:bg-white/10
-                      text-white
-                    `
+                    ? "bg-cyan-400 text-black shadow-[0_4px_16px_rgba(6,182,212,0.3)]"
+                    : "bg-white/5 hover:bg-white/10 text-white/70 border border-white/[0.06]"
                 }
               `}
             >
-
               {day}
-
             </button>
-
           ))}
-
         </div>
 
-        {/* KPI */}
+        {/* ── KPI CARDS ──────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
+          {/* Total */}
           <button
-            onClick={() =>
-              setShowTodayPanel(
-                true
-              )
-            }
+            onClick={() => setShowTodayPanel(true)}
             className="
-              rounded-[32px]
+              group rounded-[24px]
               border border-cyan-500/20
-              bg-cyan-500/10
-              p-6
-              text-left
-              hover:bg-cyan-500/15
-              transition
+              bg-gradient-to-br from-cyan-500/15 to-blue-900/10
+              p-5 text-left
+              hover:border-cyan-500/40
+              hover:scale-[1.01]
+              transition-all
             "
           >
-
-            <div className="flex items-start justify-between">
-
+            <div className="flex items-start justify-between gap-4">
               <div>
-
-                <p className="text-cyan-300 text-xl">
-                  Tâches du jour
-                </p>
-
-                <h2 className="text-6xl font-black mt-5">
-                  {
-                    filteredTasks.length
-                  }
+                <p className="text-cyan-300 text-sm font-semibold">Tâches du jour</p>
+                <h2 className="text-[48px] font-black leading-none mt-3 text-white">
+                  {filteredTasks.length}
                 </h2>
-
               </div>
-
-              <CalendarDays className="w-12 h-12 text-cyan-300" />
-
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20">
+                <CalendarDays className="w-5 h-5 text-cyan-300" />
+              </div>
             </div>
-
+            <div className="mt-3 flex items-center gap-1 text-[12px] font-semibold text-cyan-300 group-hover:gap-2 transition-all">
+              Voir les tâches <ChevronRight size={12} />
+            </div>
           </button>
 
+          {/* Validated */}
           <button
-            onClick={() =>
-              setShowTodayPanel(
-                true
-              )
-            }
+            onClick={() => setShowTodayPanel(true)}
             className="
-              rounded-[32px]
+              group rounded-[24px]
               border border-green-500/20
-              bg-green-500/10
-              p-6
-              text-left
-              hover:bg-green-500/15
-              transition
+              bg-gradient-to-br from-green-500/15 to-green-900/10
+              p-5 text-left
+              hover:border-green-500/40
+              hover:scale-[1.01]
+              transition-all
             "
           >
-
-            <div className="flex items-start justify-between">
-
+            <div className="flex items-start justify-between gap-4">
               <div>
-
-                <p className="text-green-300 text-xl">
-                  Validées
-                </p>
-
-                <h2 className="text-6xl font-black mt-5">
-                  {
-                    validatedTasks.length
-                  }
+                <p className="text-green-300 text-sm font-semibold">Validées</p>
+                <h2 className="text-[48px] font-black leading-none mt-3 text-white">
+                  {validatedTasks.length}
                 </h2>
-
               </div>
-
-              <CheckCircle2 className="w-12 h-12 text-green-300" />
-
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-green-400/20 bg-green-500/20">
+                <CheckCircle2 className="w-5 h-5 text-green-300" />
+              </div>
             </div>
-
+            <div className="mt-3 flex items-center gap-1 text-[12px] font-semibold text-green-300 group-hover:gap-2 transition-all">
+              Voir le détail <ChevronRight size={12} />
+            </div>
           </button>
 
+          {/* Pending */}
           <button
-            onClick={() =>
-              setShowTodayPanel(
-                true
-              )
-            }
-            className="
-              rounded-[32px]
-              border border-orange-500/20
-              bg-orange-500/10
-              p-6
-              text-left
-              hover:bg-orange-500/15
-              transition
-            "
+            onClick={() => setShowTodayPanel(true)}
+            className={`
+              group rounded-[24px]
+              border p-5 text-left
+              hover:scale-[1.01]
+              transition-all
+              ${
+                pendingTasks.length > 0
+                  ? "border-orange-500/40 bg-gradient-to-br from-orange-500/20 to-orange-900/10 hover:border-orange-500/60"
+                  : "border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-orange-900/5 hover:border-orange-500/30"
+              }
+            `}
           >
-
-            <div className="flex items-start justify-between">
-
+            <div className="flex items-start justify-between gap-4">
               <div>
-
-                <p className="text-orange-300 text-xl">
-                  À faire
-                </p>
-
-                <h2 className="text-6xl font-black mt-5">
-                  {
-                    pendingTasks.length
-                  }
+                <p className="text-orange-300 text-sm font-semibold">À faire</p>
+                <h2 className="text-[48px] font-black leading-none mt-3 text-white">
+                  {pendingTasks.length}
                 </h2>
-
               </div>
-
-              <Clock3 className="w-12 h-12 text-orange-300" />
-
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-500/20">
+                <Clock3 className={`w-5 h-5 text-orange-300 ${pendingTasks.length > 0 ? "animate-pulse" : ""}`} />
+              </div>
             </div>
-
+            <div className="mt-3 flex items-center gap-1 text-[12px] font-semibold text-orange-300 group-hover:gap-2 transition-all">
+              Voir les tâches <ChevronRight size={12} />
+            </div>
           </button>
-
         </div>
 
-        {/* TASKS PANEL */}
-
+        {/* ── TASKS PANEL ────────────────────────── */}
         {showTodayPanel && (
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 md:p-6">
 
-          <div className="rounded-[32px] border border-white/10 bg-white/[0.03] p-6 md:p-8">
-
-            <div className="flex items-start justify-between mb-8">
-
+            {/* Panel header */}
+            <div className="flex items-center justify-between mb-5">
               <div>
-
-                <h2 className="text-4xl md:text-6xl font-black">
-
-                  Tâches du jour
-
-                </h2>
-
-                <p className="text-zinc-400 text-lg md:text-2xl mt-3">
-
-                  {selectedDay}
-
-                </p>
-
+                <h2 className="text-2xl font-black text-white">Tâches du jour</h2>
+                <p className="text-white/40 text-sm mt-0.5">{selectedDay}</p>
               </div>
-
               <button
-                onClick={() =>
-                  setShowTodayPanel(
-                    false
-                  )
-                }
-                className="
-                  w-14 h-14
-                  rounded-3xl
-                  bg-white/5
-                  hover:bg-white/10
-                  flex items-center justify-center
-                "
+                onClick={() => setShowTodayPanel(false)}
+                className="w-10 h-10 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition"
               >
-
-                <X size={24} />
-
+                <X size={16} />
               </button>
-
             </div>
 
-            <div className="space-y-5">
-
-              {filteredTasks.map(
-                (task) => (
-
+            {/* Tasks list */}
+            {filteredTasks.length === 0 ? (
+              <div className="text-center py-12 text-white/30">
+                <CalendarDays size={32} className="mx-auto mb-3 opacity-40" />
+                <p className="text-sm">Aucune tâche pour ce jour</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="
-                      rounded-3xl
-                      bg-black/30
-                      border border-white/5
-                      p-5 md:p-6
-                    "
+                    className={`
+                      rounded-[20px]
+                      border
+                      p-4
+                      transition-all
+                      ${
+                        task.status === "validated"
+                          ? "border-green-500/20 bg-green-500/[0.05]"
+                          : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]"
+                      }
+                    `}
                   >
+                    <div className="flex items-center justify-between gap-4">
 
-                    <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
-
-                      <div className="min-w-0">
-
-                        <h3 className="text-3xl md:text-4xl font-black break-words">
-
+                      {/* Task info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`
+                          text-base font-black break-words
+                          ${task.status === "validated" ? "text-white/50 line-through" : "text-white"}
+                        `}>
                           {task.title}
-
                         </h3>
 
-                        <div className="flex flex-wrap gap-3 mt-4">
-
-                          <div className="px-4 py-2 rounded-full bg-white/5 text-zinc-300 text-sm md:text-base">
-
-                            {
-                              task.frequency
-                            }
-
-                          </div>
-
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <span className="px-2.5 py-1 rounded-full bg-white/[0.05] text-white/40 text-xs font-medium border border-white/[0.06]">
+                            {task.frequency}
+                          </span>
                           {task.day_of_week && (
-
-                            <div className="px-4 py-2 rounded-full bg-white/5 text-zinc-300 text-sm md:text-base">
-
-                              {
-                                task.day_of_week
-                              }
-
-                            </div>
-
+                            <span className="px-2.5 py-1 rounded-full bg-white/[0.05] text-white/40 text-xs font-medium border border-white/[0.06]">
+                              {task.day_of_week}
+                            </span>
                           )}
-
+                          {task.status === "validated" && task.validated_by && (
+                            <span className="px-2.5 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-medium border border-green-500/20">
+                              ✓ {task.validated_by}
+                            </span>
+                          )}
                         </div>
-
                       </div>
 
-                      <div className="flex items-center gap-4 flex-wrap">
-
-                        {task.status ===
-                        "validated" ? (
-
-                          <button
-                            className="
-                              px-5 py-3
-                              rounded-2xl
-                              bg-green-500/20
-                              text-green-300
-                              font-black
-                              text-lg
-                            "
-                          >
-
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {task.status === "validated" ? (
+                          <span className="px-4 py-2 rounded-xl bg-green-500/15 border border-green-500/30 text-green-300 font-black text-xs">
                             VALIDÉE
-
-                          </button>
-
+                          </span>
                         ) : (
-
                           <button
                             onClick={() => {
-
-                              setSelectedTask(
-                                task
-                              );
-
-                              setShowValidationModal(
-                                true
-                              );
+                              setSelectedTask(task);
+                              setShowValidationModal(true);
                             }}
-                            className="
-                              px-5 py-3
-                              rounded-2xl
-                              bg-orange-500/20
-                              hover:bg-orange-500/30
-                              text-orange-300
-                              font-black
-                              text-lg
-                            "
+                            className="px-4 py-2 rounded-xl bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/30 text-orange-300 font-black text-xs transition"
                           >
-
                             À FAIRE
-
                           </button>
-
                         )}
 
                         {authorized && (
-
                           <button
-                            onClick={() =>
-                              deleteTask(
-                                task.id
-                              )
-                            }
-                            className="
-                              w-12 h-12
-                              rounded-2xl
-                              bg-red-500/10
-                              hover:bg-red-500/20
-                              text-red-400
-                              flex items-center justify-center
-                              transition
-                            "
+                            onClick={() => deleteTask(task.id)}
+                            className="w-9 h-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition"
                           >
-
-                            <Trash2 size={20} />
-
+                            <Trash2 size={14} />
                           </button>
-
                         )}
-
                       </div>
-
                     </div>
-
                   </div>
-
-                )
-              )}
-
-            </div>
-
+                ))}
+              </div>
+            )}
           </div>
-
         )}
 
-        {/* ADD TASK */}
+        {/* ── ADD TASK ───────────────────────────── */}
+        <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 md:p-6">
 
-        <div className="rounded-[32px] border border-white/10 bg-white/[0.03] p-6 md:p-8">
-
-          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
-
-            <div className="flex items-center gap-5 min-w-0">
-
-              <div className="w-16 h-16 rounded-3xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-
-                <Plus className="text-cyan-300 w-8 h-8" />
-
+          {/* Section header */}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border border-cyan-500/20 flex items-center justify-center">
+                <Plus className="text-cyan-300 w-4 h-4" />
               </div>
-
-              <div className="min-w-0">
-
-                <h2 className="text-3xl md:text-5xl font-black leading-[0.95] break-words">
-
-                  Ajouter une
-                  <br />
-                  tâche PMS
-
-                </h2>
-
-                <p className="text-zinc-400 text-base md:text-xl mt-3">
-
-                  Accès administrateur sécurisé
-
-                </p>
-
+              <div>
+                <h2 className="text-lg font-black text-white">Ajouter une tâche PMS</h2>
+                <p className="text-white/40 text-xs mt-0.5">Accès administrateur sécurisé</p>
               </div>
-
             </div>
 
+            {/* PIN or unlock button */}
             {!authorized ? (
-
-              <div className="flex flex-col md:flex-row gap-4 w-full xl:w-auto">
-
+              <div className="flex gap-3">
                 <input
                   type="password"
                   placeholder="Code PIN"
                   value={pin}
-                  onChange={(e) =>
-                    setPin(
-                      e.target.value
-                    )
-                  }
-                  className="
-                    h-16
-                    w-full md:w-[260px]
-                    rounded-3xl
-                    bg-black/30
-                    border border-white/10
-                    px-6
-                    text-lg
-                    outline-none
-                  "
-                />
-
-                <button
-                  onClick={() => {
-
-                    if (
-                      pin ===
-                      ADMIN_PIN
-                    ) {
-
-                      setAuthorized(
-                        true
-                      );
-
-                    } else {
-
-                      alert(
-                        "PIN incorrect"
-                      );
-                    }
-                  }}
-                  className="
-                    h-16
-                    px-8
-                    rounded-3xl
-                    bg-cyan-400
-                    hover:bg-cyan-300
+                  onChange={(e) => setPin(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && checkPin()}
+                  className={`
+                    h-11 w-36
+                    rounded-2xl
+                    bg-white/[0.05]
+                    border px-4
+                    text-sm outline-none
+                    text-white
                     transition
-                    text-black
-                    text-lg
-                    font-black
-                  "
+                    ${pinError ? "border-red-500/60 bg-red-500/10" : "border-white/10"}
+                  `}
+                />
+                <button
+                  onClick={checkPin}
+                  className="h-11 px-5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2"
                 >
-
-                  Déverrouiller
-
+                  <Lock size={14} />
+                  {pinError ? "PIN incorrect" : "Déverrouiller"}
                 </button>
-
               </div>
-
             ) : (
-
-              <button
-                onClick={() =>
-                  setShowAddPanel(
-                    !showAddPanel
-                  )
-                }
-                className="
-                  h-16
-                  px-8
-                  rounded-3xl
-                  bg-cyan-400
-                  hover:bg-cyan-300
-                  transition
-                  text-black
-                  text-lg
-                  font-black
-                "
-              >
-
-                {showAddPanel
-                  ? "Fermer"
-                  : "Nouvelle tâche"}
-
-              </button>
-
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1.5 text-xs text-green-400 font-bold">
+                  <Unlock size={12} /> Admin connecté
+                </span>
+                <button
+                  onClick={() => setShowAddPanel(!showAddPanel)}
+                  className="h-11 px-5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black"
+                >
+                  {showAddPanel ? "Fermer" : "Nouvelle tâche"}
+                </button>
+              </div>
             )}
-
           </div>
 
-          {showAddPanel && (
-
-            <div className="border-t border-white/10 mt-8 pt-8">
-
-              <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+          {/* Add form */}
+          {showAddPanel && authorized && (
+            <div className="border-t border-white/[0.06] mt-5 pt-5">
+              <div className="grid grid-cols-1 xl:grid-cols-4 gap-3">
 
                 <input
                   value={title}
-                  onChange={(e) =>
-                    setTitle(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Nom tâche"
+                  onChange={(e) => setTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addTask()}
+                  placeholder="Nom de la tâche"
                   className="
-                    h-16
-                    rounded-3xl
-                    bg-black/30
+                    h-12 col-span-2
+                    rounded-2xl
+                    bg-white/[0.05]
                     border border-white/10
-                    px-6
-                    text-lg
+                    px-4
+                    text-sm text-white
                     outline-none
                   "
                 />
 
                 <select
                   value={frequency}
-                  onChange={(e) =>
-                    setFrequency(
-                      e.target.value
-                    )
-                  }
+                  onChange={(e) => setFrequency(e.target.value)}
                   className="
-                    h-16
-                    rounded-3xl
-                    bg-black/30
+                    h-12
+                    rounded-2xl
+                    bg-white/[0.05]
                     border border-white/10
-                    px-6
-                    text-lg
+                    px-4
+                    text-sm text-white
+                    outline-none
                   "
                 >
-
-                  <option>
-                    Quotidien
-                  </option>
-
-                  <option>
-                    Hebdomadaire
-                  </option>
-
-                  <option>
-                    Mensuel
-                  </option>
-
+                  <option>Quotidien</option>
+                  <option>Hebdomadaire</option>
+                  <option>Mensuel</option>
                 </select>
+
+                {frequency === "Hebdomadaire" && (
+                  <select
+                    value={selectedDay}
+                    onChange={(e) => setSelectedDay(e.target.value)}
+                    className="
+                      h-12
+                      rounded-2xl
+                      bg-white/[0.05]
+                      border border-white/10
+                      px-4
+                      text-sm text-white
+                      outline-none
+                    "
+                  >
+                    {DAYS.map((d) => (
+                      <option key={d}>{d}</option>
+                    ))}
+                  </select>
+                )}
 
                 <button
                   onClick={addTask}
+                  disabled={!title.trim()}
                   className="
-                    h-16
-                    rounded-3xl
+                    h-12
+                    rounded-2xl
                     bg-cyan-400
                     hover:bg-cyan-300
+                    disabled:opacity-40
                     transition
                     text-black
-                    text-lg
+                    text-sm
                     font-black
+                    flex items-center justify-center gap-2
                   "
                 >
-
+                  <Plus size={16} />
                   Ajouter
-
                 </button>
-
               </div>
-
             </div>
-
           )}
-
         </div>
 
       </div>
 
-      {/* MODAL */}
-
-      {showValidationModal &&
-        selectedTask && (
-
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-
-          <div className="w-full max-w-md rounded-[32px] border border-white/10 bg-[#071226] p-8">
-
-            <div className="flex items-center justify-between mb-6">
-
+      {/* ── VALIDATION MODAL ───────────────────── */}
+      {showValidationModal && selectedTask && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowValidationModal(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-[28px] border border-white/10 bg-[#071226] p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
               <div>
-
-                <h2 className="text-3xl font-black">
-
-                  Validation tâche
-
-                </h2>
-
-                <p className="text-zinc-400 mt-2">
-
-                  {selectedTask.title}
-
-                </p>
-
+                <h2 className="text-xl font-black text-white">Validation</h2>
+                <p className="text-white/40 text-sm mt-0.5 line-clamp-1">{selectedTask.title}</p>
               </div>
-
               <button
-                onClick={() =>
-                  setShowValidationModal(false)
-                }
-                className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center"
+                onClick={() => setShowValidationModal(false)}
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition"
               >
-
-                <X />
-
+                <X size={16} />
               </button>
-
             </div>
 
-            <div className="space-y-4">
-
+            <div className="space-y-3">
               <input
                 value={employeeName}
-                onChange={(e) =>
-                  setEmployeeName(
-                    e.target.value
-                  )
-                }
-                placeholder="Nom employé"
+                onChange={(e) => setEmployeeName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && validateTask()}
+                placeholder="Nom de l'employé"
+                autoFocus
                 className="
-                  w-full h-14
+                  w-full h-12
                   rounded-2xl
-                  bg-black/30
+                  bg-white/[0.05]
                   border border-white/10
-                  px-5
+                  px-4
+                  text-sm text-white
+                  outline-none
                 "
               />
-
               <button
                 onClick={validateTask}
+                disabled={!employeeName.trim()}
                 className="
-                  w-full h-14
+                  w-full h-12
                   rounded-2xl
                   bg-cyan-400
                   hover:bg-cyan-300
+                  disabled:opacity-40
                   transition
                   text-black
                   font-black
+                  text-sm
+                  flex items-center justify-center gap-2
                 "
               >
-
+                <CheckCircle2 size={16} />
                 Valider la tâche
-
               </button>
-
             </div>
-
           </div>
-
         </div>
-
       )}
-
     </div>
   );
 }

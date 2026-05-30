@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import {
   Pencil,
@@ -9,9 +9,20 @@ import {
   Snowflake,
   Wifi,
   AlertTriangle,
+  CheckCircle2,
+  X,
+  Loader2,
+  ChevronRight,
+  Thermometer,
+  MapPin,
+  Settings2,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+
+// ─────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────
 
 type Equipment = {
   id: number;
@@ -22,501 +33,534 @@ type Equipment = {
   temp_max: number;
 };
 
-type TemperatureLog = {
-  equipment_id: number;
-  temperature: number;
-};
+// ─────────────────────────────────────────────
+// MODAL COMPONENT
+// ─────────────────────────────────────────────
+
+function EquipmentModal({
+  equipment,
+  onClose,
+  onSave,
+  isSaving,
+}: {
+  equipment: Partial<Equipment> | null;
+  onClose: () => void;
+  onSave: (data: Partial<Equipment>) => void;
+  isSaving: boolean;
+}) {
+  const [form, setForm] = useState<Partial<Equipment>>(
+    equipment || { name: "", zone: "", type: "", temp_min: 0, temp_max: 4 }
+  );
+
+  const isEdit = !!equipment?.id;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#030b1d] p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-black text-white">
+              {isEdit ? "Modifier l'équipement" : "Nouvel équipement"}
+            </h2>
+            <p className="text-white/30 text-xs mt-0.5">
+              {isEdit ? form.name : "Remplissez les informations"}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <div className="space-y-3">
+          <div>
+            <label className="text-white/40 text-xs mb-1.5 block">Nom</label>
+            <input
+              value={form.name || ""}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Ex: Chambre froide 1"
+              className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-white/40 text-xs mb-1.5 block">Zone</label>
+            <input
+              value={form.zone || ""}
+              onChange={(e) => setForm({ ...form, zone: e.target.value })}
+              placeholder="Ex: Cuisine froide"
+              className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-white/40 text-xs mb-1.5 block">Type</label>
+            <select
+              value={form.type || ""}
+              onChange={(e) => setForm({ ...form, type: e.target.value })}
+              className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none"
+            >
+              <option value="">Sélectionner un type</option>
+              <option value="Chambre froide">Chambre froide</option>
+              <option value="Congélateur">Congélateur</option>
+              <option value="Réfrigérateur">Réfrigérateur</option>
+              <option value="Vitrine réfrigérée">Vitrine réfrigérée</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-white/40 text-xs mb-1.5 block">Temp. min (°C)</label>
+              <input
+                type="number"
+                value={form.temp_min ?? 0}
+                onChange={(e) => setForm({ ...form, temp_min: Number(e.target.value) })}
+                className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-white/40 text-xs mb-1.5 block">Temp. max (°C)</label>
+              <input
+                type="number"
+                value={form.temp_max ?? 4}
+                onChange={(e) => setForm({ ...form, temp_max: Number(e.target.value) })}
+                className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 h-11 rounded-2xl border border-white/10 bg-white/[0.03] text-white/60 hover:text-white text-sm font-bold transition"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={() => onSave(form)}
+            disabled={isSaving || !form.name || !form.zone}
+            className="flex-1 h-11 rounded-2xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black font-black text-sm flex items-center justify-center gap-2"
+          >
+            {isSaving ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+            {isEdit ? "Enregistrer" : "Ajouter"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MAIN PAGE
+// ─────────────────────────────────────────────
 
 export default function EquipmentsPage() {
 
-  const [equipments, setEquipments] =
-    useState<Equipment[]>([]);
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [temperatures, setTemperatures] = useState<Record<string, number>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [temperatures, setTemperatures] =
-    useState<Record<number, number>>({});
+  const [showModal, setShowModal] = useState(false);
+  const [editingEquipment, setEditingEquipment] = useState<Partial<Equipment> | null>(null);
 
-  async function loadEquipments() {
+  // ── Fetch ──────────────────────────────────
 
-    const { data, error } =
-      await supabase
-        .from("equipments")
-        .select("*")
-        .order("id", {
-          ascending: true,
-        });
-
-    if (!error && data) {
-
-      setEquipments(data);
-
-    }
-  }
-
-  async function loadTemperatures() {
-
-    const { data, error } =
-      await supabase
-        .from("temperature_logs")
-        .select("*")
-        .order("created_at", {
-          ascending: false,
-        });
-
-    if (!error && data) {
-
-      const latestTemps:
-        Record<number, number> = {};
-
-      data.forEach((log: any) => {
-
-        if (
-          log.equipment_id &&
-          latestTemps[log.equipment_id] === undefined
-        ) {
-
-          latestTemps[
-            log.equipment_id
-          ] = log.temperature;
-
-        }
-
-      });
-
-      setTemperatures(latestTemps);
-
-    }
-  }
-
-  async function deleteEquipment(
-    id: number
-  ) {
-
-    await supabase
+  const loadEquipments = useCallback(async () => {
+    const { data, error } = await supabase
       .from("equipments")
-      .delete()
-      .eq("id", id);
-
-    loadEquipments();
-  }
-
-  async function addEquipment() {
-
-    const name =
-      prompt("Nom équipement");
-
-    if (!name) return;
-
-    const zone =
-      prompt("Zone");
-
-    if (!zone) return;
-
-    const type =
-      prompt("Type");
-
-    if (!type) return;
-
-    await supabase
-      .from("equipments")
-      .insert({
-        name,
-        zone,
-        type,
-        temp_min: 0,
-        temp_max: 4,
-      });
-
-    loadEquipments();
-  }
-
-  useEffect(() => {
-
-    loadEquipments();
-    loadTemperatures();
-
+      .select("*")
+      .order("id", { ascending: true });
+    if (!error && data) setEquipments(data);
   }, []);
 
+  const loadTemperatures = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("temperature_logs")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      const latestTemps: Record<string, number> = {};
+      data.forEach((log: any) => {
+        const key = log.equipment?.toLowerCase().trim();
+        if (key && latestTemps[key] === undefined) {
+          latestTemps[key] = log.temperature;
+        }
+      });
+      setTemperatures(latestTemps);
+    }
+  }, []);
+
+  useEffect(() => {
+    async function init() {
+      setIsLoading(true);
+      await Promise.all([loadEquipments(), loadTemperatures()]);
+      setIsLoading(false);
+    }
+    init();
+  }, [loadEquipments, loadTemperatures]);
+
+  // ── Save (add or edit) ─────────────────────
+
+  async function handleSave(form: Partial<Equipment>) {
+    if (!form.name || !form.zone) return;
+    setIsSaving(true);
+
+    if (form.id) {
+      await supabase
+        .from("equipments")
+        .update({
+          name: form.name,
+          zone: form.zone,
+          type: form.type,
+          temp_min: form.temp_min,
+          temp_max: form.temp_max,
+        })
+        .eq("id", form.id);
+    } else {
+      await supabase.from("equipments").insert({
+        name: form.name,
+        zone: form.zone,
+        type: form.type || "Autre",
+        temp_min: form.temp_min ?? 0,
+        temp_max: form.temp_max ?? 4,
+      });
+    }
+
+    await loadEquipments();
+    setIsSaving(false);
+    setShowModal(false);
+    setEditingEquipment(null);
+  }
+
+  // ── Delete ─────────────────────────────────
+
+  async function deleteEquipment(id: number) {
+    if (!confirm("Supprimer cet équipement ?")) return;
+    await supabase.from("equipments").delete().eq("id", id);
+    loadEquipments();
+  }
+
+  // ── Computed ───────────────────────────────
+
+  const alertsCount = equipments.filter((eq) => {
+    const temp = temperatures[eq.name?.toLowerCase().trim()];
+    if (temp === undefined) return false;
+    return temp < eq.temp_min || temp > eq.temp_max;
+  }).length;
+
+  const onlineCount = equipments.filter((eq) =>
+    temperatures[eq.name?.toLowerCase().trim()] !== undefined
+  ).length;
+
+  // ─────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────
+
   return (
-
-    <div className="space-y-6 md:space-y-10">
-
-      {/* HEADER */}
-      <div
-        className="
-          flex
-          flex-col
-          xl:flex-row
-          xl:items-start
-          xl:justify-between
-
-          gap-6
-        "
-      >
-
-        <div>
-
-          <div className="flex items-center gap-3 mb-3">
-
-            <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-cyan-400" />
-
-            <span className="text-cyan-400 tracking-[0.18em] md:tracking-[0.25em] text-[10px] md:text-sm font-semibold uppercase">
-              Equipment Management
-            </span>
-
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white mb-4 leading-none">
-            Équipements
-          </h1>
-
-          <p className="text-white/50 text-base md:text-2xl">
-            Gestion intelligente des équipements HACCP
-          </p>
-
-        </div>
-
-        {/* BUTTON */}
-        <button
-          onClick={addEquipment}
-          className="
-            w-full
-            xl:w-auto
-
-            px-6 md:px-8
-            py-4 md:py-5
-
-            rounded-3xl
-
-            bg-gradient-to-r
-            from-cyan-500
-            to-blue-500
-
-            text-white
-            font-bold
-
-            text-base md:text-xl
-
-            shadow-[0_0_40px_rgba(0,200,255,0.35)]
-
-            hover:scale-[1.02]
-
-            transition
-
-            flex
-            items-center
-            justify-center
-            gap-3
-          "
-        >
-
-          <Plus size={22} />
-
-          Ajouter un équipement
-
-        </button>
-
-      </div>
-
-      {/* LIST */}
-      <div className="space-y-5 md:space-y-8">
-
-        {equipments.map((equipment) => {
-
-          const currentTemp =
-            temperatures[equipment.id];
-
-          const isAlert =
-            currentTemp !== undefined &&
-            (
-              currentTemp < equipment.temp_min ||
-              currentTemp > equipment.temp_max
-            );
-
-          return (
-
-            <div
-              key={equipment.id}
-              className="
-                relative
-                overflow-hidden
-
-                rounded-[30px] md:rounded-[36px]
-
-                border
-                border-white/10
-
-                bg-white/[0.03]
-                backdrop-blur-xl
-
-                p-5 md:p-8
-              "
-            >
-
-              <div
-                className="
-                  flex
-                  flex-col
-                  2xl:flex-row
-                  2xl:items-center
-                  2xl:justify-between
-
-                  gap-8
-                "
-              >
-
-                {/* LEFT */}
-                <div
-                  className="
-                    flex
-                    flex-col
-                    sm:flex-row
-
-                    sm:items-center
-
-                    gap-5 md:gap-6
-
-                    min-w-0
-                  "
-                >
-
-                  {/* ICON */}
-                  <div
-                    className="
-                      w-20
-                      h-20
-
-                      md:w-24
-                      md:h-24
-
-                      rounded-3xl
-
-                      bg-cyan-500/20
-
-                      flex
-                      items-center
-                      justify-center
-
-                      shrink-0
-                    "
-                  >
-
-                    <Snowflake
-                      size={38}
-                      className="text-cyan-300"
-                    />
-
-                  </div>
-
-                  {/* INFO */}
-                  <div className="min-w-0">
-
-                    <div
-                      className="
-                        flex
-                        flex-col
-                        md:flex-row
-                        md:items-center
-
-                        gap-3 md:gap-4
-
-                        mb-3
-                      "
-                    >
-
-                      <h2 className="text-3xl md:text-5xl font-black text-white break-words">
-
-                        {equipment.name}
-
-                      </h2>
-
-                      <div
-                        className={`
-                          w-fit
-
-                          px-4
-                          py-2
-
-                          rounded-full
-
-                          text-sm md:text-lg
-                          font-bold
-
-                          ${
-                            isAlert
-                              ? "bg-red-500/20 text-red-400"
-                              : "bg-green-500/20 text-green-400"
-                          }
-                        `}
-                      >
-
-                        {isAlert
-                          ? "ALERTE"
-                          : "Stable"}
-
-                      </div>
-
-                    </div>
-
-                    <p className="text-white/50 text-lg md:text-2xl mb-4 break-words">
-
-                      Zone :
-                      {" "}
-                      {equipment.zone}
-
-                    </p>
-
-                    <div className="flex items-center gap-2 text-cyan-300">
-
-                      <Wifi size={16} />
-
-                      <span className="text-sm md:text-lg">
-                        Online
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-                {/* RIGHT */}
-                <div
-                  className="
-                    flex
-                    flex-col
-                    lg:flex-row
-
-                    lg:items-center
-
-                    gap-6 md:gap-8
-                  "
-                >
-
-                  {/* ALERT */}
-                  {isAlert && (
-
-                    <div className="flex justify-start lg:justify-center">
-
-                      <AlertTriangle
-                        size={38}
-                        className="text-red-400"
-                      />
-
-                    </div>
-
-                  )}
-
-                  {/* ACTIONS */}
-                  <div className="flex gap-4">
-
-                    <button
-                      className="
-                        w-14
-                        h-14
-
-                        md:w-16
-                        md:h-16
-
-                        rounded-2xl
-
-                        border
-                        border-white/10
-
-                        bg-white/[0.03]
-
-                        flex
-                        items-center
-                        justify-center
-                      "
-                    >
-
-                      <Pencil className="text-cyan-300" />
-
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        deleteEquipment(
-                          equipment.id
-                        )
-                      }
-                      className="
-                        w-14
-                        h-14
-
-                        md:w-16
-                        md:h-16
-
-                        rounded-2xl
-
-                        border
-                        border-red-500/20
-
-                        bg-red-500/10
-
-                        flex
-                        items-center
-                        justify-center
-                      "
-                    >
-
-                      <Trash2 className="text-red-300" />
-
-                    </button>
-
-                  </div>
-
-                  {/* TEMP */}
-                  <div className="lg:text-right">
-
-                    <p className="text-white/50 text-base md:text-xl mb-3">
-                      Température live
-                    </p>
-
-                    <div
-                      className={`
-                        text-4xl md:text-6xl
-                        font-black
-
-                        break-words
-
-                        ${
-                          isAlert
-                            ? "text-red-400"
-                            : "text-white"
-                        }
-                      `}
-                    >
-
-                      {currentTemp ?? "--"}°C
-
-                    </div>
-
-                    <p className="text-white/40 text-sm md:text-lg mt-2 break-words">
-
-                      HACCP :
-                      {" "}
-                      {equipment.temp_min}°C
-                      {" → "}
-                      {equipment.temp_max}°C
-
-                    </p>
-
-                  </div>
-
-                </div>
-
+    <>
+      {/* MODAL */}
+      {showModal && (
+        <EquipmentModal
+          equipment={editingEquipment}
+          onClose={() => { setShowModal(false); setEditingEquipment(null); }}
+          onSave={handleSave}
+          isSaving={isSaving}
+        />
+      )}
+
+      <div className="min-h-screen bg-[#020817] text-white p-5">
+        <div className="mx-auto max-w-[1450px] rounded-[32px] border border-white/5 bg-[#030b1d] p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
+
+          {/* ── HEADER ─────────────────────────────── */}
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                <p className="uppercase tracking-[0.32em] text-cyan-400 font-semibold text-xs">
+                  EQUIPMENT MANAGEMENT
+                </p>
               </div>
-
+              <h1 className="text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">
+                Équipements
+              </h1>
+              <p className="text-white/40 text-base mt-2">
+                Gestion intelligente des équipements HACCP
+              </p>
             </div>
 
-          );
+            <button
+              onClick={() => { setEditingEquipment(null); setShowModal(true); }}
+              className="
+                mt-2 h-10 px-5
+                rounded-2xl
+                bg-cyan-400 hover:bg-cyan-300
+                transition text-black text-sm font-black
+                flex items-center gap-2
+              "
+            >
+              <Plus size={16} />
+              <span className="hidden sm:inline">Ajouter</span>
+            </button>
+          </div>
 
-        })}
+          {/* ── KPI CARDS ──────────────────────────── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
+            {/* Total */}
+            <div className="rounded-[24px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-cyan-300 text-sm font-semibold">Équipements</p>
+                  <h2 className="text-[48px] font-black text-white leading-none mt-3">
+                    {equipments.length}
+                  </h2>
+                  <p className="text-cyan-400/50 text-xs mt-1">enregistrés</p>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20">
+                  <Snowflake size={20} className="text-cyan-300" />
+                </div>
+              </div>
+            </div>
+
+            {/* Online */}
+            <div className="rounded-[24px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-green-300 text-sm font-semibold">En ligne</p>
+                  <h2 className="text-[48px] font-black text-white leading-none mt-3">
+                    {onlineCount}
+                  </h2>
+                  <p className="text-green-400/50 text-xs mt-1">avec relevé récent</p>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-green-400/20 bg-green-500/20">
+                  <Wifi size={20} className="text-green-300" />
+                </div>
+              </div>
+            </div>
+
+            {/* Alerts */}
+            <div className={`rounded-[24px] border p-5 ${alertsCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-red-300 text-sm font-semibold">Alertes HACCP</p>
+                  <h2 className="text-[48px] font-black text-white leading-none mt-3">
+                    {alertsCount}
+                  </h2>
+                  {alertsCount > 0 && <p className="text-red-400/70 text-xs mt-1 font-bold">Action requise</p>}
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/20">
+                  <AlertTriangle size={20} className={`text-red-300 ${alertsCount > 0 ? "animate-pulse" : ""}`} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── EQUIPMENT LIST ──────────────────────── */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 size={32} className="animate-spin text-cyan-400" />
+            </div>
+          ) : equipments.length === 0 ? (
+            <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-12 text-center">
+              <Snowflake size={40} className="mx-auto mb-4 text-white/20" />
+              <p className="text-white/30 text-sm">Aucun équipement enregistré</p>
+              <button
+                onClick={() => { setEditingEquipment(null); setShowModal(true); }}
+                className="mt-4 px-5 py-2.5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2 mx-auto"
+              >
+                <Plus size={14} /> Ajouter le premier équipement
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {equipments.map((equipment) => {
+                const currentTemp = temperatures[equipment.name?.toLowerCase().trim()];
+                const isAlert = currentTemp !== undefined && (currentTemp < equipment.temp_min || currentTemp > equipment.temp_max);
+                const isOnline = currentTemp !== undefined;
+
+                return (
+                  <div
+                    key={equipment.id}
+                    className={`
+                      rounded-[24px] border p-5 transition-all
+                      ${isAlert
+                        ? "border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-900/5"
+                        : isOnline
+                        ? "border-green-500/20 bg-gradient-to-br from-green-500/[0.07] to-green-900/5"
+                        : "border-white/[0.08] bg-white/[0.02]"}
+                    `}
+                  >
+                    {/* Card header */}
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`
+                          w-10 h-10 rounded-2xl flex items-center justify-center shrink-0
+                          ${isAlert ? "bg-red-500/20 border border-red-500/30" : "bg-cyan-500/20 border border-cyan-500/20"}
+                        `}>
+                          <Snowflake size={18} className={isAlert ? "text-red-300" : "text-cyan-300"} />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-white font-black text-base leading-tight break-words">
+                            {equipment.name}
+                          </h3>
+                          <p className="text-white/30 text-xs">{equipment.type || "—"}</p>
+                        </div>
+                      </div>
+
+                      {/* Status badge */}
+                      {isAlert ? (
+                        <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold">
+                          <AlertTriangle size={9} /> ALERTE
+                        </span>
+                      ) : isOnline ? (
+                        <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-500/15 border border-green-500/30 text-green-300 text-xs font-bold">
+                          <Wifi size={9} /> ONLINE
+                        </span>
+                      ) : (
+                        <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/[0.05] border border-white/10 text-white/30 text-xs font-bold">
+                          — OFFLINE
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Info rows */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-white/40 text-xs">
+                        <MapPin size={12} className="text-white/25 shrink-0" />
+                        <span>Zone : <span className="text-white/60 font-medium">{equipment.zone}</span></span>
+                      </div>
+                      <div className="flex items-center gap-2 text-white/40 text-xs">
+                        <Thermometer size={12} className="text-white/25 shrink-0" />
+                        <span>HACCP : <span className="text-white/60 font-medium">{equipment.temp_min}°C → {equipment.temp_max}°C</span></span>
+                      </div>
+                    </div>
+
+                    {/* Temperature display */}
+                    <div className={`
+                      rounded-2xl p-4 mb-4 flex items-center justify-between
+                      ${isAlert ? "bg-red-500/10 border border-red-500/20" : isOnline ? "bg-green-500/10 border border-green-500/20" : "bg-white/[0.03] border border-white/[0.06]"}
+                    `}>
+                      <div>
+                        <p className="text-white/30 text-xs mb-1">Température live</p>
+                        <p className={`text-3xl font-black ${isAlert ? "text-red-400" : isOnline ? "text-green-300" : "text-white/20"}`}>
+                          {currentTemp !== undefined ? `${currentTemp}°C` : "—"}
+                        </p>
+                      </div>
+                      {isAlert && <AlertTriangle size={24} className="text-red-400 animate-pulse" />}
+                      {!isAlert && isOnline && <CheckCircle2 size={24} className="text-green-400" />}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { setEditingEquipment(equipment); setShowModal(true); }}
+                        className="flex-1 h-9 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/60 hover:text-white transition text-xs font-bold flex items-center justify-center gap-1.5"
+                      >
+                        <Pencil size={12} /> Modifier
+                      </button>
+                      <button
+                        onClick={() => deleteEquipment(equipment.id)}
+                        className="h-9 w-9 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Add card */}
+              <button
+                onClick={() => { setEditingEquipment(null); setShowModal(true); }}
+                className="
+                  rounded-[24px] border-2 border-dashed border-white/10
+                  bg-transparent hover:bg-white/[0.02] hover:border-white/20
+                  p-5 transition-all
+                  flex flex-col items-center justify-center gap-3
+                  min-h-[200px]
+                  text-white/25 hover:text-white/50
+                "
+              >
+                <div className="w-12 h-12 rounded-2xl border-2 border-dashed border-white/15 flex items-center justify-center">
+                  <Plus size={20} />
+                </div>
+                <p className="text-sm font-bold">Ajouter un équipement</p>
+              </button>
+            </div>
+          )}
+
+          {/* ── SETTINGS SECTION ───────────────────── */}
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+                <Settings2 size={16} className="text-white/40" />
+              </div>
+              <div>
+                <h2 className="text-base font-black text-white">Récapitulatif des zones HACCP</h2>
+                <p className="text-white/30 text-xs">Plages de températures réglementaires</p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.06]">
+                    {["Équipement", "Zone", "Type", "Min", "Max", "Statut"].map((h) => (
+                      <th key={h} className="text-left text-white/30 font-bold text-[10px] uppercase tracking-widest pb-3 pr-4">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {equipments.map((eq) => {
+                    const temp = temperatures[eq.name?.toLowerCase().trim()];
+                    const isAlert = temp !== undefined && (temp < eq.temp_min || temp > eq.temp_max);
+                    return (
+                      <tr key={eq.id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition">
+                        <td className="py-2.5 pr-4 text-white font-medium text-sm">{eq.name}</td>
+                        <td className="py-2.5 pr-4 text-white/50 text-xs">{eq.zone}</td>
+                        <td className="py-2.5 pr-4 text-white/50 text-xs">{eq.type || "—"}</td>
+                        <td className="py-2.5 pr-4 text-cyan-400 font-bold text-sm">{eq.temp_min}°C</td>
+                        <td className="py-2.5 pr-4 text-cyan-400 font-bold text-sm">{eq.temp_max}°C</td>
+                        <td className="py-2.5">
+                          {isAlert ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold">
+                              <AlertTriangle size={9} /> ALERTE
+                            </span>
+                          ) : temp !== undefined ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-500/15 border border-green-500/30 text-green-300 text-xs font-bold">
+                              <CheckCircle2 size={9} /> OK
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/[0.05] border border-white/10 text-white/30 text-xs font-bold">
+                              — Offline
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
       </div>
-
-    </div>
-
+    </>
   );
 }
