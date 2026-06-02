@@ -18,6 +18,7 @@ import {
   Settings,
   Menu,
   X,
+  Wrench,
 } from "lucide-react";
 
 const menuItems = [
@@ -29,6 +30,7 @@ const menuItems = [
   { name: "Traçabilité", href: "/traceability", icon: ClipboardList },
   { name: "Alertes", href: "/alerts", icon: AlertTriangle },
   { name: "PMS entretien", href: "/pms-entretien", icon: ShieldCheck },
+  { name: "Maintenance", href: "/maintenance", icon: Wrench },
   { name: "Monitoring", href: "/monitoring", icon: Activity },
   { name: "Employés", href: "/employees", icon: Users },
   { name: "Paramètres", href: "/settings", icon: Settings },
