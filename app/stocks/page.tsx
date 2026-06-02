@@ -31,19 +31,32 @@ import { supabase } from "@/lib/supabase";
 // CATEGORIES
 // ─────────────────────────────────────────────
 
-const CATEGORIES = [
-  { id: "Viande",            emoji: "🥩", color: "border-red-500/30 bg-red-500/10",       text: "text-red-300",    badge: "bg-red-500/15 border-red-500/25 text-red-300" },
-  { id: "Poisson",           emoji: "🐟", color: "border-blue-500/30 bg-blue-500/10",      text: "text-blue-300",   badge: "bg-blue-500/15 border-blue-500/25 text-blue-300" },
-  { id: "Fruits & Légumes",  emoji: "🥦", color: "border-green-500/30 bg-green-500/10",    text: "text-green-300",  badge: "bg-green-500/15 border-green-500/25 text-green-300" },
-  { id: "Produits laitiers", emoji: "🧀", color: "border-yellow-500/30 bg-yellow-500/10",  text: "text-yellow-300", badge: "bg-yellow-500/15 border-yellow-500/25 text-yellow-300" },
-  { id: "Épicerie",          emoji: "🛒", color: "border-cyan-500/30 bg-cyan-500/10",      text: "text-cyan-300",   badge: "bg-cyan-500/15 border-cyan-500/25 text-cyan-300" },
-  { id: "Surgelés",          emoji: "❄️", color: "border-violet-500/30 bg-violet-500/10",  text: "text-violet-300", badge: "bg-violet-500/15 border-violet-500/25 text-violet-300" },
-] as const;
+type Category = {
+  id: string;
+  emoji: string;
+  color: string;
+  text: string;
+  badge: string;
+};
 
-type CategoryId = typeof CATEGORIES[number]["id"];
+const CATEGORIES: Category[] = [
+  { id: "Viande",            emoji: "🥩", color: "border-red-500/30 bg-red-500/10",      text: "text-red-300",    badge: "bg-red-500/15 border-red-500/25 text-red-300" },
+  { id: "Poisson",           emoji: "🐟", color: "border-blue-500/30 bg-blue-500/10",     text: "text-blue-300",   badge: "bg-blue-500/15 border-blue-500/25 text-blue-300" },
+  { id: "Fruits & Légumes",  emoji: "🥦", color: "border-green-500/30 bg-green-500/10",   text: "text-green-300",  badge: "bg-green-500/15 border-green-500/25 text-green-300" },
+  { id: "Produits laitiers", emoji: "🧀", color: "border-yellow-500/30 bg-yellow-500/10", text: "text-yellow-300", badge: "bg-yellow-500/15 border-yellow-500/25 text-yellow-300" },
+  { id: "Épicerie",          emoji: "🛒", color: "border-cyan-500/30 bg-cyan-500/10",     text: "text-cyan-300",   badge: "bg-cyan-500/15 border-cyan-500/25 text-cyan-300" },
+  { id: "Surgelés",          emoji: "❄️", color: "border-violet-500/30 bg-violet-500/10", text: "text-violet-300", badge: "bg-violet-500/15 border-violet-500/25 text-violet-300" },
+];
 
-function getCategoryInfo(categoryId: string) {
-  return CATEGORIES.find((c) => c.id === categoryId) || CATEGORIES[4]; // default Épicerie
+const CAT_AUTRE: Category = {
+  id: "Autre", emoji: "📦",
+  color: "border-white/10 bg-white/[0.02]",
+  text: "text-white/60",
+  badge: "bg-white/10 border-white/20 text-white/60",
+};
+
+function getCategoryInfo(categoryId: string): Category {
+  return CATEGORIES.find((c) => c.id === categoryId) || CATEGORIES[4];
 }
 
 // ─────────────────────────────────────────────
@@ -112,7 +125,7 @@ function CategorySection({
   onDelete,
   onShowImage,
 }: {
-  category: typeof CATEGORIES[number];
+  category: Category;
   products: Product[];
   updatingId: string | null;
   onUpdateQty: (id: string, qty: number, action: "plus" | "minus") => void;
@@ -126,7 +139,6 @@ function CategorySection({
 
   return (
     <div className={`rounded-[24px] border ${category.color} overflow-hidden`}>
-      {/* Category header */}
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="w-full flex items-center justify-between gap-4 p-4 hover:bg-white/[0.02] transition"
@@ -144,11 +156,10 @@ function CategorySection({
               <AlertTriangle size={10} /> {lowCount} faible
             </span>
           )}
-          <span className={`text-white/30 transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`}>▼</span>
+          <span className={`text-white/30 text-xs transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`}>▼</span>
         </div>
       </button>
 
-      {/* Products list */}
       {!collapsed && (
         <div className="px-4 pb-4 space-y-2 border-t border-white/[0.06]">
           {products.map((item) => {
@@ -158,8 +169,6 @@ function CategorySection({
             return (
               <div key={item.id} className={`rounded-[18px] border p-3 transition-all mt-2 ${isLow ? "border-red-500/25 bg-red-500/[0.08]" : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]"}`}>
                 <div className="flex items-center justify-between gap-3">
-
-                  {/* Photo ou emoji catégorie */}
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {item.image_url ? (
                       <button onClick={() => onShowImage(item.id)} className="w-10 h-10 rounded-2xl overflow-hidden shrink-0 border border-white/10 hover:border-violet-500/40 transition">
@@ -193,7 +202,6 @@ function CategorySection({
                     </div>
                   </div>
 
-                  {/* Controls */}
                   <div className="flex items-center gap-1.5 shrink-0">
                     {item.image_url && (
                       <button onClick={() => onShowImage(item.id)} className="h-8 w-8 rounded-xl border border-violet-500/20 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 flex items-center justify-center transition">
@@ -236,7 +244,6 @@ export default function StocksPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
-  // Add product
   const [showAddForm, setShowAddForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"scan" | "manual">("scan");
   const [newProduct, setNewProduct] = useState("");
@@ -247,7 +254,6 @@ export default function StocksPage() {
   const [newCategory, setNewCategory] = useState<string>("Épicerie");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Scan IA
   const [isScanning, setIsScanning] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [scanPreview, setScanPreview] = useState<string | null>(null);
@@ -255,10 +261,8 @@ export default function StocksPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Image modal
   const [showImageFor, setShowImageFor] = useState<string | null>(null);
 
-  // Toasts
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [toastCounter, setToastCounter] = useState(0);
 
@@ -268,8 +272,6 @@ export default function StocksPage() {
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
   }, [toastCounter]);
-
-  // ── Fetch ──────────────────────────────────
 
   const fetchProducts = useCallback(async () => {
     const { data } = await supabase
@@ -295,8 +297,6 @@ export default function StocksPage() {
     addToast("Données actualisées", "success");
   }
 
-  // ── Update quantity ────────────────────────
-
   async function updateQuantity(id: string, currentQty: number, action: "plus" | "minus") {
     const newQty = action === "plus" ? currentQty + 1 : Math.max(0, currentQty - 1);
     setUpdatingId(id);
@@ -305,16 +305,12 @@ export default function StocksPage() {
     setUpdatingId(null);
   }
 
-  // ── Delete ─────────────────────────────────
-
   async function deleteProduct(id: string) {
     if (!confirm("Supprimer ce produit ?")) return;
     await supabase.from("traceability_products").delete().eq("id", id);
     await fetchProducts();
     addToast("Produit supprimé", "success");
   }
-
-  // ── Upload photo ───────────────────────────
 
   async function uploadPhoto(file: File): Promise<string> {
     const ext = file.name.split(".").pop() || "jpg";
@@ -326,8 +322,6 @@ export default function StocksPage() {
     const { data } = supabase.storage.from("traceability-images").getPublicUrl(fileName);
     return data.publicUrl;
   }
-
-  // ── AI Scan ────────────────────────────────
 
   async function scanImage(file: File) {
     setIsScanning(true);
@@ -404,8 +398,6 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
     e.target.value = "";
   }
 
-  // ── Save ───────────────────────────────────
-
   async function handleSave() {
     if (!newProduct.trim()) { addToast("Veuillez saisir un nom de produit", "error"); return; }
     setIsSaving(true);
@@ -428,7 +420,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
 
     setIsSaving(false);
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
-    addToast(`✅ ${newProduct} ajouté au stock (${newCategory})`, "success");
+    addToast(`✅ ${newProduct} ajouté (${newCategory})`, "success");
 
     setNewProduct(""); setNewSupplier(""); setNewBatch("");
     setNewQuantity("1"); setNewExpiry(""); setNewCategory("Épicerie");
@@ -444,13 +436,11 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
     setActiveTab("scan"); setShowAddForm(false);
   }
 
-  // ── Computed ───────────────────────────────
-
   const filteredProducts = products.filter((item) => {
     const matchSearch = !search ||
       (item.product || "").toLowerCase().includes(search.toLowerCase()) ||
       (item.supplier || "").toLowerCase().includes(search.toLowerCase());
-    const matchCategory = filterCategory === "all" || item.category === filterCategory;
+    const matchCategory = filterCategory === "all" || (item.category || "Épicerie") === filterCategory;
     return matchSearch && matchCategory;
   });
 
@@ -459,20 +449,14 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
   const withPhotoCount = products.filter((p) => p.image_url).length;
   const imageModalProduct = products.find((p) => p.id === showImageFor);
 
-  // Group by category
   const productsByCategory = CATEGORIES.map((cat) => ({
     category: cat,
     products: filteredProducts.filter((p) => (p.category || "Épicerie") === cat.id),
   }));
 
-  // Uncategorized
   const uncategorized = filteredProducts.filter(
-    (p) => !CATEGORIES.find((c) => c.id === p.category)
+    (p) => p.category && !CATEGORIES.find((c) => c.id === p.category)
   );
-
-  // ─────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────
 
   return (
     <>
@@ -486,7 +470,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
       <div className="min-h-screen bg-[#020817] text-white p-5">
         <div className="mx-auto max-w-[1450px] rounded-[32px] border border-white/5 bg-[#030b1d] p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
 
-          {/* ── HEADER ─────────────────────────────── */}
+          {/* HEADER */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -506,7 +490,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
             </div>
           </div>
 
-          {/* ── KPI CARDS ──────────────────────────── */}
+          {/* KPI CARDS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="rounded-[24px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10 p-5">
               <div className="flex items-start justify-between gap-3">
@@ -561,7 +545,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
             </div>
           </div>
 
-          {/* ── ADD PRODUCT FORM ───────────────────── */}
+          {/* ADD FORM */}
           {showAddForm && (
             <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 md:p-6">
               <div className="flex items-center justify-between mb-5">
@@ -569,7 +553,6 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                 <button onClick={resetForm} className="text-white/30 hover:text-white transition"><X size={18} /></button>
               </div>
 
-              {/* Tabs */}
               <div className="flex gap-2 mb-5">
                 <button onClick={() => setActiveTab("scan")} className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold transition border ${activeTab === "scan" ? "bg-violet-500/20 border-violet-500/40 text-violet-300" : "border-white/10 bg-white/[0.03] text-white/40 hover:text-white/70"}`}>
                   <Sparkles size={14} /> Scan IA
@@ -582,11 +565,11 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
               {/* SCAN TAB */}
               {activeTab === "scan" && (
                 <div className="rounded-[20px] border border-violet-500/20 bg-violet-500/[0.05] p-5 space-y-4">
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3">
                     <Sparkles size={18} className="text-violet-300" />
                     <div>
                       <p className="text-white font-black text-sm">Scan IA — Reconnaissance automatique</p>
-                      <p className="text-white/30 text-xs">L'IA détecte aussi la catégorie du produit !</p>
+                      <p className="text-white/30 text-xs">L'IA détecte le produit et sa catégorie !</p>
                     </div>
                   </div>
 
@@ -639,7 +622,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
 
               {/* MANUAL TAB */}
               {activeTab === "manual" && (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {scanPreview && capturedFile && (
                     <div className="flex items-center gap-3 p-3 rounded-2xl bg-violet-500/10 border border-violet-500/20">
                       <img src={scanPreview} alt="Photo" className="w-10 h-10 rounded-xl object-cover shrink-0" />
@@ -648,7 +631,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                     </div>
                   )}
 
-                  {/* Catégorie selector */}
+                  {/* Category picker */}
                   <div>
                     <label className="text-white/30 text-xs mb-2 block">Catégorie *</label>
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -656,7 +639,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                         <button
                           key={cat.id}
                           onClick={() => setNewCategory(cat.id)}
-                          className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition ${newCategory === cat.id ? `${cat.color} border-opacity-60` : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"}`}
+                          className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition ${newCategory === cat.id ? `${cat.color}` : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"}`}
                         >
                           <span className="text-xl">{cat.emoji}</span>
                           <span className={`text-[10px] font-bold text-center leading-tight ${newCategory === cat.id ? cat.text : "text-white/40"}`}>{cat.id}</span>
@@ -706,16 +689,14 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
             </div>
           )}
 
-          {/* ── SEARCH + CATEGORY FILTER ────────────── */}
+          {/* SEARCH + FILTERS */}
           <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-4 space-y-3">
-            {/* Search */}
             <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 h-11">
               <Search size={15} className="text-white/30 shrink-0" />
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un produit..." className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/25" />
               {search && <button onClick={() => setSearch("")} className="text-white/30 hover:text-white transition"><X size={14} /></button>}
             </div>
 
-            {/* Category filters */}
             <div className="flex gap-2 flex-wrap">
               <button onClick={() => setFilterCategory("all")} className={`px-3 py-2 rounded-xl border text-xs font-bold transition ${filterCategory === "all" ? "bg-white/10 border-white/20 text-white" : "border-white/10 text-white/35 hover:text-white/60"}`}>
                 Toutes
@@ -724,7 +705,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                 const count = products.filter((p) => (p.category || "Épicerie") === cat.id).length;
                 if (count === 0) return null;
                 return (
-                  <button key={cat.id} onClick={() => setFilterCategory(cat.id)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 ${filterCategory === cat.id ? `${cat.badge}` : "border-white/10 text-white/35 hover:text-white/60"}`}>
+                  <button key={cat.id} onClick={() => setFilterCategory(cat.id)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 ${filterCategory === cat.id ? cat.badge : "border-white/10 text-white/35 hover:text-white/60"}`}>
                     <span>{cat.emoji}</span> {cat.id} <span className="opacity-60">({count})</span>
                   </button>
                 );
@@ -732,7 +713,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
             </div>
           </div>
 
-          {/* ── PRODUCTS BY CATEGORY ───────────────── */}
+          {/* PRODUCTS BY CATEGORY */}
           {isLoading ? (
             <div className="flex items-center justify-center py-16"><Loader2 size={32} className="animate-spin text-cyan-400" /></div>
           ) : filteredProducts.length === 0 ? (
@@ -756,11 +737,9 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                   onShowImage={(id) => setShowImageFor(id)}
                 />
               ))}
-
-              {/* Produits sans catégorie */}
               {uncategorized.length > 0 && (
                 <CategorySection
-                  category={{ id: "Autre" as any, emoji: "📦", color: "border-white/10 bg-white/[0.02]", text: "text-white/60", badge: "bg-white/10 border-white/20 text-white/60" }}
+                  category={CAT_AUTRE}
                   products={uncategorized}
                   updatingId={updatingId}
                   onUpdateQty={updateQuantity}
@@ -771,7 +750,6 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
             </div>
           )}
 
-          {/* Footer */}
           {!isLoading && filteredProducts.length > 0 && (
             <div className="flex items-center justify-between text-white/25 text-xs pt-2 border-t border-white/[0.04]">
               <span>{filteredProducts.length} produit(s) · {withPhotoCount} avec photo 📷</span>
