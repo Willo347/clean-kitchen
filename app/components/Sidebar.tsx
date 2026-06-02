@@ -48,7 +48,7 @@ export default function Sidebar() {
         fixed top-0 left-0 right-0
         h-[70px] px-5
         flex items-center justify-between
-        bg-[#081120]/90 backdrop-blur-3xl
+        bg-[#020810] backdrop-blur-3xl
         border-b border-white/10
         z-[60] lg:hidden
       ">
@@ -93,7 +93,7 @@ export default function Sidebar() {
         h-screen w-[270px]
         overflow-y-auto
         border-r border-white/10
-        bg-[#081120]/95 backdrop-blur-3xl
+        bg-[#020810] backdrop-blur-3xl
         px-4 py-5
         z-50
         transition-transform duration-300
@@ -101,11 +101,11 @@ export default function Sidebar() {
       `}>
 
         {/* ── DESKTOP LOGO ──────────────────────── */}
-        <div className="hidden lg:block mb-4 -mx-4 -mt-5">
+        <div className="hidden lg:block -mx-4 -mt-5">
           <img
             src="/ck-logo-new.png"
             alt="Clean Kitchen"
-            className="w-full h-auto object-contain drop-shadow-[0_0_24px_rgba(6,182,212,0.3)]"
+            className="w-full h-auto object-cover block"
           />
         </div>
 
@@ -130,7 +130,7 @@ export default function Sidebar() {
                   rounded-[20px] border p-3
                   backdrop-blur-xl
                   transition-all duration-300
-                  hover:scale-[1.01]
+                  hover:scale-[1.03]
                   ${active
                     ? "border-cyan-500/20 bg-gradient-to-r from-cyan-500/15 to-blue-500/10 shadow-[0_0_30px_rgba(6,182,212,0.10)]"
                     : "border-white/10 bg-white/[0.03] hover:bg-white/[0.05] hover:border-cyan-500/10"
