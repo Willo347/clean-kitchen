@@ -49,8 +49,9 @@ function PanneauAlertes({
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed right-0 top-0 h-full w-full max-w-md z-50 bg-[#030b1d] border-l border-white/10 shadow-2xl flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between p-5 border-b border-white/[0.07]">
+      {/* Panneau : plein écran sur mobile, max-w-md sur grand écran */}
+      <div className="fixed right-0 top-0 h-full w-full sm:max-w-md z-50 bg-[#030b1d] border-l border-white/10 shadow-2xl flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/[0.07]">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center">
               <Bell size={16} className="text-red-300" />
@@ -65,7 +66,7 @@ function PanneauAlertes({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5">
           {sections.map((section) => (
             <div key={section.key}>
               <div className="flex items-center gap-2 mb-3">
@@ -87,7 +88,7 @@ function PanneauAlertes({
           ))}
         </div>
 
-        <div className="p-5 border-t border-white/[0.07]">
+        <div className="p-4 sm:p-5 border-t border-white/[0.07]">
           <Link href="/alerts" onClick={onClose}>
             <button className="w-full h-11 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black font-black text-sm flex items-center justify-center gap-2">
               Voir toutes les alertes <ChevronRight size={16} />
@@ -114,15 +115,15 @@ function MiniCalendar() {
   function nextMonth() { if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear((y) => y + 1) } else { setCurrentMonth((m) => m + 1) } }
 
   return (
-    <div className="rounded-[24px] border border-white/10 bg-[#071224] p-5">
+    <div className="rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-cyan-300" />
           <p className="text-[11px] font-bold tracking-[0.28em] text-cyan-300">CALENDRIER</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button onClick={prevMonth} className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition"><ChevronLeft className="h-3 w-3 text-white/60" /></button>
-          <span className="text-[13px] font-bold text-white min-w-[110px] text-center">{MONTHS_FR[currentMonth]} {currentYear}</span>
+          <span className="text-[11px] sm:text-[13px] font-bold text-white min-w-[90px] sm:min-w-[110px] text-center">{MONTHS_FR[currentMonth]} {currentYear}</span>
           <button onClick={nextMonth} className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition"><ChevronRight className="h-3 w-3 text-white/60" /></button>
         </div>
       </div>
@@ -131,7 +132,7 @@ function MiniCalendar() {
         {cells.map((day, i) => {
           if (!day) return <div key={i} />
           const isToday = isCurrentMonth && day === today
-          return <div key={i} className={`flex h-8 w-8 mx-auto items-center justify-center rounded-full text-[13px] font-semibold transition cursor-pointer ${isToday ? "bg-cyan-400 text-black font-black" : "text-white/70 hover:bg-white/10"}`}>{day}</div>
+          return <div key={i} className={`flex h-7 w-7 sm:h-8 sm:w-8 mx-auto items-center justify-center rounded-full text-[12px] sm:text-[13px] font-semibold transition cursor-pointer ${isToday ? "bg-cyan-400 text-black font-black" : "text-white/70 hover:bg-white/10"}`}>{day}</div>
         })}
       </div>
     </div>
@@ -154,7 +155,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function init() {
-      // NOM DE L'ÉTABLISSEMENT
       const { data: settings } = await supabase
         .from("settings")
         .select("restaurant_name")
@@ -163,7 +163,6 @@ export default function DashboardPage() {
         setRestaurantName(settings.restaurant_name.toUpperCase())
       }
 
-      // TEMPÉRATURES
       const { data: equipments } = await supabase.from("equipments").select("*")
       const { data: tempLogs } = await supabase.from("temperature_logs").select("*").order("created_at", { ascending: false })
       const tempFound: Alerte[] = []
@@ -183,7 +182,6 @@ export default function DashboardPage() {
       }
       setTempAlertes(tempFound)
 
-      // MAINTENANCE
       const { data: reports } = await supabase.from("maintenance_reports").select("*").neq("status", "Résolu")
       const { data: certs } = await supabase.from("maintenance_certificates").select("*")
       const maintFound: Alerte[] = []
@@ -201,7 +199,6 @@ export default function DashboardPage() {
       }
       setMaintenanceAlertes(maintFound)
 
-      // DLC
       const { data: products } = await supabase.from("traceability_products").select("*")
       const dlcFound: Alerte[] = []
       if (products) {
@@ -235,7 +232,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#020817] p-5 text-white">
+    <div className="min-h-screen bg-[#020817] p-3 sm:p-5 text-white">
       {showAlertes && (
         <PanneauAlertes
           onClose={() => setShowAlertes(false)}
@@ -245,102 +242,126 @@ export default function DashboardPage() {
         />
       )}
 
-      <div className="mx-auto max-w-[1450px] rounded-[32px] border border-white/5 bg-[#030b1d] p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)]">
+      <div className="mx-auto max-w-[1450px] rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#030b1d] p-4 sm:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)]">
 
-        <div className="mb-5 flex items-start justify-between">
-          <div>
+        {/* ── HEADER ── */}
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div className="min-w-0">
             <div className="mb-2 flex items-center gap-3">
-              <div className="h-2.5 w-2.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="text-[12px] font-semibold tracking-[0.32em] text-cyan-300">{restaurantName}</span>
+              <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="text-[11px] sm:text-[12px] font-semibold tracking-[0.2em] sm:tracking-[0.32em] text-cyan-300 truncate">{restaurantName}</span>
             </div>
-            <h1 className="text-[64px] font-black leading-[0.95] tracking-[-0.05em]">Tableau de bord</h1>
-            <p className="mt-3 text-[17px] text-white/45">Vue d'ensemble de votre activité en temps réel</p>
+            {/* Titre : 36px mobile → 48px tablette → 64px desktop */}
+            <h1 className="text-[36px] sm:text-[48px] lg:text-[64px] font-black leading-[0.95] tracking-[-0.04em]">
+              Tableau<br className="sm:hidden" /> de bord
+            </h1>
+            <p className="mt-2 sm:mt-3 text-[13px] sm:text-[15px] lg:text-[17px] text-white/45 leading-snug">
+              Vue d'ensemble de votre activité en temps réel
+            </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3 shrink-0">
             <button
               onClick={() => setShowAlertes(true)}
-              className={`relative flex h-14 w-14 items-center justify-center rounded-2xl border transition ${totalAlertes > 0 ? "border-red-500/30 bg-red-500/10 hover:bg-red-500/20" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+              className={`relative flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border transition ${totalAlertes > 0 ? "border-red-500/30 bg-red-500/10 hover:bg-red-500/20" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
             >
-              <Bell className={`h-5 w-5 ${totalAlertes > 0 ? "text-red-300" : "text-white/70"}`} />
+              <Bell className={`h-4 w-4 sm:h-5 sm:w-5 ${totalAlertes > 0 ? "text-red-300" : "text-white/70"}`} />
               {totalAlertes > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">{totalAlertes}</span>
               )}
             </button>
             <Link href="/monitoring">
-              <button className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
-                <Activity className="h-5 w-5 text-white/70" />
+              <button className="flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
+                <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-white/70" />
               </button>
             </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_220px] gap-4">
+        {/* ── CARTES STAT (4 + météo) ──
+            mobile  : 2 colonnes
+            tablette: 2 colonnes (météo en bas, pleine largeur)
+            desktop : 4 + 220px côte à côte
+        */}
+        <div className="grid grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_220px] gap-3 sm:gap-4">
+
+          {/* Carte générique — hauteur auto sur mobile, fixe sur desktop */}
           <Link href="/pms-entretien">
-            <div className="group h-[200px] cursor-pointer rounded-[24px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-blue-900/15 p-5 transition-all hover:scale-[1.02] hover:border-cyan-400/50 hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)]">
-              <div className="mb-4 flex items-start justify-between">
-                <p className="text-[10px] font-black tracking-[0.28em] text-cyan-200/90">PMS ENTRETIEN</p>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20"><ClipboardCheck className="h-5 w-5 text-cyan-300" /></div>
+            <div className="group h-auto lg:h-[200px] cursor-pointer rounded-[20px] sm:rounded-[24px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-blue-900/15 p-4 sm:p-5 transition-all hover:scale-[1.02] hover:border-cyan-400/50 hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)]">
+              <div className="mb-3 sm:mb-4 flex items-start justify-between">
+                <p className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] sm:tracking-[0.28em] text-cyan-200/90 leading-tight">PMS ENTRETIEN</p>
+                <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl sm:rounded-2xl border border-cyan-400/20 bg-cyan-500/20 shrink-0">
+                  <ClipboardCheck className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-300" />
+                </div>
               </div>
-              <div className="text-[58px] font-black leading-none tracking-tight text-white">22</div>
-              <p className="mt-2 text-[14px] text-white/60">tâches à effectuer</p>
-              <div className="mt-4 flex items-center gap-1 text-[13px] font-semibold text-cyan-300 group-hover:gap-2 transition-all">Voir le détail <ChevronRight className="h-4 w-4" /></div>
+              <div className="text-[40px] sm:text-[52px] lg:text-[58px] font-black leading-none tracking-tight text-white">22</div>
+              <p className="mt-1 sm:mt-2 text-[12px] sm:text-[14px] text-white/60">tâches à effectuer</p>
+              <div className="mt-3 sm:mt-4 flex items-center gap-1 text-[12px] sm:text-[13px] font-semibold text-cyan-300 group-hover:gap-2 transition-all">Voir <ChevronRight className="h-3.5 w-3.5" /></div>
             </div>
           </Link>
 
           <Link href="/temperatures">
-            <div className="group h-[200px] cursor-pointer rounded-[24px] border border-orange-400/25 bg-gradient-to-br from-orange-500/20 via-amber-600/10 to-purple-900/15 p-5 transition-all hover:scale-[1.02] hover:border-orange-400/50 hover:shadow-[0_8px_32px_rgba(251,146,60,0.15)]">
-              <div className="mb-4 flex items-start justify-between">
-                <p className="text-[10px] font-black tracking-[0.28em] text-orange-200/90">TEMPÉRATURES</p>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-500/20"><Thermometer className="h-5 w-5 text-orange-300" /></div>
+            <div className="group h-auto lg:h-[200px] cursor-pointer rounded-[20px] sm:rounded-[24px] border border-orange-400/25 bg-gradient-to-br from-orange-500/20 via-amber-600/10 to-purple-900/15 p-4 sm:p-5 transition-all hover:scale-[1.02] hover:border-orange-400/50 hover:shadow-[0_8px_32px_rgba(251,146,60,0.15)]">
+              <div className="mb-3 sm:mb-4 flex items-start justify-between">
+                <p className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] sm:tracking-[0.28em] text-orange-200/90 leading-tight">TEMPÉRATURES</p>
+                <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl sm:rounded-2xl border border-orange-400/20 bg-orange-500/20 shrink-0">
+                  <Thermometer className="h-4 w-4 sm:h-5 sm:w-5 text-orange-300" />
+                </div>
               </div>
-              <div className="text-[58px] font-black leading-none tracking-tight text-white">{tempAlertes.length}</div>
-              <p className="mt-2 text-[14px] text-white/60">alertes actives</p>
-              <div className="mt-4 flex items-center gap-1 text-[13px] font-semibold text-orange-300 group-hover:gap-2 transition-all">Voir le détail <ChevronRight className="h-4 w-4" /></div>
+              <div className="text-[40px] sm:text-[52px] lg:text-[58px] font-black leading-none tracking-tight text-white">{tempAlertes.length}</div>
+              <p className="mt-1 sm:mt-2 text-[12px] sm:text-[14px] text-white/60">alertes actives</p>
+              <div className="mt-3 sm:mt-4 flex items-center gap-1 text-[12px] sm:text-[13px] font-semibold text-orange-300 group-hover:gap-2 transition-all">Voir <ChevronRight className="h-3.5 w-3.5" /></div>
             </div>
           </Link>
 
           <Link href="/stocks">
-            <div className="group h-[200px] cursor-pointer rounded-[24px] border border-pink-400/25 bg-gradient-to-br from-pink-500/20 via-rose-600/10 to-indigo-900/15 p-5 transition-all hover:scale-[1.02] hover:border-pink-400/50 hover:shadow-[0_8px_32px_rgba(236,72,153,0.15)]">
-              <div className="mb-4 flex items-start justify-between">
-                <p className="text-[10px] font-black tracking-[0.28em] text-pink-200/90">STOCKS</p>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-pink-400/20 bg-pink-500/20"><Boxes className="h-5 w-5 text-pink-300" /></div>
+            <div className="group h-auto lg:h-[200px] cursor-pointer rounded-[20px] sm:rounded-[24px] border border-pink-400/25 bg-gradient-to-br from-pink-500/20 via-rose-600/10 to-indigo-900/15 p-4 sm:p-5 transition-all hover:scale-[1.02] hover:border-pink-400/50 hover:shadow-[0_8px_32px_rgba(236,72,153,0.15)]">
+              <div className="mb-3 sm:mb-4 flex items-start justify-between">
+                <p className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] sm:tracking-[0.28em] text-pink-200/90 leading-tight">STOCKS</p>
+                <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl sm:rounded-2xl border border-pink-400/20 bg-pink-500/20 shrink-0">
+                  <Boxes className="h-4 w-4 sm:h-5 sm:w-5 text-pink-300" />
+                </div>
               </div>
-              <div className="text-[58px] font-black leading-none tracking-tight text-white">0</div>
-              <p className="mt-2 text-[14px] text-white/60">produits faibles</p>
-              <div className="mt-4 flex items-center gap-1 text-[13px] font-semibold text-pink-300 group-hover:gap-2 transition-all">Voir le détail <ChevronRight className="h-4 w-4" /></div>
+              <div className="text-[40px] sm:text-[52px] lg:text-[58px] font-black leading-none tracking-tight text-white">0</div>
+              <p className="mt-1 sm:mt-2 text-[12px] sm:text-[14px] text-white/60">produits faibles</p>
+              <div className="mt-3 sm:mt-4 flex items-center gap-1 text-[12px] sm:text-[13px] font-semibold text-pink-300 group-hover:gap-2 transition-all">Voir <ChevronRight className="h-3.5 w-3.5" /></div>
             </div>
           </Link>
 
           <Link href="/traceability">
-            <div className="group h-[200px] cursor-pointer rounded-[24px] border border-violet-400/25 bg-gradient-to-br from-violet-500/20 via-purple-600/10 to-indigo-900/15 p-5 transition-all hover:scale-[1.02] hover:border-violet-400/50 hover:shadow-[0_8px_32px_rgba(139,92,246,0.15)]">
-              <div className="mb-4 flex items-start justify-between">
-                <p className="text-[10px] font-black tracking-[0.28em] text-violet-200/90">TRAÇABILITÉ</p>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-500/20"><FileText className="h-5 w-5 text-violet-300" /></div>
+            <div className="group h-auto lg:h-[200px] cursor-pointer rounded-[20px] sm:rounded-[24px] border border-violet-400/25 bg-gradient-to-br from-violet-500/20 via-purple-600/10 to-indigo-900/15 p-4 sm:p-5 transition-all hover:scale-[1.02] hover:border-violet-400/50 hover:shadow-[0_8px_32px_rgba(139,92,246,0.15)]">
+              <div className="mb-3 sm:mb-4 flex items-start justify-between">
+                <p className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] sm:tracking-[0.28em] text-violet-200/90 leading-tight">TRAÇABILITÉ</p>
+                <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl sm:rounded-2xl border border-violet-400/20 bg-violet-500/20 shrink-0">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-violet-300" />
+                </div>
               </div>
-              <div className="text-[58px] font-black leading-none tracking-tight text-white">248</div>
-              <p className="mt-2 text-[14px] text-white/60">produits tracés</p>
-              <div className="mt-4 flex items-center gap-1 text-[13px] font-semibold text-violet-300 group-hover:gap-2 transition-all">Voir le détail <ChevronRight className="h-4 w-4" /></div>
+              <div className="text-[40px] sm:text-[52px] lg:text-[58px] font-black leading-none tracking-tight text-white">248</div>
+              <p className="mt-1 sm:mt-2 text-[12px] sm:text-[14px] text-white/60">produits tracés</p>
+              <div className="mt-3 sm:mt-4 flex items-center gap-1 text-[12px] sm:text-[13px] font-semibold text-violet-300 group-hover:gap-2 transition-all">Voir <ChevronRight className="h-3.5 w-3.5" /></div>
             </div>
           </Link>
 
-          <div className="h-[200px] rounded-[24px] border border-white/10 bg-[#071224] p-5 flex flex-col justify-between">
-            <div className="flex items-start justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15"><CalendarDays className="h-5 w-5 text-cyan-300" /></div>
+          {/* Widget météo/date : col-span-2 sur mobile/tablette, colonne normale sur desktop */}
+          <div className="col-span-2 lg:col-span-1 h-auto lg:h-[200px] rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5 flex flex-row lg:flex-col justify-between gap-4 lg:gap-0">
+            <div className="flex items-start justify-between flex-1 lg:flex-none">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15 shrink-0">
+                <CalendarDays className="h-5 w-5 text-cyan-300" />
+              </div>
               <div className="text-right">
                 <p className="text-[12px] text-white/50">{dayName}</p>
-                <p className="text-[46px] font-black leading-none">{dayNumber}</p>
+                <p className="text-[40px] sm:text-[46px] font-black leading-none">{dayNumber}</p>
                 <p className="text-[11px] text-white/35">{monthName} {year}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-[32px]">⛅</span>
+            <div className="flex items-center gap-3 flex-1 lg:flex-none">
+              <span className="text-[28px] sm:text-[32px]">⛅</span>
               <div>
-                <p className="text-[34px] font-black leading-none">18°C</p>
+                <p className="text-[28px] sm:text-[34px] font-black leading-none">18°C</p>
                 <p className="text-[11px] text-white/45">Partiellement nuageux</p>
               </div>
             </div>
-            <div className="flex h-10 items-center justify-between rounded-xl border border-white/10 bg-[#050d1c] px-3">
+            <div className="flex h-10 items-center justify-between rounded-xl border border-white/10 bg-[#050d1c] px-3 col-span-full lg:col-span-1">
               <div className="flex items-center gap-2">
                 <MapPin className="h-3.5 w-3.5 text-cyan-300" />
                 <span className="text-[12px] text-white/70">Lyon, France</span>
@@ -350,23 +371,40 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-[1.6fr_1fr] gap-4">
-          <div className="flex flex-col gap-4">
-            <div className="rounded-[28px] border border-white/10 bg-[#071224] p-5">
-              <div className="mb-5 flex items-start justify-between">
+        {/* ── SECTION BAS ──
+            mobile  : 1 colonne (tout empilé)
+            tablette: 1 colonne (tout empilé)
+            desktop : 1.6fr + 1fr
+        */}
+        <div className="mt-3 sm:mt-4 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-3 sm:gap-4">
+
+          {/* Colonne gauche */}
+          <div className="flex flex-col gap-3 sm:gap-4">
+
+            {/* Monitoring */}
+            <div className="rounded-[24px] sm:rounded-[28px] border border-white/10 bg-[#071224] p-4 sm:p-5">
+              <div className="mb-4 sm:mb-5 flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="mb-2 flex items-center gap-2">
                     <Activity className="h-4 w-4 text-cyan-300" />
                     <p className="text-[11px] font-bold tracking-[0.28em] text-cyan-300">MONITORING LIVE</p>
                   </div>
-                  <h2 className="text-[20px] font-black">Températures (°C)</h2>
+                  <h2 className="text-[18px] sm:text-[20px] font-black">Températures (°C)</h2>
                 </div>
-                <button className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-[13px] text-white/60 hover:bg-white/10 transition flex items-center gap-2">Toutes les zones <ChevronRight className="h-3.5 w-3.5" /></button>
+                <button className="rounded-2xl border border-white/10 bg-white/5 px-3 sm:px-5 py-2 sm:py-3 text-[12px] sm:text-[13px] text-white/60 hover:bg-white/10 transition flex items-center gap-2 whitespace-nowrap">
+                  Toutes les zones <ChevronRight className="h-3.5 w-3.5" />
+                </button>
               </div>
-              <div className="relative h-[220px] overflow-hidden rounded-[20px] border border-white/5 bg-[#020817]">
-                <div className="absolute inset-0 opacity-15"><div className="h-full w-full bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:40px_40px]" /></div>
-                <div className="absolute left-3 top-0 bottom-0 flex flex-col justify-between py-3 text-[10px] text-white/25 font-mono"><span>10°C</span><span>5°C</span><span>0°C</span><span>-5°C</span></div>
-                <div className="absolute bottom-2 left-10 right-4 flex justify-between text-[10px] text-white/25 font-mono">{["00:00","04:00","08:00","12:00","16:00","20:00","24:00"].map((t) => <span key={t}>{t}</span>)}</div>
+              <div className="relative h-[180px] sm:h-[220px] overflow-hidden rounded-[16px] sm:rounded-[20px] border border-white/5 bg-[#020817]">
+                <div className="absolute inset-0 opacity-15">
+                  <div className="h-full w-full bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:40px_40px]" />
+                </div>
+                <div className="absolute left-3 top-0 bottom-0 flex flex-col justify-between py-3 text-[10px] text-white/25 font-mono">
+                  <span>10°C</span><span>5°C</span><span>0°C</span><span>-5°C</span>
+                </div>
+                <div className="absolute bottom-2 left-10 right-4 flex justify-between text-[10px] text-white/25 font-mono">
+                  {["00:00","04:00","08:00","12:00","16:00","20:00","24:00"].map((t) => <span key={t}>{t}</span>)}
+                </div>
                 <svg viewBox="0 0 800 220" className="absolute inset-0 h-full w-full">
                   <defs>
                     <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3BCBFF" stopOpacity="0.15" /><stop offset="100%" stopColor="#3BCBFF" stopOpacity="0" /></linearGradient>
@@ -381,54 +419,87 @@ export default function DashboardPage() {
                   <path d="M0 168 C80 150 120 178 220 158 C320 136 360 172 460 155 C560 138 620 165 800 145" stroke="#D946EF" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </svg>
               </div>
-              <div className="mt-4 flex items-center gap-6">
-                {[{ color: "bg-cyan-400", label: "Chambre froide 1" },{ color: "bg-sky-300", label: "Chambre froide 2" },{ color: "bg-fuchsia-500", label: "Congélateur" }].map((item) => (
-                  <div key={item.label} className="flex items-center gap-2"><div className={`h-2.5 w-2.5 rounded-full ${item.color}`} /><span className="text-[13px] text-white/50">{item.label}</span></div>
+              <div className="mt-3 sm:mt-4 flex items-center gap-4 sm:gap-6 flex-wrap">
+                {[
+                  { color: "bg-cyan-400", label: "Chambre froide 1" },
+                  { color: "bg-sky-300", label: "Chambre froide 2" },
+                  { color: "bg-fuchsia-500", label: "Congélateur" },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-2">
+                    <div className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full ${item.color}`} />
+                    <span className="text-[12px] sm:text-[13px] text-white/50">{item.label}</span>
+                  </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-[#071224] p-5">
-              <div className="mb-5 flex items-center justify-between">
-                <div className="flex items-center gap-2"><Activity className="h-4 w-4 text-pink-300" /><p className="text-[11px] font-bold tracking-[0.28em] text-pink-300">ACTIVITÉ RÉCENTE</p></div>
-                <button className="text-[13px] text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1">Voir toutes les activités <ChevronRight className="h-3.5 w-3.5" /></button>
+            {/* Activité récente */}
+            <div className="rounded-[24px] sm:rounded-[28px] border border-white/10 bg-[#071224] p-4 sm:p-5">
+              <div className="mb-4 sm:mb-5 flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-pink-300" />
+                  <p className="text-[11px] font-bold tracking-[0.28em] text-pink-300">ACTIVITÉ RÉCENTE</p>
+                </div>
+                <button className="text-[12px] sm:text-[13px] text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1 whitespace-nowrap">
+                  Voir tout <ChevronRight className="h-3.5 w-3.5" />
+                </button>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {/* 2 colonnes sur mobile/tablette, 4 sur desktop */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {recentActivity.map((item, index) => (
-                  <div key={index} className={`rounded-[20px] border p-4 ${item.bg} transition hover:scale-[1.02] cursor-default`}>
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10"><item.icon className={`h-4 w-4 ${item.color}`} /></div>
-                      <span className="text-[12px] font-bold text-white/40">{item.time}</span>
+                  <div key={index} className={`rounded-[16px] sm:rounded-[20px] border p-3 sm:p-4 ${item.bg} transition hover:scale-[1.02] cursor-default`}>
+                    <div className="mb-2 sm:mb-3 flex items-center justify-between">
+                      <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-white/10">
+                        <item.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${item.color}`} />
+                      </div>
+                      <span className="text-[11px] sm:text-[12px] font-bold text-white/40">{item.time}</span>
                     </div>
-                    <p className="text-[14px] font-bold text-white leading-tight">{item.title}</p>
-                    <p className="mt-1 text-[12px] text-white/45">{item.subtitle}</p>
+                    <p className="text-[13px] sm:text-[14px] font-bold text-white leading-tight">{item.title}</p>
+                    <p className="mt-1 text-[11px] sm:text-[12px] text-white/45">{item.subtitle}</p>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
+          {/* Colonne droite */}
+          <div className="flex flex-col gap-3 sm:gap-4">
             <MiniCalendar />
-            <div className="rounded-[24px] border border-white/10 bg-[#071224] p-5">
-              <div className="mb-4 flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-cyan-300" /><p className="text-[11px] font-bold tracking-[0.28em] text-cyan-300">HACCP</p></div>
+
+            {/* HACCP */}
+            <div className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5">
+              <div className="mb-3 sm:mb-4 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-cyan-300" />
+                <p className="text-[11px] font-bold tracking-[0.28em] text-cyan-300">HACCP</p>
+              </div>
               <div className="space-y-2">
                 {haccpItems.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 hover:bg-white/[0.05] transition cursor-pointer">
-                    <span className="text-[14px] font-semibold text-white/80">{item.label}</span>
-                    <div className="flex items-center gap-3"><span className="text-[13px] font-bold text-cyan-400">{item.time}</span><CheckCircle2 className="h-4 w-4 text-green-400" /></div>
+                  <div key={i} className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-white/[0.05] transition cursor-pointer">
+                    <span className="text-[13px] sm:text-[14px] font-semibold text-white/80">{item.label}</span>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <span className="text-[12px] sm:text-[13px] font-bold text-cyan-400">{item.time}</span>
+                      <CheckCircle2 className="h-4 w-4 text-green-400" />
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* Stats mini */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-[20px] border border-orange-500/20 bg-gradient-to-br from-orange-500/15 to-orange-900/10 p-4">
-                <div className="mb-2 flex items-center gap-2"><Thermometer className="h-4 w-4 text-orange-300" /><p className="text-[10px] font-bold tracking-wider text-orange-300/80">TEMP. MOYENNE</p></div>
-                <p className="text-[34px] font-black leading-none text-white">4,2°C</p>
+              <div className="rounded-[16px] sm:rounded-[20px] border border-orange-500/20 bg-gradient-to-br from-orange-500/15 to-orange-900/10 p-3 sm:p-4">
+                <div className="mb-2 flex items-center gap-1.5 sm:gap-2">
+                  <Thermometer className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-300" />
+                  <p className="text-[9px] sm:text-[10px] font-bold tracking-wider text-orange-300/80 leading-tight">TEMP. MOYENNE</p>
+                </div>
+                <p className="text-[28px] sm:text-[34px] font-black leading-none text-white">4,2°C</p>
               </div>
-              <div className="rounded-[20px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-4">
-                <div className="mb-2 flex items-center gap-2"><Wifi className="h-4 w-4 text-green-300" /><p className="text-[10px] font-bold tracking-wider text-green-300/80">ÉQUIPEMENTS</p></div>
-                <p className="text-[34px] font-black leading-none text-white">8</p>
+              <div className="rounded-[16px] sm:rounded-[20px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-3 sm:p-4">
+                <div className="mb-2 flex items-center gap-1.5 sm:gap-2">
+                  <Wifi className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-300" />
+                  <p className="text-[9px] sm:text-[10px] font-bold tracking-wider text-green-300/80 leading-tight">ÉQUIPEMENTS</p>
+                </div>
+                <p className="text-[28px] sm:text-[34px] font-black leading-none text-white">8</p>
                 <p className="text-[11px] text-green-400/70 mt-1">actifs</p>
               </div>
             </div>
