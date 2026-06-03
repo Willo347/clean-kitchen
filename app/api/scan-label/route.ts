@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
+export const POST = async (req: NextRequest) => {
   try {
     const { base64, mediaType } = await req.json();
 
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 1000,
         messages: [{
           role: "user",
@@ -27,10 +27,10 @@ export async function POST(req: NextRequest) {
 {
   "product": "nom du produit",
   "supplier": "fournisseur ou marque",
-  "lot": "numéro de lot (LOT, N° LOT, BATCH, L:)",
+  "lot": "numéro de lot",
   "quantity": 1,
-  "dlc": "date YYYY-MM-DD (DLC, DDM, USE BY, EXP)",
-  "category": "une seule valeur parmi : Viande, Poisson, Fruits & Légumes, Produits laitiers, Épicerie, Surgelés"
+  "dlc": "date YYYY-MM-DD",
+  "category": "Viande, Poisson, Fruits & Légumes, Produits laitiers, Épicerie, ou Surgelés"
 }
 Si non visible mets "". Réponds UNIQUEMENT avec le JSON.`
             }
@@ -52,4 +52,4 @@ Si non visible mets "". Réponds UNIQUEMENT avec le JSON.`
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
-}
+};
