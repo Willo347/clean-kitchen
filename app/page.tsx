@@ -31,10 +31,7 @@ function AlerteItem({ message, detail, time, level }: Alerte) {
 }
 
 function PanneauAlertes({
-  onClose,
-  tempAlertes,
-  maintenanceAlertes,
-  dlcAlertes,
+  onClose, tempAlertes, maintenanceAlertes, dlcAlertes,
 }: {
   onClose: () => void
   tempAlertes: Alerte[]
@@ -42,7 +39,6 @@ function PanneauAlertes({
   dlcAlertes: Alerte[]
 }) {
   const totalAlertes = tempAlertes.length + maintenanceAlertes.length + dlcAlertes.length
-
   const sections = [
     { key: "temperatures", label: "Températures", icon: Thermometer, color: "text-orange-300", data: tempAlertes },
     { key: "maintenance", label: "Maintenance", icon: Wrench, color: "text-cyan-300", data: maintenanceAlertes },
@@ -148,6 +144,7 @@ export default function DashboardPage() {
   const [tempAlertes, setTempAlertes] = useState<Alerte[]>([])
   const [maintenanceAlertes, setMaintenanceAlertes] = useState<Alerte[]>([])
   const [dlcAlertes, setDlcAlertes] = useState<Alerte[]>([])
+  const [restaurantName, setRestaurantName] = useState("SMART KITCHEN")
 
   const dayNames = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"]
   const dayName = dayNames[now.getDay()]
@@ -156,7 +153,16 @@ export default function DashboardPage() {
   const year = now.getFullYear()
 
   useEffect(() => {
-    async function fetchAlertes() {
+    async function init() {
+      // NOM DE L'ÉTABLISSEMENT
+      const { data: settings } = await supabase
+        .from("settings")
+        .select("restaurant_name")
+        .single()
+      if (settings?.restaurant_name) {
+        setRestaurantName(settings.restaurant_name.toUpperCase())
+      }
+
       // TEMPÉRATURES
       const { data: equipments } = await supabase.from("equipments").select("*")
       const { data: tempLogs } = await supabase.from("temperature_logs").select("*").order("created_at", { ascending: false })
@@ -210,7 +216,7 @@ export default function DashboardPage() {
       setDlcAlertes(dlcFound)
     }
 
-    fetchAlertes()
+    init()
   }, [])
 
   const totalAlertes = tempAlertes.length + maintenanceAlertes.length + dlcAlertes.length
@@ -245,7 +251,7 @@ export default function DashboardPage() {
           <div>
             <div className="mb-2 flex items-center gap-3">
               <div className="h-2.5 w-2.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="text-[12px] font-semibold tracking-[0.32em] text-cyan-300">SMART KITCHEN</span>
+              <span className="text-[12px] font-semibold tracking-[0.32em] text-cyan-300">{restaurantName}</span>
             </div>
             <h1 className="text-[64px] font-black leading-[0.95] tracking-[-0.05em]">Tableau de bord</h1>
             <p className="mt-3 text-[17px] text-white/45">Vue d'ensemble de votre activité en temps réel</p>
