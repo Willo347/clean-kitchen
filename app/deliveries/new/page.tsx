@@ -211,7 +211,6 @@ function DeliveryRow({ delivery, onDelete }: { delivery: Delivery; onDelete: (id
         <div className="flex items-center justify-between gap-4 p-4">
           <div className="flex items-center gap-3 flex-1 min-w-0">
 
-            {/* Photo ou emoji catégorie */}
             {delivery.image_url ? (
               <button onClick={() => setShowImage(true)} className="w-10 h-10 rounded-2xl overflow-hidden shrink-0 border border-white/10 hover:border-violet-500/40 transition">
                 <img src={delivery.image_url} alt={delivery.product} className="w-full h-full object-cover" />
@@ -330,7 +329,6 @@ export default function DeliveriesPage() {
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<"scan" | "manual">("scan");
 
-  // Category picker modal
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -354,7 +352,6 @@ export default function DeliveriesPage() {
       .order("created_at", { ascending: false });
     if (data) {
       setDeliveries(data);
-      // Extrait les fournisseurs uniques déjà utilisés
       const suppliers = [...new Set(
         data
           .map((d: Delivery) => d.supplier)
@@ -410,42 +407,15 @@ export default function DeliveriesPage() {
         reader.readAsDataURL(file);
       });
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      // ✅ Appel via route API (côté serveur) — plus de clé exposée côté client
+      const response = await fetch("/api/scan-label", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY!,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{
-            role: "user",
-            content: [
-              { type: "image", source: { type: "base64", media_type: file.type as "image/jpeg" | "image/png" | "image/webp", data: base64 } },
-              {
-                type: "text",
-                text: `Analyse cette étiquette produit alimentaire et réponds UNIQUEMENT en JSON :
-{
-  "product": "nom du produit",
-  "supplier": "fournisseur ou marque",
-  "lot": "numéro de lot (LOT, N° LOT, BATCH, L:)",
-  "quantity": 1,
-  "dlc": "date YYYY-MM-DD (DLC, DDM, USE BY, EXP)",
-  "category": "une seule valeur parmi : Viande, Poisson, Fruits & Légumes, Produits laitiers, Épicerie, Surgelés"
-}
-Si non visible mets "". Réponds UNIQUEMENT avec le JSON.`,
-              },
-            ],
-          }],
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base64, mediaType: file.type }),
       });
 
       if (!response.ok) throw new Error(`API error: ${response.status}`);
-      const data = await response.json();
-      const parsed = JSON.parse(data.content[0].text.replace(/```json|```/g, "").trim());
+      const parsed = await response.json();
 
       if (parsed.product) setProduct(parsed.product);
       if (parsed.supplier) setSupplier(parsed.supplier);
@@ -453,15 +423,12 @@ Si non visible mets "". Réponds UNIQUEMENT avec le JSON.`,
       if (parsed.quantity) setQuantity(String(parsed.quantity));
       if (parsed.dlc) setDlc(parsed.dlc);
 
-      // Si l'IA détecte une catégorie, on la pré-sélectionne
       if (parsed.category && CATEGORIES.find((c) => c.id === parsed.category)) {
         setCategory(parsed.category);
       }
 
       addToast("✨ Étiquette analysée ! Vérifiez les champs.", "success");
       setActiveTab("manual");
-
-      // Ouvre le sélecteur de catégorie après le scan
       setTimeout(() => setShowCategoryPicker(true), 400);
 
     } catch {
@@ -546,7 +513,6 @@ Si non visible mets "". Réponds UNIQUEMENT avec le JSON.`,
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
       <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileChange} />
 
-      {/* Category picker modal */}
       {showCategoryPicker && (
         <CategoryPickerModal
           currentCategory={category}
@@ -731,7 +697,6 @@ Si non visible mets "". Réponds UNIQUEMENT avec le JSON.`,
                   </div>
                 </div>
 
-                {/* Photo thumbnail */}
                 {scanPreview && capturedFile && (
                   <div className="flex items-center gap-3 p-3 rounded-2xl bg-violet-500/10 border border-violet-500/20">
                     <img src={scanPreview} alt="Photo" className="w-12 h-12 rounded-xl object-cover shrink-0" />
@@ -745,7 +710,6 @@ Si non visible mets "". Réponds UNIQUEMENT avec le JSON.`,
                   </div>
                 )}
 
-                {/* Category selector button */}
                 <div>
                   <label className="text-white/40 text-xs mb-1.5 block">Catégorie</label>
                   <button
@@ -795,7 +759,6 @@ Si non visible mets "". Réponds UNIQUEMENT avec le JSON.`,
                       )}
                     </div>
 
-                    {/* Dropdown fournisseurs connus */}
                     {showSupplierDropdown && knownSuppliers.length > 0 && (
                       <div className="absolute top-full left-0 right-0 mt-1 z-30 rounded-2xl border border-white/10 bg-[#030b1d] shadow-2xl overflow-hidden">
                         <p className="text-white/25 text-[10px] font-bold uppercase tracking-widest px-3 pt-2 pb-1">
