@@ -67,10 +67,10 @@ type Product = {
   id: string;
   product: string;
   supplier?: string;
-  batch?: string;
+  lot?: string;
   quantity: number;
   image_url?: string;
-  expiry?: string;
+  dlc?: string;
   category?: string;
   created_at?: string;
 };
@@ -196,8 +196,8 @@ function CategorySection({
                       </div>
                       <div className="flex flex-wrap gap-2 mt-0.5">
                         {item.supplier && <span className="text-white/30 text-xs">Fournisseur : <span className="text-white/50">{item.supplier}</span></span>}
-                        {item.batch && <span className="text-white/30 text-xs">Lot : <span className="text-white/50">{item.batch}</span></span>}
-                        {item.expiry && <span className="text-white/30 text-xs">DLC : <span className="text-white/50">{new Date(item.expiry).toLocaleDateString("fr-FR")}</span></span>}
+                        {item.lot && <span className="text-white/30 text-xs">Lot : <span className="text-white/50">{item.lot}</span></span>}
+                        {item.dlc && <span className="text-white/30 text-xs">DLC : <span className="text-white/50">{new Date(item.dlc).toLocaleDateString("fr-FR")}</span></span>}
                       </div>
                     </div>
                   </div>
@@ -243,14 +243,15 @@ export default function StocksPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterStock, setFilterStock] = useState<"all" | "low" | "ok" | "photo">("all");
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"scan" | "manual">("scan");
   const [newProduct, setNewProduct] = useState("");
   const [newSupplier, setNewSupplier] = useState("");
-  const [newBatch, setNewBatch] = useState("");
+  const [newLot, setNewLot] = useState("");
   const [newQuantity, setNewQuantity] = useState("1");
-  const [newExpiry, setNewExpiry] = useState("");
+  const [newDlc, setNewDlc] = useState("");
   const [newCategory, setNewCategory] = useState<string>("Épicerie");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -357,9 +358,9 @@ export default function StocksPage() {
 {
   "product": "nom du produit",
   "supplier": "fournisseur ou marque",
-  "batch": "numéro de lot",
+  "lot": "numéro de lot",
   "quantity": 1,
-  "expiry": "date YYYY-MM-DD (DLC, DDM, USE BY)",
+  "dlc": "date YYYY-MM-DD (DLC, DDM, USE BY)",
   "category": "une seule valeur parmi : Viande, Poisson, Fruits & Légumes, Produits laitiers, Épicerie, Surgelés"
 }
 Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQUEMENT avec le JSON.`,
@@ -375,9 +376,9 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
 
       if (parsed.product) setNewProduct(parsed.product);
       if (parsed.supplier) setNewSupplier(parsed.supplier);
-      if (parsed.batch) setNewBatch(parsed.batch);
+      if (parsed.lot) setNewLot(parsed.lot);
       if (parsed.quantity) setNewQuantity(String(parsed.quantity));
-      if (parsed.expiry) setNewExpiry(parsed.expiry);
+      if (parsed.dlc) setNewDlc(parsed.dlc);
       if (parsed.category && CATEGORIES.find((c) => c.id === parsed.category)) {
         setNewCategory(parsed.category);
       }
@@ -411,9 +412,9 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
     const { error } = await supabase.from("traceability_products").insert({
       product: newProduct.trim(),
       supplier: newSupplier.trim() || null,
-      batch: newBatch.trim() || null,
+      lot: newLot.trim() || null,
       quantity: Number(newQuantity) || 1,
-      expiry: newExpiry || null,
+      dlc: newDlc || null,
       category: newCategory,
       image_url: imageUrl || null,
     });
@@ -422,16 +423,16 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
     addToast(`✅ ${newProduct} ajouté (${newCategory})`, "success");
 
-    setNewProduct(""); setNewSupplier(""); setNewBatch("");
-    setNewQuantity("1"); setNewExpiry(""); setNewCategory("Épicerie");
+    setNewProduct(""); setNewSupplier(""); setNewLot("");
+    setNewQuantity("1"); setNewDlc(""); setNewCategory("Épicerie");
     setScanPreview(null); setCapturedFile(null);
     setShowAddForm(false);
     await fetchProducts();
   }
 
   function resetForm() {
-    setNewProduct(""); setNewSupplier(""); setNewBatch("");
-    setNewQuantity("1"); setNewExpiry(""); setNewCategory("Épicerie");
+    setNewProduct(""); setNewSupplier(""); setNewLot("");
+    setNewQuantity("1"); setNewDlc(""); setNewCategory("Épicerie");
     setScanPreview(null); setCapturedFile(null);
     setActiveTab("scan"); setShowAddForm(false);
   }
@@ -441,7 +442,13 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
       (item.product || "").toLowerCase().includes(search.toLowerCase()) ||
       (item.supplier || "").toLowerCase().includes(search.toLowerCase());
     const matchCategory = filterCategory === "all" || (item.category || "Épicerie") === filterCategory;
-    return matchSearch && matchCategory;
+    const matchStock =
+      filterStock === "all" ? true
+      : filterStock === "low" ? (item.quantity || 0) <= 2
+      : filterStock === "ok" ? (item.quantity || 0) > 2
+      : filterStock === "photo" ? !!item.image_url
+      : true;
+    return matchSearch && matchCategory && matchStock;
   });
 
   const lowStockCount = products.filter((p) => (p.quantity || 0) <= 2).length;
@@ -492,57 +499,57 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
 
           {/* KPI CARDS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="rounded-[24px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10 p-5">
+            <button onClick={() => setFilterStock("all")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "all" ? "border-cyan-400/50 ring-2 ring-cyan-400/20 bg-gradient-to-br from-cyan-500/20 to-blue-900/15" : "border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-cyan-300 text-xs font-semibold">Produits</p>
                   <h2 className="text-[42px] font-black text-white leading-none mt-2">{products.length}</h2>
                   <p className="text-cyan-400/50 text-xs mt-1">{totalItems} unités</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStock === "all" ? "border-cyan-400/40 bg-cyan-400/30" : "border-cyan-400/20 bg-cyan-500/20"}`}>
                   <Boxes size={18} className="text-cyan-300" />
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div className="rounded-[24px] border border-violet-500/20 bg-gradient-to-br from-violet-500/15 to-violet-900/10 p-5">
+            <button onClick={() => setFilterStock(filterStock === "photo" ? "all" : "photo")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "photo" ? "border-violet-400/50 ring-2 ring-violet-400/20 bg-gradient-to-br from-violet-500/20 to-violet-900/15" : "border-violet-500/20 bg-gradient-to-br from-violet-500/15 to-violet-900/10"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-violet-300 text-xs font-semibold">Avec photo</p>
                   <h2 className="text-[42px] font-black text-white leading-none mt-2">{withPhotoCount}</h2>
                   <p className="text-violet-400/50 text-xs mt-1">scannés IA</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-500/20">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStock === "photo" ? "border-violet-400/40 bg-violet-400/30" : "border-violet-400/20 bg-violet-500/20"}`}>
                   <ImageIcon size={18} className="text-violet-300" />
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div className={`rounded-[24px] border p-5 ${lowStockCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
+            <button onClick={() => setFilterStock(filterStock === "low" ? "all" : "low")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "low" ? "border-red-400/50 ring-2 ring-red-400/20 bg-gradient-to-br from-red-500/25 to-red-900/15" : lowStockCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-red-300 text-xs font-semibold">Stock faible</p>
                   <h2 className="text-[42px] font-black text-white leading-none mt-2">{lowStockCount}</h2>
                   {lowStockCount > 0 && <p className="text-red-400/70 text-xs mt-1 font-bold">Réapprovisionner</p>}
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/20">
-                  <TrendingDown size={18} className={`text-red-300 ${lowStockCount > 0 ? "animate-pulse" : ""}`} />
+                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStock === "low" ? "border-red-400/40 bg-red-400/30" : "border-red-400/20 bg-red-500/20"}`}>
+                  <TrendingDown size={18} className={`text-red-300 ${lowStockCount > 0 && filterStock !== "low" ? "animate-pulse" : ""}`} />
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div className="rounded-[24px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-5">
+            <button onClick={() => setFilterStock(filterStock === "ok" ? "all" : "ok")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "ok" ? "border-green-400/50 ring-2 ring-green-400/20 bg-gradient-to-br from-green-500/20 to-green-900/15" : "border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-green-300 text-xs font-semibold">Stock OK</p>
                   <h2 className="text-[42px] font-black text-white leading-none mt-2">{products.length - lowStockCount}</h2>
                   <p className="text-green-400/50 text-xs mt-1">niveaux corrects</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-green-400/20 bg-green-500/20">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStock === "ok" ? "border-green-400/40 bg-green-400/30" : "border-green-400/20 bg-green-500/20"}`}>
                   <CheckCircle2 size={18} className="text-green-300" />
                 </div>
               </div>
-            </div>
+            </button>
           </div>
 
           {/* ADD FORM */}
@@ -609,7 +616,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                           { label: "Produit", value: newProduct },
                           { label: "Catégorie", value: newCategory ? `${getCategoryInfo(newCategory).emoji} ${newCategory}` : "" },
                           { label: "Fournisseur", value: newSupplier },
-                          { label: "DLC", value: newExpiry },
+                          { label: "DLC", value: newDlc },
                         ].filter((f) => f.value).map((f) => (
                           <p key={f.label} className="text-xs"><span className="text-white/40">{f.label} : </span><span className="text-white font-bold">{f.value}</span></p>
                         ))}
@@ -667,7 +674,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                       <label className="text-white/30 text-xs mb-1 block">Numéro de lot</label>
                       <div className="flex items-center gap-3 h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4">
                         <Hash size={14} className="text-white/30 shrink-0" />
-                        <input value={newBatch} onChange={(e) => setNewBatch(e.target.value)} placeholder="N° de lot" className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/25" />
+                        <input value={newLot} onChange={(e) => setNewLot(e.target.value)} placeholder="N° de lot" className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/25" />
                       </div>
                     </div>
                     <div>
@@ -676,7 +683,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                     </div>
                     <div className="xl:col-span-2">
                       <label className="text-white/30 text-xs mb-1 block">Date DLC</label>
-                      <input type="date" value={newExpiry} onChange={(e) => setNewExpiry(e.target.value)} className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none" />
+                      <input type="date" value={newDlc} onChange={(e) => setNewDlc(e.target.value)} className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none" />
                     </div>
                   </div>
 

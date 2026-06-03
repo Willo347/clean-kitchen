@@ -28,6 +28,30 @@ import {
 import { supabase } from "@/lib/supabase";
 
 // ─────────────────────────────────────────────
+// CATEGORIES
+// ─────────────────────────────────────────────
+
+type Category = {
+  id: string;
+  emoji: string;
+  color: string;
+  text: string;
+};
+
+const CATEGORIES: Category[] = [
+  { id: "Viande",            emoji: "🥩", color: "border-red-500/30 bg-red-500/10",      text: "text-red-300" },
+  { id: "Poisson",           emoji: "🐟", color: "border-blue-500/30 bg-blue-500/10",     text: "text-blue-300" },
+  { id: "Fruits & Légumes",  emoji: "🥦", color: "border-green-500/30 bg-green-500/10",   text: "text-green-300" },
+  { id: "Produits laitiers", emoji: "🧀", color: "border-yellow-500/30 bg-yellow-500/10", text: "text-yellow-300" },
+  { id: "Épicerie",          emoji: "🛒", color: "border-cyan-500/30 bg-cyan-500/10",     text: "text-cyan-300" },
+  { id: "Surgelés",          emoji: "❄️", color: "border-violet-500/30 bg-violet-500/10", text: "text-violet-300" },
+];
+
+function getCategoryInfo(categoryId: string): Category {
+  return CATEGORIES.find((c) => c.id === categoryId) || CATEGORIES[4];
+}
+
+// ─────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────
 
@@ -35,9 +59,10 @@ type Delivery = {
   id: string;
   product: string;
   supplier: string;
-  batch: string;
+  lot: string;
   quantity: number;
-  expiry: string;
+  dlc: string;
+  category?: string;
   image_url?: string;
   created_at: string;
 };
@@ -56,15 +81,15 @@ function formatDateFR(dateStr: string): string {
   });
 }
 
-function isExpiringSoon(expiryStr: string): boolean {
-  if (!expiryStr) return false;
-  const diff = (new Date(expiryStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
+function isExpiringSoon(dlc: string): boolean {
+  if (!dlc) return false;
+  const diff = (new Date(dlc).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
   return diff <= 3 && diff >= 0;
 }
 
-function isExpired(expiryStr: string): boolean {
-  if (!expiryStr) return false;
-  return new Date(expiryStr) < new Date();
+function isExpired(dlc: string): boolean {
+  if (!dlc) return false;
+  return new Date(dlc) < new Date();
 }
 
 // ─────────────────────────────────────────────
@@ -86,6 +111,66 @@ function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: 
 }
 
 // ─────────────────────────────────────────────
+// CATEGORY PICKER MODAL
+// ─────────────────────────────────────────────
+
+function CategoryPickerModal({
+  currentCategory,
+  onSelect,
+  onClose,
+}: {
+  currentCategory: string;
+  onSelect: (cat: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-[28px] border border-white/10 bg-[#030b1d] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-lg font-black text-white">Choisir une catégorie</h3>
+            <p className="text-white/30 text-xs mt-0.5">Sélectionnez la catégorie du produit</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition">
+            <X size={15} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => { onSelect(cat.id); onClose(); }}
+              className={`flex items-center gap-3 p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                currentCategory === cat.id
+                  ? `${cat.color} ring-2 ring-white/20`
+                  : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
+              }`}
+            >
+              <span className="text-2xl">{cat.emoji}</span>
+              <span className={`text-sm font-bold leading-tight text-left ${currentCategory === cat.id ? cat.text : "text-white/60"}`}>
+                {cat.id}
+              </span>
+              {currentCategory === cat.id && (
+                <CheckCircle2 size={14} className="ml-auto shrink-0 text-white/60" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => { onSelect(""); onClose(); }}
+          className="mt-3 w-full h-10 rounded-2xl border border-white/10 bg-white/[0.03] text-white/40 hover:text-white text-sm font-bold transition"
+        >
+          Sans catégorie
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // IMAGE MODAL
 // ─────────────────────────────────────────────
 
@@ -96,7 +181,7 @@ function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
         <button onClick={onClose} className="absolute -top-10 right-0 text-white/60 hover:text-white transition flex items-center gap-2 text-sm font-bold">
           <X size={16} /> Fermer
         </button>
-        <img src={url} alt="Photo étiquette" className="w-full h-auto rounded-[24px] border border-white/10 shadow-2xl" />
+        <img src={url} alt="Étiquette" className="w-full h-auto rounded-[24px] border border-white/10 shadow-2xl" />
         <a href={url} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center justify-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm font-bold transition">
           <Eye size={14} /> Ouvrir en plein écran
         </a>
@@ -112,8 +197,9 @@ function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
 function DeliveryRow({ delivery, onDelete }: { delivery: Delivery; onDelete: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false);
   const [showImage, setShowImage] = useState(false);
-  const expired = isExpired(delivery.expiry);
-  const expiringSoon = !expired && isExpiringSoon(delivery.expiry);
+  const expired = isExpired(delivery.dlc);
+  const expiringSoon = !expired && isExpiringSoon(delivery.dlc);
+  const cat = delivery.category ? getCategoryInfo(delivery.category) : null;
 
   return (
     <>
@@ -125,11 +211,15 @@ function DeliveryRow({ delivery, onDelete }: { delivery: Delivery; onDelete: (id
         <div className="flex items-center justify-between gap-4 p-4">
           <div className="flex items-center gap-3 flex-1 min-w-0">
 
-            {/* Miniature photo ou icône */}
+            {/* Photo ou emoji catégorie */}
             {delivery.image_url ? (
-              <button onClick={() => setShowImage(true)} className="w-10 h-10 rounded-2xl overflow-hidden shrink-0 border border-white/10 hover:border-cyan-500/40 transition">
-                <img src={delivery.image_url} alt="Étiquette" className="w-full h-full object-cover" />
+              <button onClick={() => setShowImage(true)} className="w-10 h-10 rounded-2xl overflow-hidden shrink-0 border border-white/10 hover:border-violet-500/40 transition">
+                <img src={delivery.image_url} alt={delivery.product} className="w-full h-full object-cover" />
               </button>
+            ) : cat ? (
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${cat.color} text-xl`}>
+                {cat.emoji}
+              </div>
             ) : (
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${expired ? "bg-red-500/20 border-red-500/30" : expiringSoon ? "bg-orange-500/20 border-orange-500/30" : "bg-cyan-500/15 border-cyan-500/20"}`}>
                 <Truck size={16} className={expired ? "text-red-300" : expiringSoon ? "text-orange-300" : "text-cyan-300"} />
@@ -139,9 +229,14 @@ function DeliveryRow({ delivery, onDelete }: { delivery: Delivery; onDelete: (id
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-white font-black text-sm">{delivery.product || "—"}</h3>
+                {cat && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold ${cat.color} ${cat.text}`}>
+                    {cat.emoji} {cat.id}
+                  </span>
+                )}
                 {delivery.image_url && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/25 text-violet-300 text-[10px] font-bold">
-                    <ImageIcon size={8} /> Photo
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/20 text-violet-300 text-[10px] font-bold">
+                    <ImageIcon size={7} /> Photo
                   </span>
                 )}
                 {expired && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/15 border border-red-500/25 text-red-300 text-[10px] font-bold"><AlertTriangle size={8} /> EXPIRÉ</span>}
@@ -149,7 +244,7 @@ function DeliveryRow({ delivery, onDelete }: { delivery: Delivery; onDelete: (id
               </div>
               <div className="flex flex-wrap gap-3 mt-0.5">
                 {delivery.supplier && <span className="text-white/35 text-xs">Fournisseur : <span className="text-white/55">{delivery.supplier}</span></span>}
-                {delivery.batch && <span className="text-white/35 text-xs">Lot : <span className="text-white/55">{delivery.batch}</span></span>}
+                {delivery.lot && <span className="text-white/35 text-xs">Lot : <span className="text-white/55">{delivery.lot}</span></span>}
               </div>
             </div>
           </div>
@@ -157,27 +252,24 @@ function DeliveryRow({ delivery, onDelete }: { delivery: Delivery; onDelete: (id
           <div className="flex items-center gap-2 shrink-0">
             <div className="text-right hidden sm:block">
               <p className="text-white font-bold text-sm">Qté : {delivery.quantity || 0}</p>
-              <p className="text-white/35 text-xs">DLC : {formatDateFR(delivery.expiry)}</p>
+              <p className="text-white/35 text-xs">DLC : {formatDateFR(delivery.dlc)}</p>
             </div>
+            {delivery.image_url && (
+              <button onClick={() => setShowImage(true)} className="h-8 w-8 rounded-xl border border-violet-500/20 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 flex items-center justify-center transition">
+                <Eye size={13} />
+              </button>
+            )}
             <button onClick={() => setExpanded(!expanded)} className="text-white/25 hover:text-white/50 transition">
               {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
           </div>
         </div>
 
-        {/* Expanded detail */}
         {expanded && (
           <div className="px-4 pb-4 border-t border-white/[0.05] pt-3 space-y-3">
-
-            {/* Photo section */}
             {delivery.image_url && (
-              <div className="rounded-2xl overflow-hidden border border-white/10">
-                <img
-                  src={delivery.image_url}
-                  alt="Photo étiquette"
-                  className="w-full max-h-48 object-contain bg-black/40 cursor-pointer"
-                  onClick={() => setShowImage(true)}
-                />
+              <div className="rounded-2xl overflow-hidden border border-white/10 cursor-pointer" onClick={() => setShowImage(true)}>
+                <img src={delivery.image_url} alt={delivery.product} className="w-full max-h-48 object-contain bg-black/40" />
                 <div className="p-2 flex items-center justify-between bg-white/[0.02]">
                   <span className="text-white/30 text-xs flex items-center gap-1"><ImageIcon size={10} /> Photo de l'étiquette</span>
                   <button onClick={() => setShowImage(true)} className="text-cyan-400 text-xs font-bold hover:text-cyan-300 transition flex items-center gap-1">
@@ -186,14 +278,13 @@ function DeliveryRow({ delivery, onDelete }: { delivery: Delivery; onDelete: (id
                 </div>
               </div>
             )}
-
-            {/* Info grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
                 { label: "Produit", value: delivery.product },
+                { label: "Catégorie", value: delivery.category ? `${getCategoryInfo(delivery.category).emoji} ${delivery.category}` : "—" },
                 { label: "Fournisseur", value: delivery.supplier },
-                { label: "Lot", value: delivery.batch },
-                { label: "DLC", value: formatDateFR(delivery.expiry) },
+                { label: "Lot", value: delivery.lot },
+                { label: "DLC", value: formatDateFR(delivery.dlc) },
                 { label: "Quantité", value: delivery.quantity },
                 { label: "Reçu le", value: formatDateFR(delivery.created_at) },
               ].map((item) => (
@@ -203,7 +294,6 @@ function DeliveryRow({ delivery, onDelete }: { delivery: Delivery; onDelete: (id
                 </div>
               ))}
             </div>
-
             <button onClick={() => onDelete(delivery.id)} className="flex items-center gap-1.5 text-xs text-red-400/60 hover:text-red-400 transition font-bold">
               <X size={12} /> Supprimer cette livraison
             </button>
@@ -222,11 +312,14 @@ export default function DeliveriesPage() {
 
   const [product, setProduct] = useState("");
   const [supplier, setSupplier] = useState("");
-  const [batch, setBatch] = useState("");
+  const [lot, setLot] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [expiry, setExpiry] = useState("");
+  const [dlc, setDlc] = useState("");
+  const [category, setCategory] = useState("");
 
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [knownSuppliers, setKnownSuppliers] = useState<string[]>([]);
+  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -236,6 +329,9 @@ export default function DeliveriesPage() {
   const [scanPreview, setScanPreview] = useState<string | null>(null);
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<"scan" | "manual">("scan");
+
+  // Category picker modal
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [toastCounter, setToastCounter] = useState(0);
@@ -256,7 +352,16 @@ export default function DeliveriesPage() {
       .from("traceability_products")
       .select("*")
       .order("created_at", { ascending: false });
-    if (data) setDeliveries(data);
+    if (data) {
+      setDeliveries(data);
+      // Extrait les fournisseurs uniques déjà utilisés
+      const suppliers = [...new Set(
+        data
+          .map((d: Delivery) => d.supplier)
+          .filter((s: string) => s && s.trim() !== "")
+      )].sort() as string[];
+      setKnownSuppliers(suppliers);
+    }
   }, []);
 
   useEffect(() => {
@@ -275,7 +380,7 @@ export default function DeliveriesPage() {
     addToast("Données actualisées", "success");
   }
 
-  // ── Upload photo to Supabase Storage ───────
+  // ── Upload photo ───────────────────────────
 
   async function uploadPhoto(file: File): Promise<string> {
     const ext = file.name.split(".").pop() || "jpg";
@@ -319,21 +424,19 @@ export default function DeliveriesPage() {
           messages: [{
             role: "user",
             content: [
-              {
-                type: "image",
-                source: { type: "base64", media_type: file.type as "image/jpeg" | "image/png" | "image/webp", data: base64 },
-              },
+              { type: "image", source: { type: "base64", media_type: file.type as "image/jpeg" | "image/png" | "image/webp", data: base64 } },
               {
                 type: "text",
-                text: `Analyse cette étiquette produit alimentaire et extrait les informations en JSON uniquement :
+                text: `Analyse cette étiquette produit alimentaire et réponds UNIQUEMENT en JSON :
 {
   "product": "nom du produit",
   "supplier": "fournisseur ou marque",
-  "batch": "numéro de lot (LOT, N° LOT, BATCH, L:)",
+  "lot": "numéro de lot (LOT, N° LOT, BATCH, L:)",
   "quantity": 1,
-  "expiry": "date YYYY-MM-DD (DLC, DDM, USE BY, EXP, À CONSOMMER AVANT)"
+  "dlc": "date YYYY-MM-DD (DLC, DDM, USE BY, EXP)",
+  "category": "une seule valeur parmi : Viande, Poisson, Fruits & Légumes, Produits laitiers, Épicerie, Surgelés"
 }
-Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
+Si non visible mets "". Réponds UNIQUEMENT avec le JSON.`,
               },
             ],
           }],
@@ -346,14 +449,22 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
 
       if (parsed.product) setProduct(parsed.product);
       if (parsed.supplier) setSupplier(parsed.supplier);
-      if (parsed.batch) setBatch(parsed.batch);
+      if (parsed.lot) setLot(parsed.lot);
       if (parsed.quantity) setQuantity(String(parsed.quantity));
-      if (parsed.expiry) setExpiry(parsed.expiry);
+      if (parsed.dlc) setDlc(parsed.dlc);
+
+      // Si l'IA détecte une catégorie, on la pré-sélectionne
+      if (parsed.category && CATEGORIES.find((c) => c.id === parsed.category)) {
+        setCategory(parsed.category);
+      }
 
       addToast("✨ Étiquette analysée ! Vérifiez les champs.", "success");
       setActiveTab("manual");
 
-    } catch (error) {
+      // Ouvre le sélecteur de catégorie après le scan
+      setTimeout(() => setShowCategoryPicker(true), 400);
+
+    } catch {
       addToast("Erreur d'analyse — vérifiez la photo", "error");
     } finally {
       setIsScanning(false);
@@ -374,32 +485,27 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
     if (!quantity || isNaN(Number(quantity))) { addToast("Quantité invalide", "error"); return; }
 
     setIsSaving(true);
-
-    // Upload photo if exists
     let imageUrl = "";
     if (capturedFile) {
-      try {
-        imageUrl = await uploadPhoto(capturedFile);
-      } catch (err) {
-        addToast("Erreur upload photo — livraison sauvegardée sans photo", "error");
-      }
+      try { imageUrl = await uploadPhoto(capturedFile); }
+      catch { addToast("Erreur upload photo — livraison sauvegardée sans photo", "error"); }
     }
 
     const { error } = await supabase.from("traceability_products").insert({
       product: product.trim(),
       supplier: supplier.trim(),
-      batch: batch.trim(),
+      lot: lot.trim() || null,
       quantity: Number(quantity),
-      expiry: expiry || null,
+      dlc: dlc || null,
+      category: category || null,
       image_url: imageUrl || null,
     });
 
     setIsSaving(false);
-
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
-    addToast(`✅ Livraison enregistrée${imageUrl ? " avec photo" : ""}`, "success");
+    addToast(`✅ Livraison enregistrée${category ? ` · ${getCategoryInfo(category).emoji} ${category}` : ""}`, "success");
 
-    setProduct(""); setSupplier(""); setBatch(""); setQuantity(""); setExpiry("");
+    setProduct(""); setSupplier(""); setLot(""); setQuantity(""); setDlc(""); setCategory("");
     setScanPreview(null); setCapturedFile(null);
     await fetchDeliveries();
   }
@@ -413,8 +519,8 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
 
   // ── Computed ───────────────────────────────
 
-  const expiredCount = deliveries.filter((d) => isExpired(d.expiry)).length;
-  const expiringSoonCount = deliveries.filter((d) => isExpiringSoon(d.expiry)).length;
+  const expiredCount = deliveries.filter((d) => isExpired(d.dlc)).length;
+  const expiringSoonCount = deliveries.filter((d) => isExpiringSoon(d.dlc)).length;
   const todayCount = deliveries.filter((d) => {
     if (!d.created_at) return false;
     return new Date(d.created_at).toISOString().split("T")[0] === new Date().toISOString().split("T")[0];
@@ -422,10 +528,13 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
   const withPhotoCount = deliveries.filter((d) => d.image_url).length;
 
   const filteredDeliveries = deliveries.filter((d) => {
-    if (filterStatus === "expired") return isExpired(d.expiry);
-    if (filterStatus === "ok") return !isExpired(d.expiry);
+    if (filterStatus === "expired") return isExpired(d.dlc);
+    if (filterStatus === "ok") return !isExpired(d.dlc);
     return true;
   });
+
+  const formComplete = product && supplier && quantity;
+  const selectedCatInfo = category ? getCategoryInfo(category) : null;
 
   // ─────────────────────────────────────────────
   // RENDER
@@ -437,10 +546,19 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
       <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileChange} />
 
+      {/* Category picker modal */}
+      {showCategoryPicker && (
+        <CategoryPickerModal
+          currentCategory={category}
+          onSelect={setCategory}
+          onClose={() => setShowCategoryPicker(false)}
+        />
+      )}
+
       <div className="min-h-screen bg-[#020817] text-white p-5">
         <div className="mx-auto max-w-[1450px] rounded-[32px] border border-white/5 bg-[#030b1d] p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
 
-          {/* ── HEADER ─────────────────────────────── */}
+          {/* HEADER */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -456,7 +574,7 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
             </button>
           </div>
 
-          {/* ── KPI CARDS ──────────────────────────── */}
+          {/* KPI CARDS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="rounded-[24px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10 p-5">
               <div className="flex items-start justify-between gap-3">
@@ -511,7 +629,7 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
             </div>
           </div>
 
-          {/* ── FORM SECTION ───────────────────────── */}
+          {/* FORM SECTION */}
           <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 md:p-6">
 
             {/* Tabs */}
@@ -533,11 +651,10 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
                   </div>
                   <div>
                     <h3 className="text-base font-black text-white">Scan IA — Reconnaissance automatique</h3>
-                    <p className="text-white/30 text-xs">Photo de l'étiquette → formulaire rempli + photo sauvegardée</p>
+                    <p className="text-white/30 text-xs">Photo → formulaire rempli + choix de catégorie</p>
                   </div>
                 </div>
 
-                {/* Preview */}
                 {scanPreview && (
                   <div className="relative rounded-2xl overflow-hidden border border-white/10">
                     <img src={scanPreview} alt="Scan" className="w-full max-h-52 object-contain bg-black/40" />
@@ -549,16 +666,13 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
                       </div>
                     )}
                     {!isScanning && (
-                      <div className="absolute top-2 right-2">
-                        <button onClick={() => { setScanPreview(null); setCapturedFile(null); }} className="w-7 h-7 rounded-xl bg-black/60 text-white/70 hover:text-white flex items-center justify-center transition">
-                          <X size={14} />
-                        </button>
-                      </div>
+                      <button onClick={() => { setScanPreview(null); setCapturedFile(null); }} className="absolute top-2 right-2 w-7 h-7 rounded-xl bg-black/60 text-white/70 hover:text-white flex items-center justify-center transition">
+                        <X size={14} />
+                      </button>
                     )}
                   </div>
                 )}
 
-                {/* Scan buttons */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button onClick={() => cameraInputRef.current?.click()} disabled={isScanning} className="h-14 rounded-2xl border border-violet-500/30 bg-violet-500/15 hover:bg-violet-500/25 disabled:opacity-50 transition text-violet-300 font-black text-sm flex items-center justify-center gap-3">
                     {isScanning ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
@@ -569,19 +683,17 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
                   </button>
                 </div>
 
-                {/* AI results preview */}
-                {(product || supplier || batch || expiry) && !isScanning && (
+                {(product || supplier) && !isScanning && (
                   <div className="p-3 rounded-2xl bg-green-500/10 border border-green-500/20">
                     <p className="text-green-300 text-xs font-bold mb-2 flex items-center gap-1.5">
                       <Sparkles size={12} /> Champs détectés automatiquement
                     </p>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2 mb-2">
                       {[
                         { label: "Produit", value: product },
                         { label: "Fournisseur", value: supplier },
-                        { label: "Lot", value: batch },
-                        { label: "DLC", value: expiry },
-                        { label: "Quantité", value: quantity },
+                        { label: "Lot", value: lot },
+                        { label: "DLC", value: dlc },
                       ].filter((f) => f.value).map((f) => (
                         <div key={f.label} className="text-xs">
                           <span className="text-white/40">{f.label} : </span>
@@ -589,9 +701,14 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
                         </div>
                       ))}
                     </div>
-                    <button onClick={() => setActiveTab("manual")} className="mt-2 text-xs text-cyan-400 hover:text-cyan-300 font-bold transition">
-                      Vérifier et enregistrer →
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button onClick={() => setShowCategoryPicker(true)} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${selectedCatInfo ? `${selectedCatInfo.color} ${selectedCatInfo.text}` : "border-white/20 bg-white/[0.05] text-white/50 hover:text-white"}`}>
+                        {selectedCatInfo ? `${selectedCatInfo.emoji} ${selectedCatInfo.id}` : "🏷️ Choisir une catégorie"}
+                      </button>
+                      <button onClick={() => setActiveTab("manual")} className="text-xs text-cyan-400 hover:text-cyan-300 font-bold transition">
+                        Vérifier et enregistrer →
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -609,12 +726,12 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
                       {capturedFile ? "Vérifier et enregistrer" : "Enregistrer une livraison"}
                     </h3>
                     <p className="text-white/30 text-xs">
-                      {capturedFile ? "✅ Photo jointe — vérifiez les champs avant de sauvegarder" : "Saisie de réception marchandise"}
+                      {capturedFile ? "✅ Photo jointe — vérifiez les champs" : "Saisie de réception marchandise"}
                     </p>
                   </div>
                 </div>
 
-                {/* Photo thumbnail in manual mode */}
+                {/* Photo thumbnail */}
                 {scanPreview && capturedFile && (
                   <div className="flex items-center gap-3 p-3 rounded-2xl bg-violet-500/10 border border-violet-500/20">
                     <img src={scanPreview} alt="Photo" className="w-12 h-12 rounded-xl object-cover shrink-0" />
@@ -628,6 +745,29 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
                   </div>
                 )}
 
+                {/* Category selector button */}
+                <div>
+                  <label className="text-white/40 text-xs mb-1.5 block">Catégorie</label>
+                  <button
+                    onClick={() => setShowCategoryPicker(true)}
+                    className={`w-full h-11 rounded-2xl border px-4 flex items-center gap-3 transition ${selectedCatInfo ? `${selectedCatInfo.color}` : "border-white/10 bg-white/[0.05] hover:bg-white/[0.08]"}`}
+                  >
+                    {selectedCatInfo ? (
+                      <>
+                        <span className="text-lg">{selectedCatInfo.emoji}</span>
+                        <span className={`text-sm font-bold ${selectedCatInfo.text}`}>{selectedCatInfo.id}</span>
+                        <span className="ml-auto text-white/30 text-xs">Changer →</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg">🏷️</span>
+                        <span className="text-white/40 text-sm">Choisir une catégorie...</span>
+                        <span className="ml-auto text-white/30 text-xs">→</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
                   <div>
                     <label className="text-white/40 text-xs mb-1.5 block">Produit *</label>
@@ -636,18 +776,65 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
                       <input value={product} onChange={(e) => setProduct(e.target.value)} placeholder="Nom du produit" className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/25" />
                     </div>
                   </div>
-                  <div>
+                  <div className="relative">
                     <label className="text-white/40 text-xs mb-1.5 block">Fournisseur *</label>
-                    <div className="flex items-center gap-3 h-12 rounded-2xl bg-white/[0.05] border border-white/10 px-4">
+                    <div className="flex items-center gap-3 h-12 rounded-2xl bg-white/[0.05] border border-white/10 px-4 relative">
                       <Building2 size={15} className="text-white/30 shrink-0" />
-                      <input value={supplier} onChange={(e) => setSupplier(e.target.value)} placeholder="Nom du fournisseur" className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/25" />
+                      <input
+                        value={supplier}
+                        onChange={(e) => { setSupplier(e.target.value); setShowSupplierDropdown(true); }}
+                        onFocus={() => setShowSupplierDropdown(true)}
+                        onBlur={() => setTimeout(() => setShowSupplierDropdown(false), 150)}
+                        placeholder="Nom du fournisseur"
+                        className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/25"
+                      />
+                      {supplier && (
+                        <button onClick={() => setSupplier("")} className="text-white/30 hover:text-white transition shrink-0">
+                          <X size={14} />
+                        </button>
+                      )}
                     </div>
+
+                    {/* Dropdown fournisseurs connus */}
+                    {showSupplierDropdown && knownSuppliers.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 z-30 rounded-2xl border border-white/10 bg-[#030b1d] shadow-2xl overflow-hidden">
+                        <p className="text-white/25 text-[10px] font-bold uppercase tracking-widest px-3 pt-2 pb-1">
+                          Fournisseurs récents
+                        </p>
+                        {knownSuppliers
+                          .filter((s) => s.toLowerCase().includes(supplier.toLowerCase()))
+                          .slice(0, 6)
+                          .map((s) => (
+                            <button
+                              key={s}
+                              onMouseDown={() => { setSupplier(s); setShowSupplierDropdown(false); }}
+                              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.05] transition text-left"
+                            >
+                              <div className="w-7 h-7 rounded-xl bg-cyan-500/15 border border-cyan-500/20 flex items-center justify-center shrink-0">
+                                <Building2 size={12} className="text-cyan-300" />
+                              </div>
+                              <span className="text-white text-sm font-medium">{s}</span>
+                              {s.toLowerCase() === supplier.toLowerCase() && (
+                                <CheckCircle2 size={13} className="ml-auto text-cyan-400 shrink-0" />
+                              )}
+                            </button>
+                          ))}
+                        {supplier && !knownSuppliers.find((s) => s.toLowerCase() === supplier.toLowerCase()) && (
+                          <div className="px-3 py-2 border-t border-white/[0.06]">
+                            <p className="text-white/40 text-xs flex items-center gap-1.5">
+                              <Plus size={11} />
+                              Nouveau fournisseur : <span className="text-white font-bold">{supplier}</span>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="text-white/40 text-xs mb-1.5 block">Numéro de lot</label>
                     <div className="flex items-center gap-3 h-12 rounded-2xl bg-white/[0.05] border border-white/10 px-4">
                       <Hash size={15} className="text-white/30 shrink-0" />
-                      <input value={batch} onChange={(e) => setBatch(e.target.value)} placeholder="Numéro de lot" className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/25" />
+                      <input value={lot} onChange={(e) => setLot(e.target.value)} placeholder="Numéro de lot" className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/25" />
                     </div>
                   </div>
                   <div>
@@ -661,7 +848,7 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
                     <label className="text-white/40 text-xs mb-1.5 block">Date DLC</label>
                     <div className="flex items-center gap-3 h-12 rounded-2xl bg-white/[0.05] border border-white/10 px-4">
                       <Clock size={15} className="text-white/30 shrink-0" />
-                      <input type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} className="bg-transparent outline-none w-full text-sm text-white" />
+                      <input type="date" value={dlc} onChange={(e) => setDlc(e.target.value)} className="bg-transparent outline-none w-full text-sm text-white" />
                     </div>
                   </div>
                 </div>
@@ -672,14 +859,14 @@ Si non visible, mets "" ou 0. Réponds UNIQUEMENT avec le JSON.`,
                   </div>
                 )}
 
-                <button onClick={handleSave} disabled={isSaving || isUploading || !product || !supplier} className="w-full h-12 rounded-2xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black font-black text-sm flex items-center justify-center gap-2">
-                  {isSaving || isUploading ? <><Loader2 size={16} className="animate-spin" /> Enregistrement...</> : <><Save size={16} /> Enregistrer{capturedFile ? " avec photo" : ""}</>}
+                <button onClick={handleSave} disabled={isSaving || isUploading || !formComplete} className="w-full h-12 rounded-2xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black font-black text-sm flex items-center justify-center gap-2">
+                  {isSaving || isUploading ? <><Loader2 size={16} className="animate-spin" /> Enregistrement...</> : <><Save size={16} /> Enregistrer{capturedFile ? " avec photo" : ""}{selectedCatInfo ? ` · ${selectedCatInfo.emoji} ${selectedCatInfo.id}` : ""}</>}
                 </button>
               </div>
             )}
           </div>
 
-          {/* ── DELIVERIES LIST ─────────────────────── */}
+          {/* DELIVERIES LIST */}
           <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 md:p-6">
             <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
               <div className="flex items-center gap-3">
