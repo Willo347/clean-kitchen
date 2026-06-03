@@ -1,670 +1,377 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import { supabase } from "@/lib/supabase";
 import {
-  Activity,
-  AlertTriangle,
-  Thermometer,
-  Snowflake,
+  Thermometer, Wrench, Boxes, FileText,
+  AlertTriangle, Clock, CheckCircle2,
+  RefreshCw, Loader2, ShieldAlert,
 } from "lucide-react";
 
-import {
-  AreaChart,
-  Area,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from "recharts";
+// ─────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────
 
-import { supabase } from "@/lib/supabase";
-
-interface Equipment {
-  id: number;
-  name: string;
-  zone: string;
-  type: string;
-  temp_min: number;
-  temp_max: number;
+interface Alerte {
+  id: string;
+  message: string;
+  detail?: string;
+  level: "danger" | "warning";
+  time?: string;
 }
 
-interface TemperatureLog {
-  id: number;
-  equipment: string;
-  temperature: number;
-  created_at: string;
+interface AlerteSection {
+  key: string;
+  label: string;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  border: string;
+  badge: string;
+  alertes: Alerte[];
 }
 
-export default function MonitoringPage() {
+// ─────────────────────────────────────────────
+// ALERTE CARD
+// ─────────────────────────────────────────────
 
-  const [equipments, setEquipments] =
-    useState<Equipment[]>([]);
+function AlerteCard({ alerte }: { alerte: Alerte }) {
+  return (
+    <div className={`flex items-start gap-3 rounded-2xl border p-4 transition hover:scale-[1.01] ${
+      alerte.level === "danger"
+        ? "border-red-500/30 bg-red-500/[0.08]"
+        : "border-orange-500/25 bg-orange-500/[0.06]"
+    }`}>
+      <AlertTriangle size={16} className={`shrink-0 mt-0.5 ${alerte.level === "danger" ? "text-red-400" : "text-orange-400"}`} />
+      <div className="flex-1 min-w-0">
+        <p className="text-white font-bold text-sm leading-snug">{alerte.message}</p>
+        {alerte.detail && <p className="text-white/45 text-xs mt-1">{alerte.detail}</p>}
+        {alerte.time && (
+          <p className="text-white/30 text-[11px] mt-1.5 flex items-center gap-1">
+            <Clock size={9} /> {alerte.time}
+          </p>
+        )}
+      </div>
+      <span className={`shrink-0 text-[10px] font-black px-2 py-1 rounded-lg ${
+        alerte.level === "danger"
+          ? "bg-red-500/20 text-red-300"
+          : "bg-orange-500/20 text-orange-300"
+      }`}>
+        {alerte.level === "danger" ? "CRITIQUE" : "ATTENTION"}
+      </span>
+    </div>
+  );
+}
 
-  const [logs, setLogs] =
-    useState<TemperatureLog[]>([]);
+// ─────────────────────────────────────────────
+// SECTION
+// ─────────────────────────────────────────────
 
-  useEffect(() => {
+function AlerteSection({ section }: { section: AlerteSection }) {
+  const Icon = section.icon;
 
-    fetchData();
-
-  }, []);
-
-  async function fetchData() {
-
-    const { data: equipmentsData } =
-      await supabase
-        .from("equipments")
-        .select("*")
-        .order("id");
-
-    const { data: logsData } =
-      await supabase
-        .from("temperature_logs")
-        .select("*")
-        .order("created_at", {
-          ascending: true,
-        });
-
-    setEquipments(
-      equipmentsData || []
-    );
-
-    setLogs(
-      logsData || []
+  if (section.alertes.length === 0) {
+    return (
+      <div className={`rounded-[24px] border ${section.border} bg-white/[0.02] p-5`}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className={`w-9 h-9 rounded-xl ${section.bg} border ${section.border} flex items-center justify-center`}>
+            <Icon size={16} className={section.color} />
+          </div>
+          <p className={`text-[11px] font-bold tracking-widest uppercase ${section.color}`}>{section.label}</p>
+          <span className="ml-auto text-[10px] bg-green-500/20 border border-green-500/30 text-green-300 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+            <CheckCircle2 size={9} /> OK
+          </span>
+        </div>
+        <p className="text-white/25 text-sm">Aucune alerte dans cette catégorie.</p>
+      </div>
     );
   }
 
-  const latestLogs =
-    equipments.map((equipment) => {
+  return (
+    <div className={`rounded-[24px] border ${section.border} bg-white/[0.02] p-5`}>
+      <div className="flex items-center gap-3 mb-4">
+        <div className={`w-9 h-9 rounded-xl ${section.bg} border ${section.border} flex items-center justify-center`}>
+          <Icon size={16} className={section.color} />
+        </div>
+        <p className={`text-[11px] font-bold tracking-widest uppercase ${section.color}`}>{section.label}</p>
+        <span className={`ml-auto text-[10px] ${section.badge} px-2 py-0.5 rounded-full font-bold`}>
+          {section.alertes.length}
+        </span>
+      </div>
+      <div className="space-y-2">
+        {section.alertes.map((a) => <AlerteCard key={a.id} alerte={a} />)}
+      </div>
+    </div>
+  );
+}
 
-      const equipmentLogs =
-        logs.filter(
-          (log) =>
-            log.equipment
-              ?.toLowerCase()
-              .trim() ===
-            equipment.name
-              .toLowerCase()
-              .trim()
-        );
+// ─────────────────────────────────────────────
+// MAIN PAGE
+// ─────────────────────────────────────────────
 
-      const latestLog =
-        equipmentLogs[
-          equipmentLogs.length - 1
-        ];
+export default function AlertesPage() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [tempAlertes, setTempAlertes] = useState<Alerte[]>([]);
+  const [maintenanceAlertes, setMaintenanceAlertes] = useState<Alerte[]>([]);
+  const [stockAlertes, setStockAlertes] = useState<Alerte[]>([]);
+  const [dlcAlertes, setDlcAlertes] = useState<Alerte[]>([]);
 
-      return {
-        ...equipment,
-        currentTemp:
-          latestLog?.temperature ?? null,
-      };
-    });
+  async function fetchAlertes() {
+    // ── TEMPÉRATURES ──────────────────────────
+    const { data: equipments } = await supabase.from("equipments").select("*");
+    const { data: tempLogs } = await supabase
+      .from("temperature_logs")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  const averageTemp =
-    logs.length > 0
-      ? (
-          logs.reduce(
-            (acc, log) =>
-              acc + log.temperature,
-            0
-          ) / logs.length
-        ).toFixed(1)
-      : "0";
-
-  const alertsCount =
-    latestLogs.filter(
-      (eq) =>
-        eq.currentTemp !== null &&
-        (
-          eq.currentTemp < eq.temp_min ||
-          eq.currentTemp > eq.temp_max
-        )
-    ).length;
-
-  const chartData =
-    logs.slice(-10).map((log) => ({
-      time:
-        new Date(
-          log.created_at
-        ).toLocaleTimeString(
-          "fr-FR",
-          {
-            hour: "2-digit",
-            minute: "2-digit",
+    const tempAlertesFound: Alerte[] = [];
+    if (equipments && tempLogs) {
+      equipments.forEach((eq) => {
+        const latest = tempLogs.find((l) => l.equipment?.toLowerCase().trim() === eq.name?.toLowerCase().trim());
+        if (latest) {
+          if (latest.temperature > eq.temp_max) {
+            tempAlertesFound.push({
+              id: `temp-high-${eq.id}`,
+              message: `${eq.name} — température trop élevée`,
+              detail: `${latest.temperature}°C (max autorisé : ${eq.temp_max}°C)`,
+              level: "danger",
+              time: new Date(latest.created_at).toLocaleString("fr-FR"),
+            });
+          } else if (latest.temperature < eq.temp_min) {
+            tempAlertesFound.push({
+              id: `temp-low-${eq.id}`,
+              message: `${eq.name} — température trop basse`,
+              detail: `${latest.temperature}°C (min autorisé : ${eq.temp_min}°C)`,
+              level: "warning",
+              time: new Date(latest.created_at).toLocaleString("fr-FR"),
+            });
           }
-        ),
+        } else {
+          tempAlertesFound.push({
+            id: `temp-missing-${eq.id}`,
+            message: `${eq.name} — relevé manquant`,
+            detail: `Aucun relevé enregistré pour cet équipement`,
+            level: "warning",
+          });
+        }
+      });
+    }
+    setTempAlertes(tempAlertesFound);
 
-      temperature:
-        log.temperature,
-    }));
+    // ── MAINTENANCE ───────────────────────────
+    const { data: reports } = await supabase
+      .from("maintenance_reports")
+      .select("*")
+      .neq("status", "Résolu");
+
+    const { data: certs } = await supabase
+      .from("maintenance_certificates")
+      .select("*");
+
+    const maintenanceAlertesFound: Alerte[] = [];
+    if (reports) {
+      reports.forEach((r) => {
+        maintenanceAlertesFound.push({
+          id: `report-${r.id}`,
+          message: `${r.equipment_name} — ${r.description}`,
+          detail: `Statut : ${r.status}`,
+          level: r.priority === "Critique" ? "danger" : "warning",
+        });
+      });
+    }
+    if (certs) {
+      const today = new Date();
+      certs.forEach((c) => {
+        if (!c.next_date) return;
+        const nextDate = new Date(c.next_date);
+        const diffDays = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) {
+          maintenanceAlertesFound.push({
+            id: `cert-expired-${c.id}`,
+            message: `Certificat expiré — ${c.name}`,
+            detail: `Équipement : ${c.equipment} · Expiré le ${new Date(c.next_date).toLocaleDateString("fr-FR")}`,
+            level: "danger",
+          });
+        } else if (diffDays <= 30) {
+          maintenanceAlertesFound.push({
+            id: `cert-soon-${c.id}`,
+            message: `Certificat à renouveler — ${c.name}`,
+            detail: `Équipement : ${c.equipment} · Expire dans ${diffDays} jour(s)`,
+            level: "warning",
+          });
+        }
+      });
+    }
+    setMaintenanceAlertes(maintenanceAlertesFound);
+
+    // ── DLC ───────────────────────────────────
+    const { data: products } = await supabase
+      .from("traceability_products")
+      .select("*");
+
+    const dlcAlertesFound: Alerte[] = [];
+    if (products) {
+      const today = new Date();
+      products.forEach((p) => {
+        if (!p.dlc) return;
+        const dlcDate = new Date(p.dlc);
+        const diffDays = Math.ceil((dlcDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) {
+          dlcAlertesFound.push({
+            id: `dlc-expired-${p.id}`,
+            message: `DLC expirée — ${p.product}`,
+            detail: `Lot : ${p.lot || "—"} · Fournisseur : ${p.supplier || "—"} · Expirée le ${dlcDate.toLocaleDateString("fr-FR")}`,
+            level: "danger",
+          });
+        } else if (diffDays <= 3) {
+          dlcAlertesFound.push({
+            id: `dlc-soon-${p.id}`,
+            message: `DLC dans ${diffDays} jour(s) — ${p.product}`,
+            detail: `Lot : ${p.lot || "—"} · Fournisseur : ${p.supplier || "—"}`,
+            level: "warning",
+          });
+        }
+      });
+    }
+    setDlcAlertes(dlcAlertesFound);
+
+    // ── STOCKS ────────────────────────────────
+    // Pour l'instant pas de seuil défini — section vide
+    setStockAlertes([]);
+  }
+
+  useEffect(() => {
+    async function init() {
+      setIsLoading(true);
+      await fetchAlertes();
+      setIsLoading(false);
+    }
+    init();
+  }, []);
+
+  async function handleRefresh() {
+    setIsRefreshing(true);
+    await fetchAlertes();
+    setIsRefreshing(false);
+  }
+
+  const totalAlertes = tempAlertes.length + maintenanceAlertes.length + stockAlertes.length + dlcAlertes.length;
+
+  const sections: AlerteSection[] = [
+    {
+      key: "temperatures",
+      label: "Températures",
+      icon: Thermometer,
+      color: "text-orange-300",
+      bg: "bg-orange-500/15",
+      border: "border-orange-500/20",
+      badge: "bg-orange-500/20 border border-orange-500/30 text-orange-300",
+      alertes: tempAlertes,
+    },
+    {
+      key: "maintenance",
+      label: "Maintenance & Certificats",
+      icon: Wrench,
+      color: "text-cyan-300",
+      bg: "bg-cyan-500/15",
+      border: "border-cyan-500/20",
+      badge: "bg-cyan-500/20 border border-cyan-500/30 text-cyan-300",
+      alertes: maintenanceAlertes,
+    },
+    {
+      key: "dlc",
+      label: "DLC / Traçabilité",
+      icon: FileText,
+      color: "text-violet-300",
+      bg: "bg-violet-500/15",
+      border: "border-violet-500/20",
+      badge: "bg-violet-500/20 border border-violet-500/30 text-violet-300",
+      alertes: dlcAlertes,
+    },
+    {
+      key: "stocks",
+      label: "Stocks",
+      icon: Boxes,
+      color: "text-pink-300",
+      bg: "bg-pink-500/15",
+      border: "border-pink-500/20",
+      badge: "bg-pink-500/20 border border-pink-500/30 text-pink-300",
+      alertes: stockAlertes,
+    },
+  ];
 
   return (
+    <div className="min-h-screen bg-[#020817] text-white p-5">
+      <div className="mx-auto max-w-[1450px] rounded-[32px] border border-white/5 bg-[#030b1d] p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
 
-    <div className="space-y-6 md:space-y-8">
-
-      {/* HEADER */}
-      <div className="space-y-3">
-
-        <div className="flex items-center gap-3">
-
-          <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
-
-          <p className="text-cyan-400 tracking-[0.18em] md:tracking-[0.25em] uppercase font-semibold text-[10px] md:text-sm">
-            Live HACCP Monitoring
-          </p>
-
-        </div>
-
-        <h1 className="text-4xl sm:text-5xl xl:text-7xl font-black text-white leading-none">
-          Monitoring
-        </h1>
-
-        <p className="text-white/50 text-base md:text-xl">
-          Surveillance temps réel HACCP
-        </p>
-
-      </div>
-
-      {/* TOP CARDS */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 md:gap-6">
-
-        {/* AVG TEMP */}
-        <div
-          className="
-            rounded-[30px]
-
-            border
-            border-cyan-500/20
-
-            bg-cyan-500/10
-            backdrop-blur-xl
-
-            p-5 md:p-6
-
-            flex
-            items-center
-            justify-between
-
-            gap-4
-          "
-        >
-
-          <div className="min-w-0">
-
-            <p className="text-cyan-300 text-base md:text-lg">
-              Température moyenne
-            </p>
-
-            <h2 className="text-4xl md:text-6xl font-black text-cyan-300 mt-4 break-words">
-              {averageTemp}°C
-            </h2>
-
-            <p className="text-cyan-200/50 mt-4 text-sm md:text-base">
-              Analyse HACCP
-            </p>
-
+        {/* HEADER */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+              <p className="uppercase tracking-[0.32em] text-red-400 font-semibold text-xs">ALERTES HACCP</p>
+            </div>
+            <h1 className="text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">Alertes</h1>
+            <p className="text-white/40 text-base mt-2">Surveillance en temps réel de votre conformité</p>
           </div>
-
-          <div
-            className="
-              w-16
-              h-16
-
-              md:w-24
-              md:h-24
-
-              rounded-[24px]
-
-              bg-cyan-400/20
-
-              flex
-              items-center
-              justify-center
-
-              shrink-0
-            "
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="mt-2 h-10 px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white hover:border-white/20 transition flex items-center gap-2 text-sm font-bold disabled:opacity-50"
           >
-
-            <Thermometer
-              size={34}
-              className="text-cyan-300"
-            />
-
-          </div>
-
+            <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
+            Actualiser
+          </button>
         </div>
 
-        {/* ALERTS */}
-        <div
-          className="
-            rounded-[30px]
-
-            border
-            border-red-500/20
-
-            bg-red-500/10
-            backdrop-blur-xl
-
-            p-5 md:p-6
-
-            flex
-            items-center
-            justify-between
-
-            gap-4
-          "
-        >
-
-          <div className="min-w-0">
-
-            <p className="text-red-300 text-base md:text-lg">
-              Alertes HACCP
-            </p>
-
-            <h2 className="text-4xl md:text-6xl font-black text-red-300 mt-4">
-              {alertsCount}
-            </h2>
-
-            <p className="text-red-200/50 mt-4 text-sm md:text-base">
-              Températures critiques
-            </p>
-
-          </div>
-
-          <div
-            className="
-              w-16
-              h-16
-
-              md:w-24
-              md:h-24
-
-              rounded-[24px]
-
-              bg-red-400/20
-
-              flex
-              items-center
-              justify-center
-
-              shrink-0
-            "
-          >
-
-            <AlertTriangle
-              size={34}
-              className="text-red-300"
-            />
-
-          </div>
-
+        {/* KPI */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Températures", count: tempAlertes.length, color: "text-orange-300", border: "border-orange-500/20", bg: "from-orange-500/15" },
+            { label: "Maintenance", count: maintenanceAlertes.length, color: "text-cyan-300", border: "border-cyan-500/20", bg: "from-cyan-500/15" },
+            { label: "DLC", count: dlcAlertes.length, color: "text-violet-300", border: "border-violet-500/20", bg: "from-violet-500/15" },
+            { label: "Stocks", count: stockAlertes.length, color: "text-pink-300", border: "border-pink-500/20", bg: "from-pink-500/15" },
+          ].map((item) => (
+            <div key={item.label} className={`rounded-[24px] border ${item.border} bg-gradient-to-br ${item.bg} to-transparent p-5`}>
+              <p className={`text-xs font-bold ${item.color}`}>{item.label}</p>
+              <h2 className="text-[42px] font-black text-white leading-none mt-2">{item.count}</h2>
+              <p className="text-white/30 text-xs mt-1">{item.count === 0 ? "Aucune alerte" : item.count === 1 ? "alerte active" : "alertes actives"}</p>
+            </div>
+          ))}
         </div>
 
-        {/* SYSTEM */}
-        <div
-          className="
-            rounded-[30px]
-
-            border
-            border-green-500/20
-
-            bg-green-500/10
-            backdrop-blur-xl
-
-            p-5 md:p-6
-
-            flex
-            items-center
-            justify-between
-
-            gap-4
-          "
-        >
-
-          <div className="min-w-0">
-
-            <p className="text-green-300 text-base md:text-lg">
-              Système HACCP
+        {/* STATUT GLOBAL */}
+        <div className={`rounded-[24px] border p-5 flex items-center gap-4 ${
+          totalAlertes === 0
+            ? "border-green-500/30 bg-green-500/10"
+            : totalAlertes <= 3
+            ? "border-orange-500/30 bg-orange-500/10"
+            : "border-red-500/30 bg-red-500/10"
+        }`}>
+          <ShieldAlert size={24} className={totalAlertes === 0 ? "text-green-400" : totalAlertes <= 3 ? "text-orange-400" : "text-red-400"} />
+          <div>
+            <p className={`font-black text-base ${totalAlertes === 0 ? "text-green-300" : totalAlertes <= 3 ? "text-orange-300" : "text-red-300"}`}>
+              {totalAlertes === 0 ? "Système conforme — Aucune alerte active" : `${totalAlertes} alerte(s) nécessitent votre attention`}
             </p>
-
-            <h2 className="text-4xl md:text-6xl font-black text-green-300 mt-4 break-words">
-              ONLINE
-            </h2>
-
-            <p className="text-green-200/50 mt-4 text-sm md:text-base">
-              Monitoring actif
-            </p>
-
+            <p className="text-white/30 text-xs mt-0.5">Dernière vérification : {new Date().toLocaleString("fr-FR")}</p>
           </div>
-
-          <Activity
-            size={42}
-            className="text-green-300 shrink-0"
-          />
-
         </div>
+
+        {/* SECTIONS */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 size={32} className="animate-spin text-cyan-400" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {sections.map((section) => (
+              <AlerteSection key={section.key} section={section} />
+            ))}
+          </div>
+        )}
 
       </div>
-
-      {/* CHART */}
-      <div
-        className="
-          rounded-[32px]
-
-          border
-          border-white/10
-
-          bg-white/[0.03]
-          backdrop-blur-xl
-
-          p-5 md:p-8
-        "
-      >
-
-        <h2 className="text-3xl md:text-5xl font-black text-white">
-          Températures Live
-        </h2>
-
-        <p className="text-white/40 text-base md:text-xl mt-3">
-          Historique des relevés HACCP
-        </p>
-
-        <div className="h-[260px] md:h-[360px] mt-8">
-
-          <ResponsiveContainer width="100%" height="100%">
-
-            <AreaChart data={chartData}>
-
-              <defs>
-
-                <linearGradient
-                  id="colorTemp"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-
-                  <stop
-                    offset="0%"
-                    stopColor="#22d3ee"
-                    stopOpacity={0.5}
-                  />
-
-                  <stop
-                    offset="100%"
-                    stopColor="#22d3ee"
-                    stopOpacity={0}
-                  />
-
-                </linearGradient>
-
-              </defs>
-
-              <XAxis
-                dataKey="time"
-                stroke="#94a3b8"
-                fontSize={12}
-              />
-
-              <YAxis
-                stroke="#94a3b8"
-                fontSize={12}
-              />
-
-              <Tooltip />
-
-              <Area
-                type="monotone"
-                dataKey="temperature"
-                stroke="#22d3ee"
-                strokeWidth={3}
-                fill="url(#colorTemp)"
-              />
-
-            </AreaChart>
-
-          </ResponsiveContainer>
-
-        </div>
-
-      </div>
-
-      {/* LIVE EQUIPMENTS */}
-      <div className="space-y-5 md:space-y-6">
-
-        <div className="flex items-center gap-3">
-
-          <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
-
-          <h2 className="text-3xl md:text-5xl font-black text-white">
-            Équipements Live
-          </h2>
-
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 md:gap-6">
-
-          {latestLogs.map((equipment) => {
-
-            const isAlert =
-              equipment.currentTemp !== null &&
-              (
-                equipment.currentTemp < equipment.temp_min ||
-                equipment.currentTemp > equipment.temp_max
-              );
-
-            return (
-
-              <div
-                key={equipment.id}
-                className="
-                  rounded-[30px]
-
-                  border
-                  border-white/10
-
-                  bg-white/[0.03]
-                  backdrop-blur-xl
-
-                  p-5 md:p-6
-                "
-              >
-
-                <div
-                  className="
-                    flex
-                    flex-col
-                    lg:flex-row
-                    lg:items-center
-                    lg:justify-between
-
-                    gap-6
-                  "
-                >
-
-                  {/* LEFT */}
-                  <div
-                    className="
-                      flex
-                      items-center
-
-                      gap-4 md:gap-5
-
-                      min-w-0
-                    "
-                  >
-
-                    <div
-                      className="
-                        w-16
-                        h-16
-
-                        md:w-20
-                        md:h-20
-
-                        rounded-[24px]
-
-                        bg-cyan-500/20
-
-                        flex
-                        items-center
-                        justify-center
-
-                        shrink-0
-                      "
-                    >
-
-                      <Snowflake
-                        size={30}
-                        className="text-cyan-300"
-                      />
-
-                    </div>
-
-                    <div className="min-w-0">
-
-                      <h3
-                        className="
-                          text-2xl
-                          md:text-4xl
-
-                          font-black
-
-                          leading-none
-
-                          text-white
-
-                          break-words
-                        "
-                      >
-
-                        {equipment.name}
-
-                      </h3>
-
-                      <p className="text-sm md:text-lg text-white/50 mt-3 break-words">
-
-                        Zone :
-                        {" "}
-                        {equipment.zone}
-
-                      </p>
-
-                      <div className="flex items-center gap-3 mt-4">
-
-                        <div
-                          className={`
-                            w-3
-                            h-3
-
-                            rounded-full
-
-                            ${
-                              isAlert
-                                ? "bg-red-400"
-                                : "bg-green-400"
-                            }
-                          `}
-                        />
-
-                        <span
-                          className={`
-                            text-sm md:text-lg
-                            font-bold
-
-                            ${
-                              isAlert
-                                ? "text-red-400"
-                                : "text-green-400"
-                            }
-                          `}
-                        >
-
-                          {isAlert
-                            ? "ALERTE"
-                            : "CONFORME"}
-
-                        </span>
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                  {/* RIGHT */}
-                  <div className="lg:text-right shrink-0">
-
-                    <p className="text-white/40 text-sm md:text-base">
-                      Température HACCP
-                    </p>
-
-                    <div className="mt-2 space-y-1">
-
-                      <div
-                        className="
-                          text-3xl
-                          md:text-5xl
-
-                          font-black
-
-                          text-cyan-300
-
-                          leading-none
-                        "
-                      >
-
-                        {equipment.currentTemp ?? "--"}°C
-
-                      </div>
-
-                      <div
-                        className="
-                          text-2xl md:text-3xl
-
-                          font-black
-
-                          text-cyan-300
-
-                          leading-none
-                        "
-                      >
-                        →
-                      </div>
-
-                      <div
-                        className="
-                          text-3xl
-                          md:text-5xl
-
-                          font-black
-
-                          text-cyan-300
-
-                          leading-none
-                        "
-                      >
-
-                        {equipment.temp_max}°C
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-              </div>
-            );
-          })}
-
-        </div>
-
-      </div>
-
     </div>
   );
 }
