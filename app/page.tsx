@@ -40,12 +40,11 @@ function PanneauAlertes({
 }) {
   const totalAlertes = tempAlertes.length + maintenanceAlertes.length + dlcAlertes.length
   const sections = [
-    { key: "temperatures", label: "Températures", icon: Thermometer, color: "text-orange-300", data: tempAlertes },
-    { key: "maintenance",  label: "Maintenance",   icon: Wrench,      color: "text-cyan-300",   data: maintenanceAlertes },
-    { key: "dlc",          label: "DLC / Traçabilité", icon: FileText, color: "text-violet-300", data: dlcAlertes },
-    { key: "stocks",       label: "Stocks",        icon: Boxes,       color: "text-pink-300",   data: [] as Alerte[] },
+    { key: "temperatures", label: "Températures",    icon: Thermometer, color: "text-orange-300", data: tempAlertes },
+    { key: "maintenance",  label: "Maintenance",     icon: Wrench,      color: "text-cyan-300",   data: maintenanceAlertes },
+    { key: "dlc",          label: "DLC / Traçabilité", icon: FileText,  color: "text-violet-300", data: dlcAlertes },
+    { key: "stocks",       label: "Stocks",          icon: Boxes,       color: "text-pink-300",   data: [] as Alerte[] },
   ]
-
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
@@ -78,9 +77,7 @@ function PanneauAlertes({
                   <p className="text-white/30 text-xs">Aucune alerte</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {section.data.map((a) => <AlerteItem key={a.id} {...a} />)}
-                </div>
+                <div className="space-y-2">{section.data.map((a) => <AlerteItem key={a.id} {...a} />)}</div>
               )}
             </div>
           ))}
@@ -110,62 +107,56 @@ function MiniCalendar() {
     ...Array(startOffset).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ]
-
   function prevMonth() {
     if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear((y) => y - 1) }
-    else { setCurrentMonth((m) => m - 1) }
+    else setCurrentMonth((m) => m - 1)
   }
   function nextMonth() {
     if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear((y) => y + 1) }
-    else { setCurrentMonth((m) => m + 1) }
+    else setCurrentMonth((m) => m + 1)
   }
-
   return (
-    <div className="rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5">
-      {/* Header calendrier */}
+    <div className="rounded-[24px] border border-white/10 bg-[#071224] p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-cyan-300" />
-          <p className="text-[11px] font-bold tracking-[0.28em] text-cyan-300">CALENDRIER</p>
+          <CalendarDays className="h-4 w-4 shrink-0 text-cyan-300" />
+          <p className="text-[11px] font-bold tracking-[0.25em] text-cyan-300">CALENDRIER</p>
         </div>
         <div className="flex items-center gap-1">
-          <button
-            onClick={prevMonth}
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition"
-          >
+          <button onClick={prevMonth} className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition">
             <ChevronLeft className="h-3 w-3 text-white/60" />
           </button>
-          <span className="text-[12px] font-bold text-white w-[108px] text-center">
+          <span className="w-[100px] text-center text-[11px] font-bold text-white">
             {MONTHS_FR[currentMonth]} {currentYear}
           </span>
-          <button
-            onClick={nextMonth}
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition"
-          >
+          <button onClick={nextMonth} className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition">
             <ChevronRight className="h-3 w-3 text-white/60" />
           </button>
         </div>
       </div>
-
-      {/* Jours de la semaine */}
-      <div className="grid grid-cols-7 mb-1">
+      {/* Jours fixes en écriture horizontale */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: "4px" }}>
         {DAYS_FR.map((d, i) => (
-          <div key={i} className="text-[11px] font-bold text-white/30 py-1 text-center">{d}</div>
+          <div key={i} style={{ textAlign: "center", fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.3)", padding: "4px 0" }}>
+            {d}
+          </div>
         ))}
       </div>
-
-      {/* Grille des jours — cells toujours carrées via aspect-square */}
-      <div className="grid grid-cols-7 gap-y-0.5">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: "2px" }}>
         {cells.map((day, i) => {
           if (!day) return <div key={i} />
           const isToday = isCurrentMonth && day === today
           return (
-            <div key={i} className="flex items-center justify-center py-0.5">
-              <div className={`
-                flex h-7 w-7 items-center justify-center rounded-full
-                text-[12px] font-semibold transition cursor-pointer
-                ${isToday ? "bg-cyan-400 text-black font-black" : "text-white/70 hover:bg-white/10"}
-              `}>
+            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2px 0" }}>
+              <div style={{
+                width: "28px", height: "28px",
+                borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "12px", fontWeight: isToday ? 900 : 600,
+                background: isToday ? "#22d3ee" : "transparent",
+                color: isToday ? "#000" : "rgba(255,255,255,0.7)",
+                cursor: "pointer",
+              }}>
                 {day}
               </div>
             </div>
@@ -222,8 +213,8 @@ export default function DashboardPage() {
         certs.forEach((c) => {
           if (!c.next_date) return
           const diff = Math.ceil((new Date(c.next_date).getTime() - todayD.getTime()) / 86400000)
-          if (diff < 0)   maintFound.push({ id: `ce-${c.id}`, message: `Certificat expiré — ${c.name}`,      detail: `Équipement : ${c.equipment}`, level: "danger" })
-          else if (diff <= 30) maintFound.push({ id: `cs-${c.id}`, message: `Certificat à renouveler — ${c.name}`, detail: `Dans ${diff} jour(s)`, level: "warning" })
+          if (diff < 0)        maintFound.push({ id: `ce-${c.id}`, message: `Certificat expiré — ${c.name}`,        detail: `Équipement : ${c.equipment}`, level: "danger" })
+          else if (diff <= 30) maintFound.push({ id: `cs-${c.id}`, message: `Certificat à renouveler — ${c.name}`,  detail: `Dans ${diff} jour(s)`,         level: "warning" })
         })
       }
       setMaintenanceAlertes(maintFound)
@@ -235,7 +226,7 @@ export default function DashboardPage() {
         products.forEach((p) => {
           if (!p.dlc) return
           const diff = Math.ceil((new Date(p.dlc).getTime() - todayD.getTime()) / 86400000)
-          if (diff < 0)  dlcFound.push({ id: `de-${p.id}`, message: `DLC expirée — ${p.product}`,          detail: `Lot : ${p.lot || "—"}`, level: "danger" })
+          if (diff < 0)       dlcFound.push({ id: `de-${p.id}`, message: `DLC expirée — ${p.product}`,            detail: `Lot : ${p.lot || "—"}`, level: "danger" })
           else if (diff <= 3) dlcFound.push({ id: `ds-${p.id}`, message: `DLC dans ${diff} jour(s) — ${p.product}`, detail: `Lot : ${p.lot || "—"}`, level: "warning" })
         })
       }
@@ -247,10 +238,10 @@ export default function DashboardPage() {
   const totalAlertes = tempAlertes.length + maintenanceAlertes.length + dlcAlertes.length
 
   const recentActivity = [
-    { icon: Truck,         color: "text-violet-300", bg: "bg-violet-500/15 border-violet-500/20", title: "Livraison réceptionnée",  subtitle: "Fournisseur Metro",  time: "10:35" },
-    { icon: Thermometer,   color: "text-orange-300", bg: "bg-orange-500/15 border-orange-500/20", title: "Température normalisée",  subtitle: "Chambre froide 1",   time: "09:42" },
-    { icon: ClipboardCheck,color: "text-cyan-300",   bg: "bg-cyan-500/15 border-cyan-500/20",     title: "Tâche terminée",          subtitle: "Nettoyage hotte",    time: "09:15" },
-    { icon: Package,       color: "text-pink-300",   bg: "bg-pink-500/15 border-pink-500/20",     title: "Stock faible",            subtitle: "Sauce tomate",       time: "08:50" },
+    { icon: Truck,          color: "text-violet-300", bg: "bg-violet-500/15 border-violet-500/20", title: "Livraison réceptionnée",   subtitle: "Fournisseur Metro", time: "10:35" },
+    { icon: Thermometer,    color: "text-orange-300", bg: "bg-orange-500/15 border-orange-500/20", title: "Température normalisée",   subtitle: "Chambre froide 1",  time: "09:42" },
+    { icon: ClipboardCheck, color: "text-cyan-300",   bg: "bg-cyan-500/15 border-cyan-500/20",     title: "Tâche terminée",           subtitle: "Nettoyage hotte",   time: "09:15" },
+    { icon: Package,        color: "text-pink-300",   bg: "bg-pink-500/15 border-pink-500/20",     title: "Stock faible",             subtitle: "Sauce tomate",      time: "08:50" },
   ]
 
   const haccpItems = [
@@ -260,7 +251,8 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#020817] p-3 sm:p-5 text-white">
+    /* overflow-x-hidden empêche le scroll horizontal / la page qui "bouge" */
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#020817] p-3 sm:p-5 text-white">
       {showAlertes && (
         <PanneauAlertes
           onClose={() => setShowAlertes(false)}
@@ -272,22 +264,20 @@ export default function DashboardPage() {
 
       <div className="mx-auto max-w-[1450px] rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#030b1d] p-4 sm:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)]">
 
-        {/* ═══════════════════════════════════════
+        {/* ══════════════════════════════════
             HEADER
-            mobile  : titre 36px, sous-titre masqué
-            tablette: titre 44px
-            desktop : titre 64px
-        ═══════════════════════════════════════ */}
+        ══════════════════════════════════ */}
         <div className="mb-5 flex items-start justify-between gap-4">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2">
               <div className="h-2 w-2 shrink-0 rounded-full bg-cyan-400 animate-pulse" />
               <span className="text-[11px] font-semibold tracking-[0.2em] text-cyan-300 truncate">{restaurantName}</span>
             </div>
-            <h1 className="text-[36px] sm:text-[44px] lg:text-[64px] font-black leading-[0.95] tracking-[-0.04em]">
+            {/* Titre qui ne déborde jamais */}
+            <h1 className="text-[32px] sm:text-[40px] lg:text-[60px] font-black leading-[0.95] tracking-[-0.04em] break-words">
               Tableau de bord
             </h1>
-            <p className="mt-2 hidden sm:block text-[13px] lg:text-[17px] text-white/45">
+            <p className="mt-2 hidden sm:block text-[13px] lg:text-[15px] text-white/45">
               Vue d'ensemble de votre activité en temps réel
             </p>
           </div>
@@ -312,130 +302,119 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ═══════════════════════════════════════
-            CARTES STAT + MÉTÉO
-            mobile  : 2 colonnes (météo col-span-2)
-            tablette: 4 colonnes (météo col-span-2 sur 2e ligne)
-            desktop : 4 + 220px sur une seule ligne
-        ═══════════════════════════════════════ */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-[1fr_1fr_1fr_1fr_220px] gap-3 sm:gap-4">
-
+        {/* ══════════════════════════════════
+            CARTES STAT
+            mobile  : 2×2
+            tablette: 2×2 + météo pleine largeur en dessous
+            desktop : 4 + météo sur une ligne
+        ══════════════════════════════════ */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* PMS Entretien */}
-          <Link href="/pms-entretien">
-            <div className="group h-full min-h-[160px] cursor-pointer rounded-[20px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-blue-900/15 p-4 transition-all hover:scale-[1.02] hover:border-cyan-400/50">
-              <div className="mb-3 flex items-start justify-between">
-                <p className="text-[9px] font-black tracking-[0.2em] text-cyan-200/90 leading-tight">PMS ENTRETIEN</p>
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/20 shrink-0">
+          <Link href="/pms-entretien" className="block">
+            <div className="group rounded-[20px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-blue-900/15 p-4 transition-all hover:scale-[1.02] hover:border-cyan-400/50">
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <p className="text-[9px] font-black tracking-[0.15em] text-cyan-200/90 leading-tight">PMS ENTRETIEN</p>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/20">
                   <ClipboardCheck className="h-4 w-4 text-cyan-300" />
                 </div>
               </div>
-              <div className="text-[44px] sm:text-[52px] font-black leading-none tracking-tight text-white">22</div>
-              <p className="mt-1 text-[12px] text-white/60">tâches à effectuer</p>
-              <div className="mt-3 flex items-center gap-1 text-[12px] font-semibold text-cyan-300 group-hover:gap-2 transition-all">
-                Voir <ChevronRight className="h-3.5 w-3.5" />
+              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">22</div>
+              <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">tâches à effectuer</p>
+              <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-cyan-300 group-hover:gap-2 transition-all">
+                Voir <ChevronRight className="h-3 w-3" />
               </div>
             </div>
           </Link>
 
           {/* Températures */}
-          <Link href="/temperatures">
-            <div className="group h-full min-h-[160px] cursor-pointer rounded-[20px] border border-orange-400/25 bg-gradient-to-br from-orange-500/20 via-amber-600/10 to-purple-900/15 p-4 transition-all hover:scale-[1.02] hover:border-orange-400/50">
-              <div className="mb-3 flex items-start justify-between">
-                <p className="text-[9px] font-black tracking-[0.2em] text-orange-200/90 leading-tight">TEMPÉRATURES</p>
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-400/20 bg-orange-500/20 shrink-0">
+          <Link href="/temperatures" className="block">
+            <div className="group rounded-[20px] border border-orange-400/25 bg-gradient-to-br from-orange-500/20 via-amber-600/10 to-purple-900/15 p-4 transition-all hover:scale-[1.02] hover:border-orange-400/50">
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <p className="text-[9px] font-black tracking-[0.15em] text-orange-200/90 leading-tight">TEMPÉRATURES</p>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-orange-400/20 bg-orange-500/20">
                   <Thermometer className="h-4 w-4 text-orange-300" />
                 </div>
               </div>
-              <div className="text-[44px] sm:text-[52px] font-black leading-none tracking-tight text-white">{tempAlertes.length}</div>
-              <p className="mt-1 text-[12px] text-white/60">alertes actives</p>
-              <div className="mt-3 flex items-center gap-1 text-[12px] font-semibold text-orange-300 group-hover:gap-2 transition-all">
-                Voir <ChevronRight className="h-3.5 w-3.5" />
+              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{tempAlertes.length}</div>
+              <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">alertes actives</p>
+              <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-orange-300 group-hover:gap-2 transition-all">
+                Voir <ChevronRight className="h-3 w-3" />
               </div>
             </div>
           </Link>
 
           {/* Stocks */}
-          <Link href="/stocks">
-            <div className="group h-full min-h-[160px] cursor-pointer rounded-[20px] border border-pink-400/25 bg-gradient-to-br from-pink-500/20 via-rose-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-pink-400/50">
-              <div className="mb-3 flex items-start justify-between">
-                <p className="text-[9px] font-black tracking-[0.2em] text-pink-200/90 leading-tight">STOCKS</p>
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-pink-400/20 bg-pink-500/20 shrink-0">
+          <Link href="/stocks" className="block">
+            <div className="group rounded-[20px] border border-pink-400/25 bg-gradient-to-br from-pink-500/20 via-rose-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-pink-400/50">
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <p className="text-[9px] font-black tracking-[0.15em] text-pink-200/90 leading-tight">STOCKS</p>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-pink-400/20 bg-pink-500/20">
                   <Boxes className="h-4 w-4 text-pink-300" />
                 </div>
               </div>
-              <div className="text-[44px] sm:text-[52px] font-black leading-none tracking-tight text-white">0</div>
-              <p className="mt-1 text-[12px] text-white/60">produits faibles</p>
-              <div className="mt-3 flex items-center gap-1 text-[12px] font-semibold text-pink-300 group-hover:gap-2 transition-all">
-                Voir <ChevronRight className="h-3.5 w-3.5" />
+              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">0</div>
+              <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">produits faibles</p>
+              <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-pink-300 group-hover:gap-2 transition-all">
+                Voir <ChevronRight className="h-3 w-3" />
               </div>
             </div>
           </Link>
 
           {/* Traçabilité */}
-          <Link href="/traceability">
-            <div className="group h-full min-h-[160px] cursor-pointer rounded-[20px] border border-violet-400/25 bg-gradient-to-br from-violet-500/20 via-purple-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-violet-400/50">
-              <div className="mb-3 flex items-start justify-between">
-                <p className="text-[9px] font-black tracking-[0.2em] text-violet-200/90 leading-tight">TRAÇABILITÉ</p>
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-500/20 shrink-0">
+          <Link href="/traceability" className="block">
+            <div className="group rounded-[20px] border border-violet-400/25 bg-gradient-to-br from-violet-500/20 via-purple-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-violet-400/50">
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <p className="text-[9px] font-black tracking-[0.15em] text-violet-200/90 leading-tight">TRAÇABILITÉ</p>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-500/20">
                   <FileText className="h-4 w-4 text-violet-300" />
                 </div>
               </div>
-              <div className="text-[44px] sm:text-[52px] font-black leading-none tracking-tight text-white">248</div>
-              <p className="mt-1 text-[12px] text-white/60">produits tracés</p>
-              <div className="mt-3 flex items-center gap-1 text-[12px] font-semibold text-violet-300 group-hover:gap-2 transition-all">
-                Voir <ChevronRight className="h-3.5 w-3.5" />
+              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">248</div>
+              <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">produits tracés</p>
+              <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-violet-300 group-hover:gap-2 transition-all">
+                Voir <ChevronRight className="h-3 w-3" />
               </div>
             </div>
           </Link>
+        </div>
 
-          {/* Widget date + météo
-              mobile  : col-span-2 (pleine largeur), disposition horizontale
-              tablette: col-span-4 (pleine largeur), disposition horizontale
-              desktop : colonne dédiée, disposition verticale
-          */}
-          <div className="col-span-2 md:col-span-4 lg:col-span-1 rounded-[20px] border border-white/10 bg-[#071224] p-4 flex flex-row lg:flex-col items-center lg:items-stretch justify-between gap-4 lg:gap-0 lg:justify-between">
-            {/* Date */}
-            <div className="flex items-center gap-3 lg:items-start lg:justify-between">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/15 shrink-0">
-                <CalendarDays className="h-4 w-4 text-cyan-300" />
-              </div>
-              <div className="lg:text-right">
-                <p className="text-[11px] text-white/50">{dayName}</p>
-                <p className="text-[36px] sm:text-[40px] lg:text-[46px] font-black leading-none">{dayNumber}</p>
-                <p className="text-[11px] text-white/35">{monthName} {year}</p>
-              </div>
+        {/* Widget météo/date — toujours pleine largeur sous les cartes sur mobile/tablette,
+            caché sur desktop (intégré dans la colonne droite ci-dessous) */}
+        <div className="mt-3 sm:mt-4 flex lg:hidden rounded-[20px] border border-white/10 bg-[#071224] p-4 items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/15 shrink-0">
+              <CalendarDays className="h-4 w-4 text-cyan-300" />
             </div>
-            {/* Météo */}
-            <div className="flex items-center gap-2">
-              <span className="text-[26px]">⛅</span>
-              <div>
-                <p className="text-[28px] sm:text-[32px] font-black leading-none">18°C</p>
-                <p className="text-[10px] text-white/45 whitespace-nowrap">Partiellement nuageux</p>
-              </div>
+            <div>
+              <p className="text-[11px] text-white/50">{dayName}</p>
+              <p className="text-[32px] font-black leading-none">{dayNumber}</p>
+              <p className="text-[11px] text-white/35">{monthName} {year}</p>
             </div>
-            {/* Localisation */}
-            <div className="hidden lg:flex h-10 items-center justify-between rounded-xl border border-white/10 bg-[#050d1c] px-3 mt-2">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-3.5 w-3.5 text-cyan-300" />
-                <span className="text-[12px] text-white/70">Lyon, France</span>
-              </div>
-              <ChevronRight className="h-3.5 w-3.5 text-white/30" />
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[28px]">⛅</span>
+            <div>
+              <p className="text-[28px] font-black leading-none">18°C</p>
+              <p className="text-[11px] text-white/45">Partiellement nuageux</p>
             </div>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <MapPin className="h-3.5 w-3.5 text-cyan-300" />
+            <span className="text-[12px] text-white/70">Lyon, France</span>
           </div>
         </div>
 
-        {/* ═══════════════════════════════════════
+        {/* ══════════════════════════════════
             SECTION BAS
-            mobile  : 1 colonne
-            tablette: 1 colonne
-            desktop : 1.6fr + 1fr
-        ═══════════════════════════════════════ */}
+            mobile/tablette : 1 colonne
+            desktop          : 1.6fr + 1fr
+        ══════════════════════════════════ */}
         <div className="mt-3 sm:mt-4 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-3 sm:gap-4">
 
           {/* ── Colonne gauche ── */}
           <div className="flex flex-col gap-3 sm:gap-4">
 
-            {/* Monitoring Températures */}
+            {/* Monitoring */}
             <div className="rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5">
               <div className="mb-4 flex items-start justify-between gap-3 flex-wrap">
                 <div>
@@ -449,17 +428,17 @@ export default function DashboardPage() {
                   Toutes les zones <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="relative h-[180px] sm:h-[220px] overflow-hidden rounded-[16px] border border-white/5 bg-[#020817]">
+              <div className="relative h-[160px] sm:h-[200px] overflow-hidden rounded-[16px] border border-white/5 bg-[#020817]">
                 <div className="absolute inset-0 opacity-15">
                   <div className="h-full w-full bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:40px_40px]" />
                 </div>
-                <div className="absolute left-3 top-0 bottom-0 flex flex-col justify-between py-3 text-[10px] text-white/25 font-mono">
+                <div className="absolute left-2 top-0 bottom-0 flex flex-col justify-between py-3 text-[9px] text-white/25 font-mono">
                   <span>10°C</span><span>5°C</span><span>0°C</span><span>-5°C</span>
                 </div>
-                <div className="absolute bottom-2 left-10 right-4 flex justify-between text-[10px] text-white/25 font-mono">
+                <div className="absolute bottom-2 left-8 right-3 flex justify-between text-[9px] text-white/25 font-mono">
                   {["00:00","04:00","08:00","12:00","16:00","20:00","24:00"].map((t) => <span key={t}>{t}</span>)}
                 </div>
-                <svg viewBox="0 0 800 220" className="absolute inset-0 h-full w-full">
+                <svg viewBox="0 0 800 220" className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3BCBFF" stopOpacity="0.15" /><stop offset="100%" stopColor="#3BCBFF" stopOpacity="0" /></linearGradient>
                     <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#4EF2FF" stopOpacity="0.12" /><stop offset="100%" stopColor="#4EF2FF" stopOpacity="0" /></linearGradient>
@@ -468,9 +447,9 @@ export default function DashboardPage() {
                   <path d="M0 100 C80 80 120 120 220 95 C320 72 360 110 460 88 C560 68 620 105 800 75 L800 220 L0 220 Z" fill="url(#g1)" />
                   <path d="M0 130 C80 110 120 148 220 122 C320 98 360 138 460 115 C560 95 620 130 800 105 L800 220 L0 220 Z" fill="url(#g2)" />
                   <path d="M0 168 C80 150 120 178 220 158 C320 136 360 172 460 155 C560 138 620 165 800 145 L800 220 L0 220 Z" fill="url(#g3)" />
-                  <path d="M0 100 C80 80 120 120 220 95 C320 72 360 110 460 88 C560 68 620 105 800 75"  stroke="#3BCBFF" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                  <path d="M0 130 C80 110 120 148 220 122 C320 98 360 138 460 115 C560 95 620 130 800 105" stroke="#4EF2FF" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                  <path d="M0 168 C80 150 120 178 220 158 C320 136 360 172 460 155 C560 138 620 165 800 145" stroke="#D946EF" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                  <path d="M0 100 C80 80 120 120 220 95 C320 72 360 110 460 88 C560 68 620 105 800 75" stroke="#3BCBFF" strokeWidth="2" fill="none" strokeLinecap="round" />
+                  <path d="M0 130 C80 110 120 148 220 122 C320 98 360 138 460 115 C560 95 620 130 800 105" stroke="#4EF2FF" strokeWidth="2" fill="none" strokeLinecap="round" />
+                  <path d="M0 168 C80 150 120 178 220 158 C320 136 360 172 460 155 C560 138 620 165 800 145" stroke="#D946EF" strokeWidth="2" fill="none" strokeLinecap="round" />
                 </svg>
               </div>
               <div className="mt-3 flex items-center gap-4 flex-wrap">
@@ -481,35 +460,34 @@ export default function DashboardPage() {
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-2">
                     <div className={`h-2 w-2 rounded-full ${item.color}`} />
-                    <span className="text-[12px] text-white/50">{item.label}</span>
+                    <span className="text-[11px] text-white/50">{item.label}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Activité récente */}
+            {/* Activité récente — toujours 2 colonnes sur mobile/tablette */}
             <div className="rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-pink-300" />
                   <p className="text-[11px] font-bold tracking-[0.28em] text-pink-300">ACTIVITÉ RÉCENTE</p>
                 </div>
-                <button className="text-[12px] text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1 whitespace-nowrap">
+                <button className="text-[12px] text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1 whitespace-nowrap shrink-0">
                   Voir tout <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
-              {/* 2 col sur mobile, 4 col dès md (tablette paysage + desktop) */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {recentActivity.map((item, index) => (
                   <div key={index} className={`rounded-[16px] border p-3 ${item.bg} transition hover:scale-[1.02] cursor-default`}>
                     <div className="mb-2 flex items-center justify-between">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10">
-                        <item.icon className={`h-4 w-4 ${item.color}`} />
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                        <item.icon className={`h-3.5 w-3.5 ${item.color}`} />
                       </div>
-                      <span className="text-[11px] font-bold text-white/40">{item.time}</span>
+                      <span className="text-[11px] font-bold text-white/40 shrink-0">{item.time}</span>
                     </div>
-                    <p className="text-[13px] font-bold text-white leading-tight">{item.title}</p>
-                    <p className="mt-1 text-[11px] text-white/45">{item.subtitle}</p>
+                    <p className="text-[12px] sm:text-[13px] font-bold text-white leading-tight">{item.title}</p>
+                    <p className="mt-0.5 text-[11px] text-white/45">{item.subtitle}</p>
                   </div>
                 ))}
               </div>
@@ -518,6 +496,34 @@ export default function DashboardPage() {
 
           {/* ── Colonne droite ── */}
           <div className="flex flex-col gap-3 sm:gap-4">
+
+            {/* Widget date+météo desktop uniquement */}
+            <div className="hidden lg:block rounded-[24px] border border-white/10 bg-[#071224] p-5">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15 shrink-0">
+                  <CalendarDays className="h-5 w-5 text-cyan-300" />
+                </div>
+                <div className="text-right">
+                  <p className="text-[12px] text-white/50">{dayName}</p>
+                  <p className="text-[46px] font-black leading-none">{dayNumber}</p>
+                  <p className="text-[11px] text-white/35">{monthName} {year}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-[32px]">⛅</span>
+                <div>
+                  <p className="text-[34px] font-black leading-none">18°C</p>
+                  <p className="text-[11px] text-white/45">Partiellement nuageux</p>
+                </div>
+              </div>
+              <div className="flex h-10 items-center justify-between rounded-xl border border-white/10 bg-[#050d1c] px-3">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-cyan-300" />
+                  <span className="text-[12px] text-white/70">Lyon, France</span>
+                </div>
+                <ChevronRight className="h-3.5 w-3.5 text-white/30" />
+              </div>
+            </div>
 
             <MiniCalendar />
 
@@ -529,9 +535,9 @@ export default function DashboardPage() {
               </div>
               <div className="space-y-2">
                 {haccpItems.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 hover:bg-white/[0.05] transition cursor-pointer">
-                    <span className="text-[13px] font-semibold text-white/80">{item.label}</span>
-                    <div className="flex items-center gap-3">
+                  <div key={i} className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 sm:px-4 py-3 hover:bg-white/[0.05] transition cursor-pointer">
+                    <span className="text-[13px] font-semibold text-white/80 truncate mr-2">{item.label}</span>
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className="text-[13px] font-bold text-cyan-400">{item.time}</span>
                       <CheckCircle2 className="h-4 w-4 text-green-400" />
                     </div>
@@ -544,17 +550,17 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-[20px] border border-orange-500/20 bg-gradient-to-br from-orange-500/15 to-orange-900/10 p-4">
                 <div className="mb-2 flex items-center gap-2">
-                  <Thermometer className="h-4 w-4 text-orange-300" />
-                  <p className="text-[10px] font-bold tracking-wider text-orange-300/80 leading-tight">TEMP. MOYENNE</p>
+                  <Thermometer className="h-4 w-4 shrink-0 text-orange-300" />
+                  <p className="text-[9px] sm:text-[10px] font-bold tracking-wider text-orange-300/80 leading-tight">TEMP. MOYENNE</p>
                 </div>
-                <p className="text-[30px] sm:text-[34px] font-black leading-none text-white">4,2°C</p>
+                <p className="text-[28px] sm:text-[32px] font-black leading-none text-white">4,2°C</p>
               </div>
               <div className="rounded-[20px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-4">
                 <div className="mb-2 flex items-center gap-2">
-                  <Wifi className="h-4 w-4 text-green-300" />
-                  <p className="text-[10px] font-bold tracking-wider text-green-300/80 leading-tight">ÉQUIPEMENTS</p>
+                  <Wifi className="h-4 w-4 shrink-0 text-green-300" />
+                  <p className="text-[9px] sm:text-[10px] font-bold tracking-wider text-green-300/80 leading-tight">ÉQUIPEMENTS</p>
                 </div>
-                <p className="text-[30px] sm:text-[34px] font-black leading-none text-white">8</p>
+                <p className="text-[28px] sm:text-[32px] font-black leading-none text-white">8</p>
                 <p className="text-[11px] text-green-400/70 mt-1">actifs</p>
               </div>
             </div>
