@@ -4,15 +4,19 @@ self.addEventListener('push', (event) => {
   let url = '/'
 
   try {
-    const data = event.data?.json()
-    if (data) {
-      title = data.title || title
-      body = data.body || body
-      url = data.url || url
+    if (event.data) {
+      const text = event.data.text()
+      try {
+        const data = JSON.parse(text)
+        title = data.title || title
+        body = data.body || data.message || body
+        url = data.url || url
+      } catch {
+        body = text
+      }
     }
   } catch (e) {
-    const text = event.data?.text()
-    if (text) body = text
+    console.error('Push error:', e)
   }
 
   event.waitUntil(
@@ -21,7 +25,6 @@ self.addEventListener('push', (event) => {
       icon: '/icon-192.png',
       badge: '/icon-192.png',
       data: { url },
-      vibrate: [200, 100, 200],
     })
   )
 })
