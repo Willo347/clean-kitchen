@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
 
@@ -54,12 +54,3 @@ export function usePushSubscription() {
       if (sub) {
         await sub.unsubscribe()
         await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
-      }
-      setIsSubscribed(false)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  return { isSubscribed, isLoading, subscribe, unsubscribe }
-}
