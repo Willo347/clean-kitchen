@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   Wrench,
+  Bell,
 } from "lucide-react";
 
 const menuItems = [
@@ -33,6 +34,7 @@ const menuItems = [
   { name: "Maintenance", href: "/maintenance", icon: Wrench },
   { name: "Monitoring", href: "/monitoring", icon: Activity },
   { name: "Employés", href: "/employees", icon: Users },
+  { name: "Notifications", href: "/notifications", icon: Bell },
   { name: "Paramètres", href: "/settings", icon: Settings },
 ];
 
@@ -52,7 +54,6 @@ export default function Sidebar() {
         border-b border-white/10
         z-[60] lg:hidden
       ">
-        {/* Mobile logo */}
         <div className="flex items-center gap-3">
           <img
             src="/ck-logo-new.png"
@@ -61,7 +62,6 @@ export default function Sidebar() {
           />
         </div>
 
-        {/* Burger */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="
@@ -137,7 +137,6 @@ export default function Sidebar() {
                   }
                 `}>
 
-                  {/* Icon */}
                   <div className={`
                     rounded-2xl p-2.5 transition-all
                     ${active
@@ -148,7 +147,6 @@ export default function Sidebar() {
                     <Icon className="w-5 h-5" />
                   </div>
 
-                  {/* Text */}
                   <div className="flex flex-col">
                     <h2 className="text-[14px] font-semibold tracking-wide text-white leading-none">
                       {item.name}
