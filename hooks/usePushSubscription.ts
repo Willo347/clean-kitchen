@@ -41,6 +41,8 @@ export function usePushSubscription() {
         { onConflict: 'endpoint' }
       )
       setIsSubscribed(true)
+    } catch (e) {
+      console.error(e)
     } finally {
       setIsLoading(false)
     }
@@ -54,3 +56,14 @@ export function usePushSubscription() {
       if (sub) {
         await sub.unsubscribe()
         await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
+      }
+      setIsSubscribed(false)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return { isSubscribed, isLoading, subscribe, unsubscribe }
+}
