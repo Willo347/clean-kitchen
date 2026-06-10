@@ -20,12 +20,17 @@ export function usePushSubscription() {
     navigator.serviceWorker.register('/sw.js').then(async (reg) => {
       const sub = await reg.pushManager.getSubscription()
       setIsSubscribed(!!sub)
-    })
+    }).catch(console.error)
   }, [])
 
   async function subscribe() {
     setIsLoading(true)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.error('Utilisateur non connecté')
+        return
+      }
       const reg = await navigator.serviceWorker.ready
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -35,14 +40,17 @@ export function usePushSubscription() {
         endpoint: string
         keys: { p256dh: string; auth: string }
       }
-      const { data: { user } } = await supabase.auth.getUser()
-      await supabase.from('push_subscriptions').upsert(
-        { user_id: user!.id, endpoint, p256dh: keys.p256dh, auth: keys.auth },
+      const { error } = await supabase.from('push_subscriptions').upsert(
+        { user_id: user.id, endpoint, p256dh: keys.p256dh, auth: keys.auth },
         { onConflict: 'endpoint' }
       )
+      if (error) {
+        console.error('Erreur sauvegarde subscription:', error)
+        return
+      }
       setIsSubscribed(true)
     } catch (e) {
-      console.error(e)
+      console.error('Erreur subscribe:', e)
     } finally {
       setIsLoading(false)
     }
@@ -59,7 +67,7 @@ export function usePushSubscription() {
       }
       setIsSubscribed(false)
     } catch (e) {
-      console.error(e)
+      console.error('Erreur unsubscribe:', e)
     } finally {
       setIsLoading(false)
     }
