@@ -101,7 +101,7 @@ function getTempTrend(equipmentName: string, logs: TemperatureLog[]): "up" | "do
 
 function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: number) => void }) {
   return (
-    <div className="fixed top-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+    <div className="fixed top-6 right-4 z-50 flex flex-col gap-3 w-[calc(100vw-2rem)] max-w-sm pointer-events-none">
       {toasts.map((toast) => (
         <div
           key={toast.id}
@@ -119,7 +119,7 @@ function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: 
           {toast.type === "error" && <AlertTriangle size={16} className="shrink-0" />}
           {toast.type === "info" && <Info size={16} className="shrink-0" />}
           <p className="text-sm font-medium flex-1">{toast.message}</p>
-          <button onClick={() => onRemove(toast.id)} className="opacity-60 hover:opacity-100 transition shrink-0 pointer-events-auto">
+          <button onClick={() => onRemove(toast.id)} className="opacity-60 hover:opacity-100 transition shrink-0">
             <X size={14} />
           </button>
         </div>
@@ -177,7 +177,6 @@ function EquipmentCard({
             </p>
           </div>
 
-          {/* Temp bubble */}
           <div className={`
             rounded-2xl px-3 py-2 text-center shrink-0 border
             ${status === "critical" ? "bg-red-500/15 border-red-500/30"
@@ -204,7 +203,6 @@ function EquipmentCard({
           </div>
         </div>
 
-        {/* Status row */}
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/[0.05]">
           <div className="flex items-center gap-2">
             {status === "critical" && (
@@ -248,7 +246,6 @@ function EquipmentCard({
         </div>
       </div>
 
-      {/* Expanded history */}
       {expanded && latest.length > 0 && (
         <div className="px-5 pb-4 border-t border-white/[0.05]">
           <p className="text-white/25 text-[10px] font-bold uppercase tracking-widest mt-3 mb-2">
@@ -506,8 +503,8 @@ export default function TemperaturesPage() {
 
       {/* QUICK ADD MODAL */}
       {showQuickAdd && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowQuickAdd(false)}>
-          <div className="bg-[#030b1d] border border-white/10 rounded-[28px] p-6 w-full max-w-sm mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" onClick={() => setShowQuickAdd(false)}>
+          <div className="bg-[#030b1d] border border-white/10 rounded-[28px] p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-white font-black text-lg">Relevé rapide</h3>
               <button onClick={() => setShowQuickAdd(false)} className="text-white/40 hover:text-white transition">
@@ -536,19 +533,19 @@ export default function TemperaturesPage() {
         </div>
       )}
 
-      <div className="min-h-screen bg-[#020817] text-white p-5">
-        <div className="mx-auto max-w-[1450px] rounded-[32px] border border-white/5 bg-[#030b1d] p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
+      <div className="text-white w-full overflow-x-hidden">
+        <div className="w-full rounded-[32px] border border-white/5 bg-[#030b1d] p-4 md:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
 
           {/* ── HEADER ─────────────────────────────── */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <p className="uppercase tracking-[0.32em] text-cyan-400 font-semibold text-xs">
+                <p className="uppercase tracking-[0.2em] text-cyan-400 font-semibold text-xs">
                   HACCP TEMPERATURE CONTROL
                 </p>
               </div>
-              <h1 className="text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">
+              <h1 className="text-4xl md:text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">
                 Températures
               </h1>
               <p className="text-white/40 text-base mt-2">Relevés manuels HACCP</p>
@@ -557,17 +554,16 @@ export default function TemperaturesPage() {
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="mt-2 h-10 px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white hover:border-white/20 transition flex items-center gap-2 text-sm font-bold disabled:opacity-50"
+              className="mt-2 h-10 w-10 md:w-auto md:px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white hover:border-white/20 transition flex items-center justify-center gap-2 text-sm font-bold disabled:opacity-50 shrink-0"
             >
               <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
-              <span className="hidden sm:inline">Actualiser</span>
+              <span className="hidden md:inline">Actualiser</span>
             </button>
           </div>
 
           {/* ── KPI CARDS ──────────────────────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4">
 
-            {/* Total */}
             <div className="rounded-[24px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -575,13 +571,12 @@ export default function TemperaturesPage() {
                   <h2 className="text-[48px] font-black text-white leading-none mt-3">{logs.length}</h2>
                   <p className="text-cyan-400/50 text-xs mt-1">{todayLogs.length} aujourd'hui</p>
                 </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20 shrink-0">
                   <Thermometer size={20} className="text-cyan-300" />
                 </div>
               </div>
             </div>
 
-            {/* Alerts */}
             <div className={`rounded-[24px] border p-5 ${alertsCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -589,13 +584,12 @@ export default function TemperaturesPage() {
                   <h2 className="text-[48px] font-black text-white leading-none mt-3">{alertsCount}</h2>
                   {alertsCount > 0 && <p className="text-red-400/70 text-xs mt-1 font-bold">Action requise</p>}
                 </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/20">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/20 shrink-0">
                   <AlertTriangle size={20} className={`text-red-300 ${alertsCount > 0 ? "animate-pulse" : ""}`} />
                 </div>
               </div>
             </div>
 
-            {/* Missing */}
             <div className="rounded-[24px] border border-orange-500/20 bg-gradient-to-br from-orange-500/15 to-orange-900/10 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -611,13 +605,12 @@ export default function TemperaturesPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-500/20">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-500/20 shrink-0">
                   <ClipboardX size={20} className="text-orange-300" />
                 </div>
               </div>
             </div>
 
-            {/* Status */}
             <div className="rounded-[24px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -627,7 +620,7 @@ export default function TemperaturesPage() {
                   </h2>
                   <p className="text-green-400/50 text-xs mt-1">{equipments.length} équipements</p>
                 </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-green-400/20 bg-green-500/20">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-green-400/20 bg-green-500/20 shrink-0">
                   <CheckCircle2 size={20} className="text-green-300" />
                 </div>
               </div>
@@ -635,9 +628,9 @@ export default function TemperaturesPage() {
           </div>
 
           {/* ── ADD TEMPERATURE ─────────────────────── */}
-          <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 md:p-6">
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-4 md:p-6">
             <div className="flex items-center gap-3 mb-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20 shrink-0">
                 <Plus size={16} className="text-cyan-300" />
               </div>
               <div>
@@ -650,7 +643,7 @@ export default function TemperaturesPage() {
               <select
                 value={selectedEquipment}
                 onChange={(e) => setSelectedEquipment(e.target.value)}
-                className="h-12 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white outline-none text-sm"
+                className="h-12 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white outline-none text-sm w-full"
               >
                 <option value="">Sélectionner un équipement</option>
                 {equipments.map((equipment) => (
@@ -664,19 +657,18 @@ export default function TemperaturesPage() {
                 value={temperature}
                 onChange={(e) => setTemperature(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addTemperature()}
-                className="h-12 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white outline-none text-sm"
+                className="h-12 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white outline-none text-sm w-full"
               />
 
               <button
                 onClick={addTemperature}
                 disabled={isAdding}
-                className="h-12 rounded-2xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black font-black text-sm flex items-center justify-center gap-2"
+                className="h-12 rounded-2xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black font-black text-sm flex items-center justify-center gap-2 w-full"
               >
                 {isAdding ? <><Loader2 size={16} className="animate-spin" /> Enregistrement...</> : <><Plus size={16} /> Ajouter le relevé</>}
               </button>
             </div>
 
-            {/* Zone preview */}
             {selectedEquipment && (() => {
               const eq = equipments.find((e) => e.name === selectedEquipment);
               if (!eq) return null;
@@ -707,10 +699,10 @@ export default function TemperaturesPage() {
           </div>
 
           {/* ── LOGS TABLE ──────────────────────────── */}
-          <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 md:p-6">
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-4 md:p-6">
             <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shrink-0">
                   <Filter size={14} className="text-white/40" />
                 </div>
                 <div>
@@ -720,14 +712,13 @@ export default function TemperaturesPage() {
               </div>
             </div>
 
-            {/* Filters */}
             <div className="flex flex-wrap gap-3 mb-5">
               <input
                 type="text"
                 placeholder="Filtrer par équipement..."
                 value={filterEquipment}
                 onChange={(e) => setFilterEquipment(e.target.value)}
-                className="h-10 rounded-xl bg-white/[0.05] border border-white/10 px-4 text-white outline-none text-xs min-w-[180px]"
+                className="h-10 rounded-xl bg-white/[0.05] border border-white/10 px-4 text-white outline-none text-xs w-full sm:w-auto sm:min-w-[180px]"
               />
               <div className="flex gap-2">
                 {(["all", "ok", "critical"] as const).map((status) => (
@@ -748,51 +739,52 @@ export default function TemperaturesPage() {
               </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/[0.06]">
-                    {["Date", "Équipement", "Température", "Statut"].map((h) => (
-                      <th key={h} className="text-left text-white/30 font-bold text-[10px] uppercase tracking-widest pb-3 pr-4">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTableLogs.map((log) => {
-                    const eq = equipments.find((e) => e.name.toLowerCase().trim() === log.equipment?.toLowerCase().trim());
-                    const isAlert = eq && (log.temperature < eq.temp_min || log.temperature > eq.temp_max);
-                    return (
-                      <tr key={log.id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition">
-                        <td className="py-2.5 pr-4 text-white/40 text-xs">{formatDateFR(log.created_at)}</td>
-                        <td className="py-2.5 pr-4 text-white text-sm font-medium">{log.equipment || "—"}</td>
-                        <td className="py-2.5 pr-4">
-                          <span className={`font-black text-base ${isAlert ? "text-red-400" : "text-green-400"}`}>
-                            {log.temperature}°C
-                          </span>
-                        </td>
-                        <td className="py-2.5">
-                          {isAlert ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold">
-                              <AlertTriangle size={9} /> ALERTE
+            <div className="overflow-x-auto -mx-4 md:mx-0">
+              <div className="min-w-[400px] px-4 md:px-0">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/[0.06]">
+                      {["Date", "Équipement", "Température", "Statut"].map((h) => (
+                        <th key={h} className="text-left text-white/30 font-bold text-[10px] uppercase tracking-widest pb-3 pr-4">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTableLogs.map((log) => {
+                      const eq = equipments.find((e) => e.name.toLowerCase().trim() === log.equipment?.toLowerCase().trim());
+                      const isAlert = eq && (log.temperature < eq.temp_min || log.temperature > eq.temp_max);
+                      return (
+                        <tr key={log.id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition">
+                          <td className="py-2.5 pr-4 text-white/40 text-xs whitespace-nowrap">{formatDateFR(log.created_at)}</td>
+                          <td className="py-2.5 pr-4 text-white text-sm font-medium">{log.equipment || "—"}</td>
+                          <td className="py-2.5 pr-4">
+                            <span className={`font-black text-base ${isAlert ? "text-red-400" : "text-green-400"}`}>
+                              {log.temperature}°C
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-500/15 border border-green-500/30 text-green-300 text-xs font-bold">
-                              <CheckCircle2 size={9} /> OK
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {filteredTableLogs.length === 0 && (
-                <div className="text-center py-10 text-white/25">
-                  <Thermometer size={28} className="mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">Aucun relevé trouvé</p>
-                </div>
-              )}
+                          </td>
+                          <td className="py-2.5">
+                            {isAlert ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold whitespace-nowrap">
+                                <AlertTriangle size={9} /> ALERTE
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-500/15 border border-green-500/30 text-green-300 text-xs font-bold whitespace-nowrap">
+                                <CheckCircle2 size={9} /> OK
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {filteredTableLogs.length === 0 && (
+                  <div className="text-center py-10 text-white/25">
+                    <Thermometer size={28} className="mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">Aucun relevé trouvé</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {logs.length > logsLimit && (
@@ -808,9 +800,9 @@ export default function TemperaturesPage() {
           </div>
 
           {/* ── PDF EXPORT ──────────────────────────── */}
-          <div className="rounded-[28px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/[0.07] to-blue-900/5 p-5 md:p-6 space-y-5">
+          <div className="rounded-[28px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/[0.07] to-blue-900/5 p-4 md:p-6 space-y-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20 shrink-0">
                 <FileDown size={16} className="text-cyan-300" />
               </div>
               <div>
@@ -819,7 +811,6 @@ export default function TemperaturesPage() {
               </div>
             </div>
 
-            {/* Equipment selection */}
             <div>
               <p className="text-white/40 text-xs mb-3">Équipements (vide = tous)</p>
               <div className="flex flex-wrap gap-2">
@@ -844,7 +835,6 @@ export default function TemperaturesPage() {
               </div>
             </div>
 
-            {/* Dates + export */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
               <div>
                 <p className="text-white/30 text-xs mb-1.5">Date de début</p>
@@ -860,7 +850,7 @@ export default function TemperaturesPage() {
                 <button
                   onClick={exportPDF}
                   disabled={isExporting}
-                  className="h-12 rounded-2xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black font-black text-sm flex items-center justify-center gap-2"
+                  className="h-12 rounded-2xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black font-black text-sm flex items-center justify-center gap-2 w-full"
                 >
                   {isExporting ? <><Loader2 size={16} className="animate-spin" /> Génération...</> : <><FileDown size={16} /> Exporter PDF</>}
                 </button>
