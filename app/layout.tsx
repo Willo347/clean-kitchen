@@ -18,6 +18,12 @@ const geist = Geist({
 export const metadata: Metadata = {
   title: "Clean Kitchen",
   description: "Plateforme HACCP premium",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Clean Kitchen",
+  },
 };
 
 export default function RootLayout({
