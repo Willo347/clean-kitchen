@@ -134,7 +134,6 @@ function MiniCalendar() {
           </button>
         </div>
       </div>
-      {/* Jours fixes en écriture horizontale */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: "4px" }}>
         {DAYS_FR.map((d, i) => (
           <div key={i} style={{ textAlign: "center", fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.3)", padding: "4px 0" }}>
@@ -174,6 +173,7 @@ export default function DashboardPage() {
   const [maintenanceAlertes, setMaintenanceAlertes] = useState<Alerte[]>([])
   const [dlcAlertes, setDlcAlertes] = useState<Alerte[]>([])
   const [restaurantName, setRestaurantName] = useState("SMART KITCHEN")
+  const [traceabilityCount, setTraceabilityCount] = useState(0)
 
   const dayNames = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"]
   const dayName   = dayNames[now.getDay()]
@@ -231,6 +231,12 @@ export default function DashboardPage() {
         })
       }
       setDlcAlertes(dlcFound)
+
+      // Vrai count traçabilité depuis Supabase
+      const { count } = await supabase
+        .from("traceability_products")
+        .select("*", { count: "exact", head: true })
+      if (count !== null) setTraceabilityCount(count)
     }
     init()
   }, [])
@@ -251,7 +257,6 @@ export default function DashboardPage() {
   ]
 
   return (
-    /* overflow-x-hidden empêche le scroll horizontal / la page qui "bouge" */
     <div className="min-h-screen w-full overflow-x-hidden bg-[#020817] p-3 sm:p-5 text-white">
       {showAlertes && (
         <PanneauAlertes
@@ -264,16 +269,13 @@ export default function DashboardPage() {
 
       <div className="mx-auto max-w-[1450px] rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#030b1d] p-4 sm:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)]">
 
-        {/* ══════════════════════════════════
-            HEADER
-        ══════════════════════════════════ */}
+        {/* HEADER */}
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2">
               <div className="h-2 w-2 shrink-0 rounded-full bg-cyan-400 animate-pulse" />
               <span className="text-[11px] font-semibold tracking-[0.2em] text-cyan-300 truncate">{restaurantName}</span>
             </div>
-            {/* Titre qui ne déborde jamais */}
             <h1 className="text-[32px] sm:text-[40px] lg:text-[60px] font-black leading-[0.95] tracking-[-0.04em] break-words">
               Tableau de bord
             </h1>
@@ -302,13 +304,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ══════════════════════════════════
-            CARTES STAT
-            mobile  : 2×2
-            tablette: 2×2 + météo pleine largeur en dessous
-            desktop : 4 + météo sur une ligne
-        ══════════════════════════════════ */}
+        {/* CARTES STAT */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
           {/* PMS Entretien */}
           <Link href="/pms-entretien" className="block">
             <div className="group rounded-[20px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-blue-900/15 p-4 transition-all hover:scale-[1.02] hover:border-cyan-400/50">
@@ -360,7 +358,7 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* Traçabilité */}
+          {/* Traçabilité — chiffre réel depuis Supabase */}
           <Link href="/traceability" className="block">
             <div className="group rounded-[20px] border border-violet-400/25 bg-gradient-to-br from-violet-500/20 via-purple-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-violet-400/50">
               <div className="mb-3 flex items-start justify-between gap-2">
@@ -369,7 +367,7 @@ export default function DashboardPage() {
                   <FileText className="h-4 w-4 text-violet-300" />
                 </div>
               </div>
-              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">248</div>
+              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{traceabilityCount}</div>
               <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">produits tracés</p>
               <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-violet-300 group-hover:gap-2 transition-all">
                 Voir <ChevronRight className="h-3 w-3" />
@@ -378,8 +376,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Widget météo/date — toujours pleine largeur sous les cartes sur mobile/tablette,
-            caché sur desktop (intégré dans la colonne droite ci-dessous) */}
+        {/* Widget météo/date mobile */}
         <div className="mt-3 sm:mt-4 flex lg:hidden rounded-[20px] border border-white/10 bg-[#071224] p-4 items-center gap-6">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/15 shrink-0">
@@ -404,14 +401,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ══════════════════════════════════
-            SECTION BAS
-            mobile/tablette : 1 colonne
-            desktop          : 1.6fr + 1fr
-        ══════════════════════════════════ */}
+        {/* SECTION BAS */}
         <div className="mt-3 sm:mt-4 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-3 sm:gap-4">
 
-          {/* ── Colonne gauche ── */}
+          {/* Colonne gauche */}
           <div className="flex flex-col gap-3 sm:gap-4">
 
             {/* Monitoring */}
@@ -466,7 +459,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Activité récente — toujours 2 colonnes sur mobile/tablette */}
+            {/* Activité récente */}
             <div className="rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -494,10 +487,10 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* ── Colonne droite ── */}
+          {/* Colonne droite */}
           <div className="flex flex-col gap-3 sm:gap-4">
 
-            {/* Widget date+météo desktop uniquement */}
+            {/* Widget date+météo desktop */}
             <div className="hidden lg:block rounded-[24px] border border-white/10 bg-[#071224] p-5">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15 shrink-0">
