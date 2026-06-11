@@ -174,6 +174,7 @@ export default function DashboardPage() {
   const [dlcAlertes, setDlcAlertes] = useState<Alerte[]>([])
   const [restaurantName, setRestaurantName] = useState("SMART KITCHEN")
   const [traceabilityCount, setTraceabilityCount] = useState(0)
+  const [lowStockCount, setLowStockCount] = useState(0)
 
   const dayNames = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"]
   const dayName   = dayNames[now.getDay()]
@@ -232,11 +233,18 @@ export default function DashboardPage() {
       }
       setDlcAlertes(dlcFound)
 
-      // Vrai count traçabilité depuis Supabase
+      // Count traçabilité
       const { count } = await supabase
         .from("traceability_products")
         .select("*", { count: "exact", head: true })
       if (count !== null) setTraceabilityCount(count)
+
+      // Count stocks faibles (quantity <= 2, même logique que app/stocks/page.tsx)
+      const { count: lowCount } = await supabase
+        .from("traceability_products")
+        .select("*", { count: "exact", head: true })
+        .lte("quantity", 2)
+      if (lowCount !== null) setLowStockCount(lowCount)
     }
     init()
   }, [])
@@ -341,7 +349,7 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* Stocks */}
+          {/* Stocks — chiffre dynamique depuis Supabase */}
           <Link href="/stocks" className="block">
             <div className="group rounded-[20px] border border-pink-400/25 bg-gradient-to-br from-pink-500/20 via-rose-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-pink-400/50">
               <div className="mb-3 flex items-start justify-between gap-2">
@@ -350,7 +358,7 @@ export default function DashboardPage() {
                   <Boxes className="h-4 w-4 text-pink-300" />
                 </div>
               </div>
-              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">0</div>
+              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{lowStockCount}</div>
               <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">produits faibles</p>
               <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-pink-300 group-hover:gap-2 transition-all">
                 Voir <ChevronRight className="h-3 w-3" />
