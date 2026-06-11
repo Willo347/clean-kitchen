@@ -84,7 +84,7 @@ interface Toast { id: number; message: string; type: ToastType; }
 
 function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: number) => void }) {
   return (
-    <div className="fixed top-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+    <div className="fixed top-4 right-4 z-50 flex flex-col gap-3 max-w-[calc(100vw-2rem)] sm:max-w-sm w-full pointer-events-none">
       {toasts.map((toast) => (
         <div key={toast.id} className={`pointer-events-auto flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-xl ${toast.type === "success" ? "bg-green-500/20 border-green-500/40 text-green-200" : "bg-red-500/20 border-red-500/40 text-red-200"}`}>
           {toast.type === "success" ? <CheckCircle2 size={16} className="shrink-0" /> : <AlertTriangle size={16} className="shrink-0" />}
@@ -141,18 +141,18 @@ function CategorySection({
     <div className={`rounded-[24px] border ${category.color} overflow-hidden`}>
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="w-full flex items-center justify-between gap-4 p-4 hover:bg-white/[0.02] transition"
+        className="w-full flex items-center justify-between gap-3 p-3 sm:p-4 hover:bg-white/[0.02] transition"
       >
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{category.emoji}</span>
+          <span className="text-xl sm:text-2xl">{category.emoji}</span>
           <div className="text-left">
-            <h3 className={`font-black text-base ${category.text}`}>{category.id}</h3>
+            <h3 className={`font-black text-sm sm:text-base ${category.text}`}>{category.id}</h3>
             <p className="text-white/30 text-xs">{products.length} produit(s)</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {lowCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-bold">
+            <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-bold">
               <AlertTriangle size={10} /> {lowCount} faible
             </span>
           )}
@@ -161,28 +161,28 @@ function CategorySection({
       </button>
 
       {!collapsed && (
-        <div className="px-4 pb-4 space-y-2 border-t border-white/[0.06]">
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-2 border-t border-white/[0.06]">
           {products.map((item) => {
             const isLow = (item.quantity || 0) <= 2;
             const isUpdating = updatingId === item.id;
 
             return (
-              <div key={item.id} className={`rounded-[18px] border p-3 transition-all mt-2 ${isLow ? "border-red-500/25 bg-red-500/[0.08]" : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]"}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div key={item.id} className={`rounded-[18px] border p-2.5 sm:p-3 transition-all mt-2 ${isLow ? "border-red-500/25 bg-red-500/[0.08]" : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]"}`}>
+                <div className="flex items-center justify-between gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                     {item.image_url ? (
-                      <button onClick={() => onShowImage(item.id)} className="w-10 h-10 rounded-2xl overflow-hidden shrink-0 border border-white/10 hover:border-violet-500/40 transition">
+                      <button onClick={() => onShowImage(item.id)} className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl overflow-hidden shrink-0 border border-white/10 hover:border-violet-500/40 transition">
                         <img src={item.image_url} alt={item.product} className="w-full h-full object-cover" />
                       </button>
                     ) : (
-                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-white/[0.05] border border-white/10 text-xl">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shrink-0 bg-white/[0.05] border border-white/10 text-lg sm:text-xl">
                         {category.emoji}
                       </div>
                     )}
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="text-white font-black text-sm">{item.product || "—"}</h4>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="text-white font-black text-xs sm:text-sm">{item.product || "—"}</h4>
                         {item.image_url && (
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/20 text-violet-300 text-[10px] font-bold">
                             <ImageIcon size={7} /> Photo
@@ -194,31 +194,30 @@ function CategorySection({
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-2 mt-0.5">
-                        {item.supplier && <span className="text-white/30 text-xs">Fournisseur : <span className="text-white/50">{item.supplier}</span></span>}
-                        {item.lot && <span className="text-white/30 text-xs">Lot : <span className="text-white/50">{item.lot}</span></span>}
-                        {item.dlc && <span className="text-white/30 text-xs">DLC : <span className="text-white/50">{new Date(item.dlc).toLocaleDateString("fr-FR")}</span></span>}
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-0.5">
+                        {item.supplier && <span className="text-white/30 text-[10px] sm:text-xs truncate max-w-[120px]">Fourn. : <span className="text-white/50">{item.supplier}</span></span>}
+                        {item.dlc && <span className="text-white/30 text-[10px] sm:text-xs">DLC : <span className="text-white/50">{new Date(item.dlc).toLocaleDateString("fr-FR")}</span></span>}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                     {item.image_url && (
-                      <button onClick={() => onShowImage(item.id)} className="h-8 w-8 rounded-xl border border-violet-500/20 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 flex items-center justify-center transition">
-                        <Eye size={12} />
+                      <button onClick={() => onShowImage(item.id)} className="h-7 w-7 sm:h-8 sm:w-8 rounded-xl border border-violet-500/20 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 flex items-center justify-center transition">
+                        <Eye size={11} />
                       </button>
                     )}
-                    <button onClick={() => onUpdateQty(item.id, item.quantity || 0, "minus")} disabled={isUpdating || (item.quantity || 0) === 0} className="w-8 h-8 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/20 flex items-center justify-center transition disabled:opacity-30 active:scale-95">
-                      <Minus size={12} className="text-red-300" />
+                    <button onClick={() => onUpdateQty(item.id, item.quantity || 0, "minus")} disabled={isUpdating || (item.quantity || 0) === 0} className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/20 flex items-center justify-center transition disabled:opacity-30 active:scale-95">
+                      <Minus size={11} className="text-red-300" />
                     </button>
-                    <div className={`w-12 h-8 rounded-xl flex items-center justify-center font-black text-sm border ${isLow ? "bg-red-500/15 border-red-500/25 text-red-300" : "bg-white/[0.05] border-white/10 text-white"}`}>
-                      {isUpdating ? <Loader2 size={12} className="animate-spin" /> : (item.quantity || 0)}
+                    <div className={`w-10 sm:w-12 h-7 sm:h-8 rounded-xl flex items-center justify-center font-black text-xs sm:text-sm border ${isLow ? "bg-red-500/15 border-red-500/25 text-red-300" : "bg-white/[0.05] border-white/10 text-white"}`}>
+                      {isUpdating ? <Loader2 size={11} className="animate-spin" /> : (item.quantity || 0)}
                     </div>
-                    <button onClick={() => onUpdateQty(item.id, item.quantity || 0, "plus")} disabled={isUpdating} className="w-8 h-8 rounded-xl bg-green-500/15 hover:bg-green-500/25 border border-green-500/20 flex items-center justify-center transition disabled:opacity-30 active:scale-95">
-                      <Plus size={12} className="text-green-300" />
+                    <button onClick={() => onUpdateQty(item.id, item.quantity || 0, "plus")} disabled={isUpdating} className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-green-500/15 hover:bg-green-500/25 border border-green-500/20 flex items-center justify-center transition disabled:opacity-30 active:scale-95">
+                      <Plus size={11} className="text-green-300" />
                     </button>
-                    <button onClick={() => onDelete(item.id)} className="h-8 w-8 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition">
-                      <Trash2 size={12} />
+                    <button onClick={() => onDelete(item.id)} className="h-7 w-7 sm:h-8 sm:w-8 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition">
+                      <Trash2 size={11} />
                     </button>
                   </div>
                 </div>
@@ -474,79 +473,79 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
         <ImageModal url={imageModalProduct.image_url} onClose={() => setShowImageFor(null)} />
       )}
 
-      <div className="min-h-screen bg-[#020817] text-white p-5">
-        <div className="mx-auto max-w-[1450px] rounded-[32px] border border-white/5 bg-[#030b1d] p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
+      <div className="min-h-screen bg-[#020817] text-white p-3 sm:p-5 overflow-x-hidden">
+        <div className="mx-auto max-w-[1450px] rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#030b1d] p-4 sm:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-4 sm:space-y-5">
 
           {/* HEADER */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <p className="uppercase tracking-[0.32em] text-cyan-400 font-semibold text-xs">STOCK MANAGEMENT</p>
+                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+                <p className="uppercase tracking-[0.2em] text-cyan-400 font-semibold text-xs truncate">STOCK MANAGEMENT</p>
               </div>
-              <h1 className="text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">Gestion Stock</h1>
-              <p className="text-white/40 text-base mt-2">Contrôle rapide des marchandises</p>
+              <h1 className="text-[32px] sm:text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">Gestion Stock</h1>
+              <p className="text-white/40 text-sm sm:text-base mt-2">Contrôle rapide des marchandises</p>
             </div>
-            <div className="flex items-center gap-2 mt-2">
-              <button onClick={() => setShowAddForm(!showAddForm)} className="h-10 px-4 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2">
-                <Plus size={15} /> Ajouter
+            <div className="flex items-center gap-2 mt-1 shrink-0">
+              <button onClick={() => setShowAddForm(!showAddForm)} className="h-10 px-3 sm:px-4 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2">
+                <Plus size={15} /> <span className="hidden sm:inline">Ajouter</span>
               </button>
-              <button onClick={handleRefresh} disabled={isRefreshing} className="h-10 px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white transition flex items-center gap-2 text-sm font-bold disabled:opacity-50">
+              <button onClick={handleRefresh} disabled={isRefreshing} className="h-10 w-10 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white transition flex items-center justify-center text-sm font-bold disabled:opacity-50">
                 <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
               </button>
             </div>
           </div>
 
           {/* KPI CARDS */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button onClick={() => setFilterStock("all")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "all" ? "border-cyan-400/50 ring-2 ring-cyan-400/20 bg-gradient-to-br from-cyan-500/20 to-blue-900/15" : "border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10"}`}>
-              <div className="flex items-start justify-between gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <button onClick={() => setFilterStock("all")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "all" ? "border-cyan-400/50 ring-2 ring-cyan-400/20 bg-gradient-to-br from-cyan-500/20 to-blue-900/15" : "border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10"}`}>
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
                 <div>
                   <p className="text-cyan-300 text-xs font-semibold">Produits</p>
-                  <h2 className="text-[42px] font-black text-white leading-none mt-2">{products.length}</h2>
+                  <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{products.length}</h2>
                   <p className="text-cyan-400/50 text-xs mt-1">{totalItems} unités</p>
                 </div>
-                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStock === "all" ? "border-cyan-400/40 bg-cyan-400/30" : "border-cyan-400/20 bg-cyan-500/20"}`}>
-                  <Boxes size={18} className="text-cyan-300" />
+                <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "all" ? "border-cyan-400/40 bg-cyan-400/30" : "border-cyan-400/20 bg-cyan-500/20"}`}>
+                  <Boxes size={16} className="text-cyan-300" />
                 </div>
               </div>
             </button>
 
-            <button onClick={() => setFilterStock(filterStock === "photo" ? "all" : "photo")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "photo" ? "border-violet-400/50 ring-2 ring-violet-400/20 bg-gradient-to-br from-violet-500/20 to-violet-900/15" : "border-violet-500/20 bg-gradient-to-br from-violet-500/15 to-violet-900/10"}`}>
-              <div className="flex items-start justify-between gap-3">
+            <button onClick={() => setFilterStock(filterStock === "photo" ? "all" : "photo")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "photo" ? "border-violet-400/50 ring-2 ring-violet-400/20 bg-gradient-to-br from-violet-500/20 to-violet-900/15" : "border-violet-500/20 bg-gradient-to-br from-violet-500/15 to-violet-900/10"}`}>
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
                 <div>
                   <p className="text-violet-300 text-xs font-semibold">Avec photo</p>
-                  <h2 className="text-[42px] font-black text-white leading-none mt-2">{withPhotoCount}</h2>
+                  <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{withPhotoCount}</h2>
                   <p className="text-violet-400/50 text-xs mt-1">scannés IA</p>
                 </div>
-                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStock === "photo" ? "border-violet-400/40 bg-violet-400/30" : "border-violet-400/20 bg-violet-500/20"}`}>
-                  <ImageIcon size={18} className="text-violet-300" />
+                <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "photo" ? "border-violet-400/40 bg-violet-400/30" : "border-violet-400/20 bg-violet-500/20"}`}>
+                  <ImageIcon size={16} className="text-violet-300" />
                 </div>
               </div>
             </button>
 
-            <button onClick={() => setFilterStock(filterStock === "low" ? "all" : "low")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "low" ? "border-red-400/50 ring-2 ring-red-400/20 bg-gradient-to-br from-red-500/25 to-red-900/15" : lowStockCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
-              <div className="flex items-start justify-between gap-3">
+            <button onClick={() => setFilterStock(filterStock === "low" ? "all" : "low")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "low" ? "border-red-400/50 ring-2 ring-red-400/20 bg-gradient-to-br from-red-500/25 to-red-900/15" : lowStockCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
                 <div>
                   <p className="text-red-300 text-xs font-semibold">Stock faible</p>
-                  <h2 className="text-[42px] font-black text-white leading-none mt-2">{lowStockCount}</h2>
+                  <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{lowStockCount}</h2>
                   {lowStockCount > 0 && <p className="text-red-400/70 text-xs mt-1 font-bold">Réapprovisionner</p>}
                 </div>
-                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStock === "low" ? "border-red-400/40 bg-red-400/30" : "border-red-400/20 bg-red-500/20"}`}>
-                  <TrendingDown size={18} className={`text-red-300 ${lowStockCount > 0 && filterStock !== "low" ? "animate-pulse" : ""}`} />
+                <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "low" ? "border-red-400/40 bg-red-400/30" : "border-red-400/20 bg-red-500/20"}`}>
+                  <TrendingDown size={16} className={`text-red-300 ${lowStockCount > 0 && filterStock !== "low" ? "animate-pulse" : ""}`} />
                 </div>
               </div>
             </button>
 
-            <button onClick={() => setFilterStock(filterStock === "ok" ? "all" : "ok")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "ok" ? "border-green-400/50 ring-2 ring-green-400/20 bg-gradient-to-br from-green-500/20 to-green-900/15" : "border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10"}`}>
-              <div className="flex items-start justify-between gap-3">
+            <button onClick={() => setFilterStock(filterStock === "ok" ? "all" : "ok")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "ok" ? "border-green-400/50 ring-2 ring-green-400/20 bg-gradient-to-br from-green-500/20 to-green-900/15" : "border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10"}`}>
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
                 <div>
                   <p className="text-green-300 text-xs font-semibold">Stock OK</p>
-                  <h2 className="text-[42px] font-black text-white leading-none mt-2">{products.length - lowStockCount}</h2>
+                  <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{products.length - lowStockCount}</h2>
                   <p className="text-green-400/50 text-xs mt-1">niveaux corrects</p>
                 </div>
-                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStock === "ok" ? "border-green-400/40 bg-green-400/30" : "border-green-400/20 bg-green-500/20"}`}>
-                  <CheckCircle2 size={18} className="text-green-300" />
+                <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "ok" ? "border-green-400/40 bg-green-400/30" : "border-green-400/20 bg-green-500/20"}`}>
+                  <CheckCircle2 size={16} className="text-green-300" />
                 </div>
               </div>
             </button>
@@ -554,26 +553,26 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
 
           {/* ADD FORM */}
           {showAddForm && (
-            <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 md:p-6">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-black text-white">Ajouter un produit</h2>
+            <div className="rounded-[24px] sm:rounded-[28px] border border-white/10 bg-white/[0.02] p-4 sm:p-5 md:p-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-5">
+                <h2 className="text-base sm:text-lg font-black text-white">Ajouter un produit</h2>
                 <button onClick={resetForm} className="text-white/30 hover:text-white transition"><X size={18} /></button>
               </div>
 
-              <div className="flex gap-2 mb-5">
-                <button onClick={() => setActiveTab("scan")} className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold transition border ${activeTab === "scan" ? "bg-violet-500/20 border-violet-500/40 text-violet-300" : "border-white/10 bg-white/[0.03] text-white/40 hover:text-white/70"}`}>
+              <div className="flex gap-2 mb-4 sm:mb-5">
+                <button onClick={() => setActiveTab("scan")} className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-2xl text-sm font-bold transition border ${activeTab === "scan" ? "bg-violet-500/20 border-violet-500/40 text-violet-300" : "border-white/10 bg-white/[0.03] text-white/40 hover:text-white/70"}`}>
                   <Sparkles size={14} /> Scan IA
                 </button>
-                <button onClick={() => setActiveTab("manual")} className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold transition border ${activeTab === "manual" ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-300" : "border-white/10 bg-white/[0.03] text-white/40 hover:text-white/70"}`}>
+                <button onClick={() => setActiveTab("manual")} className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-2xl text-sm font-bold transition border ${activeTab === "manual" ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-300" : "border-white/10 bg-white/[0.03] text-white/40 hover:text-white/70"}`}>
                   <Plus size={14} /> Manuel
                 </button>
               </div>
 
               {/* SCAN TAB */}
               {activeTab === "scan" && (
-                <div className="rounded-[20px] border border-violet-500/20 bg-violet-500/[0.05] p-5 space-y-4">
+                <div className="rounded-[20px] border border-violet-500/20 bg-violet-500/[0.05] p-4 sm:p-5 space-y-4">
                   <div className="flex items-center gap-3">
-                    <Sparkles size={18} className="text-violet-300" />
+                    <Sparkles size={18} className="text-violet-300 shrink-0" />
                     <div>
                       <p className="text-white font-black text-sm">Scan IA — Reconnaissance automatique</p>
                       <p className="text-white/30 text-xs">L'IA détecte le produit et sa catégorie !</p>
@@ -646,16 +645,16 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                         <button
                           key={cat.id}
                           onClick={() => setNewCategory(cat.id)}
-                          className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition ${newCategory === cat.id ? `${cat.color}` : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"}`}
+                          className={`flex flex-col items-center gap-1.5 p-2 sm:p-3 rounded-2xl border transition ${newCategory === cat.id ? `${cat.color}` : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"}`}
                         >
-                          <span className="text-xl">{cat.emoji}</span>
-                          <span className={`text-[10px] font-bold text-center leading-tight ${newCategory === cat.id ? cat.text : "text-white/40"}`}>{cat.id}</span>
+                          <span className="text-lg sm:text-xl">{cat.emoji}</span>
+                          <span className={`text-[9px] sm:text-[10px] font-bold text-center leading-tight ${newCategory === cat.id ? cat.text : "text-white/40"}`}>{cat.id}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-white/30 text-xs mb-1 block">Produit *</label>
                       <div className="flex items-center gap-3 h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4">
@@ -681,7 +680,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                       <label className="text-white/30 text-xs mb-1 block">Quantité *</label>
                       <input type="number" min="0" value={newQuantity} onChange={(e) => setNewQuantity(e.target.value)} className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none" />
                     </div>
-                    <div className="xl:col-span-2">
+                    <div className="sm:col-span-2">
                       <label className="text-white/30 text-xs mb-1 block">Date DLC</label>
                       <input type="date" value={newDlc} onChange={(e) => setNewDlc(e.target.value)} className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none" />
                     </div>
@@ -697,7 +696,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
           )}
 
           {/* SEARCH + FILTERS */}
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-4 space-y-3">
+          <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-3 sm:p-4 space-y-3">
             <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 h-11">
               <Search size={15} className="text-white/30 shrink-0" />
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un produit..." className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/25" />
@@ -705,14 +704,14 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
             </div>
 
             <div className="flex gap-2 flex-wrap">
-              <button onClick={() => setFilterCategory("all")} className={`px-3 py-2 rounded-xl border text-xs font-bold transition ${filterCategory === "all" ? "bg-white/10 border-white/20 text-white" : "border-white/10 text-white/35 hover:text-white/60"}`}>
+              <button onClick={() => setFilterCategory("all")} className={`px-3 py-2 rounded-xl border text-xs font-bold transition whitespace-nowrap ${filterCategory === "all" ? "bg-white/10 border-white/20 text-white" : "border-white/10 text-white/35 hover:text-white/60"}`}>
                 Toutes
               </button>
               {CATEGORIES.map((cat) => {
                 const count = products.filter((p) => (p.category || "Épicerie") === cat.id).length;
                 if (count === 0) return null;
                 return (
-                  <button key={cat.id} onClick={() => setFilterCategory(cat.id)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 ${filterCategory === cat.id ? cat.badge : "border-white/10 text-white/35 hover:text-white/60"}`}>
+                  <button key={cat.id} onClick={() => setFilterCategory(cat.id)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${filterCategory === cat.id ? cat.badge : "border-white/10 text-white/35 hover:text-white/60"}`}>
                     <span>{cat.emoji}</span> {cat.id} <span className="opacity-60">({count})</span>
                   </button>
                 );
@@ -732,7 +731,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {productsByCategory.map(({ category, products: catProducts }) => (
                 <CategorySection
                   key={category.id}
@@ -758,7 +757,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
           )}
 
           {!isLoading && filteredProducts.length > 0 && (
-            <div className="flex items-center justify-between text-white/25 text-xs pt-2 border-t border-white/[0.04]">
+            <div className="flex items-center justify-between text-white/25 text-xs pt-2 border-t border-white/[0.04] flex-wrap gap-2">
               <span>{filteredProducts.length} produit(s) · {withPhotoCount} avec photo 📷</span>
               {lowStockCount > 0 && (
                 <span className="flex items-center gap-1 text-red-400/60">

@@ -141,14 +141,14 @@ function ReportCard({
       report.priority === "Urgent" ? "border-orange-500/25 bg-gradient-to-r from-orange-500/[0.07] to-orange-900/5" :
       "border-white/[0.07] bg-white/[0.02]"
     }`}>
-      <div className="flex items-center justify-between gap-4 p-4">
+      <div className="flex items-center justify-between gap-3 p-3 sm:p-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${
+          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shrink-0 border ${
             report.priority === "Critique" ? "bg-red-500/20 border-red-500/30" :
             report.priority === "Urgent" ? "bg-orange-500/20 border-orange-500/30" :
             "bg-blue-500/15 border-blue-500/20"
           }`}>
-            <Wrench size={16} className={
+            <Wrench size={15} className={
               report.priority === "Critique" ? "text-red-300" :
               report.priority === "Urgent" ? "text-orange-300" : "text-blue-300"
             } />
@@ -167,7 +167,7 @@ function ReportCard({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(report.status)}`}>
+          <span className={`hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(report.status)}`}>
             {report.status}
           </span>
           <button onClick={() => setExpanded(!expanded)} className="text-white/25 hover:text-white/50 transition">
@@ -177,12 +177,18 @@ function ReportCard({
       </div>
 
       {expanded && (
-        <div className="px-4 pb-4 border-t border-white/[0.05] pt-3 space-y-3">
+        <div className="px-3 sm:px-4 pb-4 border-t border-white/[0.05] pt-3 space-y-3">
+          {/* Statut visible sur mobile dans le panel expandé */}
+          <div className="flex sm:hidden">
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(report.status)}`}>
+              {report.status}
+            </span>
+          </div>
           <p className="text-white/50 text-sm">{report.description}</p>
 
           {isAdmin && (
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-white/30 text-xs font-bold">Changer statut :</p>
+              <p className="text-white/30 text-xs font-bold w-full sm:w-auto">Changer statut :</p>
               {(["En attente", "En cours", "Résolu"] as Status[]).map((s) => (
                 <button
                   key={s}
@@ -278,7 +284,6 @@ export default function MaintenancePage() {
     }
     init();
 
-    // Realtime pour les nouvelles pannes
     const channel = supabase
       .channel("maintenance")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "maintenance_reports" }, (payload) => {
@@ -428,28 +433,28 @@ export default function MaintenancePage() {
     <>
       <ToastContainer toasts={toasts} onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
 
-      <div className="min-h-screen bg-[#020817] text-white p-5">
-        <div className="mx-auto max-w-[1450px] rounded-[32px] border border-white/5 bg-[#030b1d] p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
+      <div className="min-h-screen bg-[#020817] text-white p-3 sm:p-5 overflow-x-hidden">
+        <div className="mx-auto max-w-[1450px] rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#030b1d] p-4 sm:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-4 sm:space-y-5">
 
           {/* ── HEADER ─────────────────────────────── */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
-                <p className="uppercase tracking-[0.32em] text-orange-400 font-semibold text-xs">MAINTENANCE & PANNES</p>
+                <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse shrink-0" />
+                <p className="uppercase tracking-[0.2em] text-orange-400 font-semibold text-xs truncate">MAINTENANCE & PANNES</p>
               </div>
-              <h1 className="text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">Maintenance</h1>
-              <p className="text-white/40 text-base mt-2">Suivi des pannes et certificats d'entretien</p>
+              <h1 className="text-[32px] sm:text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">Maintenance</h1>
+              <p className="text-white/40 text-sm sm:text-base mt-2">Suivi des pannes et certificats d'entretien</p>
             </div>
 
-            <div className="flex items-center gap-2 mt-2">
-              <button onClick={handleRefresh} disabled={isRefreshing} className="h-10 px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white hover:border-white/20 transition flex items-center gap-2 text-sm font-bold disabled:opacity-50">
+            <div className="flex items-center gap-2 mt-1 shrink-0">
+              <button onClick={handleRefresh} disabled={isRefreshing} className="h-10 px-3 sm:px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white hover:border-white/20 transition flex items-center gap-2 text-sm font-bold disabled:opacity-50">
                 <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
                 <span className="hidden sm:inline">Actualiser</span>
               </button>
               {isAdmin ? (
-                <button onClick={() => setIsAdmin(false)} className="h-10 px-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20 transition flex items-center gap-2 text-sm font-bold">
-                  <ShieldCheck size={14} /> Admin
+                <button onClick={() => setIsAdmin(false)} className="h-10 px-3 sm:px-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20 transition flex items-center gap-2 text-sm font-bold">
+                  <ShieldCheck size={14} /> <span className="hidden sm:inline">Admin</span>
                 </button>
               ) : (
                 <div className="flex items-center gap-2">
@@ -460,14 +465,14 @@ export default function MaintenancePage() {
                         onChange={(e) => setAdminPin(e.target.value.replace(/\D/g, ""))}
                         onKeyDown={(e) => e.key === "Enter" && checkAdminPin()}
                         placeholder="PIN"
-                        className={`h-10 w-20 rounded-2xl border px-3 text-white text-sm outline-none text-center ${pinError ? "border-red-500/60 bg-red-500/10" : "border-white/10 bg-white/[0.05]"}`}
+                        className={`h-10 w-16 sm:w-20 rounded-2xl border px-3 text-white text-sm outline-none text-center ${pinError ? "border-red-500/60 bg-red-500/10" : "border-white/10 bg-white/[0.05]"}`}
                       />
-                      <button onClick={checkAdminPin} className="h-10 px-4 rounded-2xl bg-orange-400 hover:bg-orange-300 transition text-black text-sm font-black">OK</button>
+                      <button onClick={checkAdminPin} className="h-10 px-3 sm:px-4 rounded-2xl bg-orange-400 hover:bg-orange-300 transition text-black text-sm font-black">OK</button>
                       <button onClick={() => { setShowAdminInput(false); setAdminPin(""); }} className="h-10 w-10 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 flex items-center justify-center transition"><X size={14} /></button>
                     </>
                   ) : (
-                    <button onClick={() => setShowAdminInput(true)} className="h-10 px-4 rounded-2xl border border-orange-500/20 bg-orange-500/[0.07] hover:bg-orange-500/15 text-orange-300 transition flex items-center gap-2 text-sm font-bold">
-                      <ShieldCheck size={15} /> Mode admin
+                    <button onClick={() => setShowAdminInput(true)} className="h-10 px-3 sm:px-4 rounded-2xl border border-orange-500/20 bg-orange-500/[0.07] hover:bg-orange-500/15 text-orange-300 transition flex items-center gap-2 text-sm font-bold">
+                      <ShieldCheck size={15} /> <span className="hidden sm:inline">Mode admin</span>
                     </button>
                   )}
                 </div>
@@ -477,76 +482,76 @@ export default function MaintenancePage() {
 
           {/* ── ALERTE CRITIQUE ────────────────────── */}
           {criticalCount > 0 && (
-            <div className="rounded-[20px] border border-red-500/50 bg-red-500/15 p-4 flex items-center gap-4">
-              <AlertTriangle size={24} className="text-red-400 animate-pulse shrink-0" />
+            <div className="rounded-[20px] border border-red-500/50 bg-red-500/15 p-4 flex items-center gap-3">
+              <AlertTriangle size={20} className="text-red-400 animate-pulse shrink-0" />
               <div>
-                <p className="text-red-300 font-black text-base">🚨 {criticalCount} panne(s) CRITIQUE(S) non résolue(s) !</p>
-                <p className="text-red-400/70 text-xs mt-0.5">Action immédiate requise — vérifiez le tableau des pannes</p>
+                <p className="text-red-300 font-black text-sm sm:text-base">🚨 {criticalCount} panne(s) CRITIQUE(S) non résolue(s) !</p>
+                <p className="text-red-400/70 text-xs mt-0.5">Action immédiate requise</p>
               </div>
             </div>
           )}
 
           {/* ── KPI CARDS ──────────────────────────── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className={`rounded-[24px] border p-5 ${pendingCount > 0 ? "border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-orange-900/10" : "border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-orange-900/5"}`}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div className={`rounded-[24px] border p-4 sm:p-5 ${pendingCount > 0 ? "border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-orange-900/10" : "border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-orange-900/5"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-orange-300 text-xs font-semibold">En attente</p>
-                  <h2 className="text-[42px] font-black text-white leading-none mt-2">{pendingCount}</h2>
+                  <h2 className="text-[36px] sm:text-[42px] font-black text-white leading-none mt-2">{pendingCount}</h2>
                   <p className="text-orange-400/50 text-xs mt-1">pannes déclarées</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-500/20">
-                  <Clock3 size={18} className={`text-orange-300 ${pendingCount > 0 ? "animate-pulse" : ""}`} />
+                <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-500/20 shrink-0">
+                  <Clock3 size={16} className={`text-orange-300 ${pendingCount > 0 ? "animate-pulse" : ""}`} />
                 </div>
               </div>
             </div>
 
-            <div className={`rounded-[24px] border p-5 ${criticalCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
+            <div className={`rounded-[24px] border p-4 sm:p-5 ${criticalCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-red-300 text-xs font-semibold">Critiques</p>
-                  <h2 className="text-[42px] font-black text-white leading-none mt-2">{criticalCount}</h2>
+                  <h2 className="text-[36px] sm:text-[42px] font-black text-white leading-none mt-2">{criticalCount}</h2>
                   <p className="text-red-400/50 text-xs mt-1">non résolues</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/20">
-                  <AlertTriangle size={18} className={`text-red-300 ${criticalCount > 0 ? "animate-pulse" : ""}`} />
+                <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/20 shrink-0">
+                  <AlertTriangle size={16} className={`text-red-300 ${criticalCount > 0 ? "animate-pulse" : ""}`} />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[24px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-5">
+            <div className="rounded-[24px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-green-300 text-xs font-semibold">Résolues</p>
-                  <h2 className="text-[42px] font-black text-white leading-none mt-2">{resolvedCount}</h2>
+                  <h2 className="text-[36px] sm:text-[42px] font-black text-white leading-none mt-2">{resolvedCount}</h2>
                   <p className="text-green-400/50 text-xs mt-1">au total</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-green-400/20 bg-green-500/20">
-                  <CheckCircle2 size={18} className="text-green-300" />
+                <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border border-green-400/20 bg-green-500/20 shrink-0">
+                  <CheckCircle2 size={16} className="text-green-300" />
                 </div>
               </div>
             </div>
 
-            <div className={`rounded-[24px] border p-5 ${expiredCerts > 0 ? "border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-900/5" : expiringSoonCerts > 0 ? "border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-orange-900/5" : "border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10"}`}>
+            <div className={`rounded-[24px] border p-4 sm:p-5 ${expiredCerts > 0 ? "border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-900/5" : expiringSoonCerts > 0 ? "border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-orange-900/5" : "border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className={`text-xs font-semibold ${expiredCerts > 0 ? "text-red-300" : expiringSoonCerts > 0 ? "text-orange-300" : "text-cyan-300"}`}>Certificats</p>
-                  <h2 className="text-[42px] font-black text-white leading-none mt-2">{certificates.length}</h2>
+                  <h2 className="text-[36px] sm:text-[42px] font-black text-white leading-none mt-2">{certificates.length}</h2>
                   {expiredCerts > 0 && <p className="text-red-400/70 text-xs mt-1 font-bold">{expiredCerts} expiré(s)</p>}
                   {expiringSoonCerts > 0 && !expiredCerts && <p className="text-orange-400/70 text-xs mt-1">{expiringSoonCerts} à renouveler</p>}
                   {!expiredCerts && !expiringSoonCerts && <p className="text-cyan-400/50 text-xs mt-1">tous à jour</p>}
                 </div>
-                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${expiredCerts > 0 ? "border-red-400/20 bg-red-500/20" : "border-cyan-400/20 bg-cyan-500/20"}`}>
-                  <ShieldCheck size={18} className={expiredCerts > 0 ? "text-red-300" : "text-cyan-300"} />
+                <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${expiredCerts > 0 ? "border-red-400/20 bg-red-500/20" : "border-cyan-400/20 bg-cyan-500/20"}`}>
+                  <ShieldCheck size={16} className={expiredCerts > 0 ? "text-red-300" : "text-cyan-300"} />
                 </div>
               </div>
             </div>
           </div>
 
           {/* ── TABS ───────────────────────────────── */}
-          <div className="flex gap-2 border-b border-white/[0.06]">
+          <div className="flex gap-2 border-b border-white/[0.06] overflow-x-auto">
             {tabs.map((tab) => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-5 py-3 rounded-t-2xl text-sm font-bold transition border-b-2 -mb-px ${activeTab === tab.id ? "border-orange-400 text-orange-400 bg-orange-500/[0.07]" : "border-transparent text-white/40 hover:text-white/70"}`}>
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 sm:px-5 py-3 rounded-t-2xl text-sm font-bold transition border-b-2 -mb-px whitespace-nowrap ${activeTab === tab.id ? "border-orange-400 text-orange-400 bg-orange-500/[0.07]" : "border-transparent text-white/40 hover:text-white/70"}`}>
                 <tab.icon size={15} /> {tab.label}
                 {tab.id === "pannes" && pendingCount > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-black">{pendingCount}</span>
@@ -559,16 +564,16 @@ export default function MaintenancePage() {
           {activeTab === "pannes" && (
             <div className="space-y-4">
 
-              {/* Declare panne button */}
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex gap-2 flex-wrap">
+              {/* Filtres + bouton déclarer */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex gap-2 flex-wrap w-full sm:w-auto">
                   {(["all", "En attente", "En cours", "Résolu"] as const).map((s) => (
-                    <button key={s} onClick={() => setFilterStatus(s)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition ${filterStatus === s ? "bg-white/10 border-white/20 text-white" : "border-white/10 text-white/35 hover:text-white/60"}`}>
+                    <button key={s} onClick={() => setFilterStatus(s)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition whitespace-nowrap ${filterStatus === s ? "bg-white/10 border-white/20 text-white" : "border-white/10 text-white/35 hover:text-white/60"}`}>
                       {s === "all" ? "Toutes" : s}
                     </button>
                   ))}
                   {(["all", "Critique", "Urgent", "Normal"] as const).map((p) => (
-                    <button key={p} onClick={() => setFilterPriority(p)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition ${filterPriority === p
+                    <button key={p} onClick={() => setFilterPriority(p)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition whitespace-nowrap ${filterPriority === p
                       ? p === "Critique" ? "bg-red-500/20 border-red-500/40 text-red-300"
                         : p === "Urgent" ? "bg-orange-500/20 border-orange-500/40 text-orange-300"
                         : p === "Normal" ? "bg-blue-500/20 border-blue-500/40 text-blue-300"
@@ -578,19 +583,19 @@ export default function MaintenancePage() {
                     </button>
                   ))}
                 </div>
-                <button onClick={() => setShowReportForm(!showReportForm)} className="h-10 px-5 rounded-2xl bg-orange-400 hover:bg-orange-300 transition text-black text-sm font-black flex items-center gap-2">
+                <button onClick={() => setShowReportForm(!showReportForm)} className="h-10 px-4 sm:px-5 rounded-2xl bg-orange-400 hover:bg-orange-300 transition text-black text-sm font-black flex items-center gap-2 shrink-0 w-full sm:w-auto justify-center">
                   <Plus size={16} /> Déclarer une panne
                 </button>
               </div>
 
               {/* Report form */}
               {showReportForm && (
-                <div className="rounded-[24px] border border-orange-500/20 bg-orange-500/[0.05] p-5 space-y-3">
+                <div className="rounded-[24px] border border-orange-500/20 bg-orange-500/[0.05] p-4 sm:p-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-base font-black text-white">Déclarer une panne</h3>
                     <button onClick={() => setShowReportForm(false)} className="text-white/30 hover:text-white transition"><X size={16} /></button>
                   </div>
-                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                     <div>
                       <label className="text-white/30 text-xs mb-1 block">Équipement *</label>
                       <input value={equipmentName} onChange={(e) => setEquipmentName(e.target.value)} placeholder="Ex: Friteuse, Hotte, Frigo..." className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none" />
@@ -647,22 +652,22 @@ export default function MaintenancePage() {
           {activeTab === "certificats" && (
             <div className="space-y-4">
 
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <p className="text-white/40 text-sm">{certificates.length} certificat(s) enregistré(s)</p>
-                <button onClick={() => setShowCertForm(!showCertForm)} className="h-10 px-5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2">
+                <button onClick={() => setShowCertForm(!showCertForm)} className="h-10 px-4 sm:px-5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2 w-full sm:w-auto justify-center">
                   <Plus size={16} /> Ajouter un certificat
                 </button>
               </div>
 
               {/* Certificate form */}
               {showCertForm && (
-                <div className="rounded-[24px] border border-cyan-500/20 bg-cyan-500/[0.05] p-5 space-y-4">
+                <div className="rounded-[24px] border border-cyan-500/20 bg-cyan-500/[0.05] p-4 sm:p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-base font-black text-white">Nouveau certificat</h3>
                     <button onClick={() => setShowCertForm(false)} className="text-white/30 hover:text-white transition"><X size={16} /></button>
                   </div>
 
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-white/30 text-xs mb-1 block">Nom du certificat *</label>
                       <input value={certName} onChange={(e) => setCertName(e.target.value)} placeholder="Ex: Entretien hotte 2024" className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none" />
@@ -685,14 +690,9 @@ export default function MaintenancePage() {
                   <div>
                     <label className="text-white/30 text-xs mb-2 block">Document (optionnel)</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-                      {/* Photo directe (caméra) */}
                       <label className="cursor-pointer">
                         <input
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          className="hidden"
+                          type="file" accept="image/*" capture="environment" className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) { setCertFile(file); addToast(`Photo sélectionnée : ${file.name}`, "success"); }
@@ -702,13 +702,9 @@ export default function MaintenancePage() {
                           <Camera size={18} /> Prendre une photo
                         </div>
                       </label>
-
-                      {/* Fichier (PDF/image) */}
                       <label className="cursor-pointer">
                         <input
-                          type="file"
-                          accept="image/*,application/pdf"
-                          className="hidden"
+                          type="file" accept="image/*,application/pdf" className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) { setCertFile(file); addToast(`Fichier sélectionné : ${file.name}`, "success"); }
@@ -751,17 +747,15 @@ export default function MaintenancePage() {
                   <p className="text-white/30 text-sm">Aucun certificat enregistré</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   {certificates.map((cert) => {
                     const expired = isExpired(cert.next_date);
                     const soon = !expired && isExpiringSoon(cert.next_date);
                     return (
-                      <div key={cert.id} className={`rounded-[24px] border p-5 transition-all ${expired ? "border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-900/5" : soon ? "border-orange-500/25 bg-gradient-to-br from-orange-500/[0.08] to-orange-900/5" : "border-green-500/20 bg-gradient-to-br from-green-500/[0.06] to-green-900/5"}`}>
-
-                        {/* Header */}
+                      <div key={cert.id} className={`rounded-[24px] border p-4 sm:p-5 transition-all ${expired ? "border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-900/5" : soon ? "border-orange-500/25 bg-gradient-to-br from-orange-500/[0.08] to-orange-900/5" : "border-green-500/20 bg-gradient-to-br from-green-500/[0.06] to-green-900/5"}`}>
                         <div className="flex items-start justify-between gap-3 mb-3">
-                          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${expired ? "bg-red-500/20 border-red-500/30" : soon ? "bg-orange-500/20 border-orange-500/30" : "bg-green-500/15 border-green-500/20"}`}>
-                            <ShieldCheck size={18} className={expired ? "text-red-300" : soon ? "text-orange-300" : "text-green-300"} />
+                          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shrink-0 border ${expired ? "bg-red-500/20 border-red-500/30" : soon ? "bg-orange-500/20 border-orange-500/30" : "bg-green-500/15 border-green-500/20"}`}>
+                            <ShieldCheck size={16} className={expired ? "text-red-300" : soon ? "text-orange-300" : "text-green-300"} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="text-white font-black text-sm break-words">{cert.name}</h3>
@@ -772,7 +766,6 @@ export default function MaintenancePage() {
                           {!expired && !soon && <span className="shrink-0 px-2 py-0.5 rounded-full bg-green-500/15 border border-green-500/25 text-green-300 text-[10px] font-bold">✓ OK</span>}
                         </div>
 
-                        {/* Dates */}
                         <div className="space-y-1.5 mb-4">
                           {cert.maintenance_date && (
                             <div className="flex items-center gap-2 text-xs text-white/40">
@@ -788,7 +781,6 @@ export default function MaintenancePage() {
                           )}
                         </div>
 
-                        {/* Actions */}
                         <div className="flex items-center gap-2">
                           {cert.file_url && (
                             <a href={cert.file_url} target="_blank" rel="noopener noreferrer" className="flex-1 h-9 rounded-xl border border-cyan-500/20 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 transition text-xs font-bold flex items-center justify-center gap-1.5">

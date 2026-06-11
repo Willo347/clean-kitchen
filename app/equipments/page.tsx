@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   X,
   Loader2,
-  ChevronRight,
   Thermometer,
   MapPin,
   Settings2,
@@ -60,13 +59,12 @@ function EquipmentModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#030b1d] p-6 shadow-2xl"
+        className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#030b1d] p-5 sm:p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-5 sm:mb-6">
           <div>
-            <h2 className="text-xl font-black text-white">
+            <h2 className="text-lg sm:text-xl font-black text-white">
               {isEdit ? "Modifier l'équipement" : "Nouvel équipement"}
             </h2>
             <p className="text-white/30 text-xs mt-0.5">
@@ -81,7 +79,6 @@ function EquipmentModal({
           </button>
         </div>
 
-        {/* Form */}
         <div className="space-y-3">
           <div>
             <label className="text-white/40 text-xs mb-1.5 block">Nom</label>
@@ -141,8 +138,7 @@ function EquipmentModal({
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 mt-5 sm:mt-6">
           <button
             onClick={onClose}
             className="flex-1 h-11 rounded-2xl border border-white/10 bg-white/[0.03] text-white/60 hover:text-white text-sm font-bold transition"
@@ -273,7 +269,6 @@ export default function EquipmentsPage() {
 
   return (
     <>
-      {/* MODAL */}
       {showModal && (
         <EquipmentModal
           equipment={editingEquipment}
@@ -283,35 +278,29 @@ export default function EquipmentsPage() {
         />
       )}
 
-      <div className="min-h-screen bg-[#020817] text-white p-5">
-        <div className="mx-auto max-w-[1450px] rounded-[32px] border border-white/5 bg-[#030b1d] p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
+      <div className="min-h-screen bg-[#020817] text-white p-3 sm:p-5 overflow-x-hidden">
+        <div className="mx-auto max-w-[1450px] rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#030b1d] p-4 sm:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-4 sm:space-y-5">
 
           {/* ── HEADER ─────────────────────────────── */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <p className="uppercase tracking-[0.32em] text-cyan-400 font-semibold text-xs">
+                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+                <p className="uppercase tracking-[0.2em] text-cyan-400 font-semibold text-xs truncate">
                   EQUIPMENT MANAGEMENT
                 </p>
               </div>
-              <h1 className="text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">
+              <h1 className="text-[32px] sm:text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">
                 Équipements
               </h1>
-              <p className="text-white/40 text-base mt-2">
+              <p className="text-white/40 text-sm sm:text-base mt-2">
                 Gestion intelligente des équipements HACCP
               </p>
             </div>
 
             <button
               onClick={() => { setEditingEquipment(null); setShowModal(true); }}
-              className="
-                mt-2 h-10 px-5
-                rounded-2xl
-                bg-cyan-400 hover:bg-cyan-300
-                transition text-black text-sm font-black
-                flex items-center gap-2
-              "
+              className="mt-1 h-10 px-4 sm:px-5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2 shrink-0"
             >
               <Plus size={16} />
               <span className="hidden sm:inline">Ajouter</span>
@@ -319,52 +308,49 @@ export default function EquipmentsPage() {
           </div>
 
           {/* ── KPI CARDS ──────────────────────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
 
-            {/* Total */}
-            <div className="rounded-[24px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10 p-5">
+            <div className="rounded-[24px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10 p-4 sm:p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-cyan-300 text-sm font-semibold">Équipements</p>
-                  <h2 className="text-[48px] font-black text-white leading-none mt-3">
+                  <h2 className="text-[40px] sm:text-[48px] font-black text-white leading-none mt-2 sm:mt-3">
                     {equipments.length}
                   </h2>
                   <p className="text-cyan-400/50 text-xs mt-1">enregistrés</p>
                 </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20">
-                  <Snowflake size={20} className="text-cyan-300" />
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20 shrink-0">
+                  <Snowflake size={18} className="text-cyan-300" />
                 </div>
               </div>
             </div>
 
-            {/* Online */}
-            <div className="rounded-[24px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-5">
+            <div className="rounded-[24px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-4 sm:p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-green-300 text-sm font-semibold">En ligne</p>
-                  <h2 className="text-[48px] font-black text-white leading-none mt-3">
+                  <h2 className="text-[40px] sm:text-[48px] font-black text-white leading-none mt-2 sm:mt-3">
                     {onlineCount}
                   </h2>
                   <p className="text-green-400/50 text-xs mt-1">avec relevé récent</p>
                 </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-green-400/20 bg-green-500/20">
-                  <Wifi size={20} className="text-green-300" />
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-green-400/20 bg-green-500/20 shrink-0">
+                  <Wifi size={18} className="text-green-300" />
                 </div>
               </div>
             </div>
 
-            {/* Alerts */}
-            <div className={`rounded-[24px] border p-5 ${alertsCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
+            <div className={`rounded-[24px] border p-4 sm:p-5 ${alertsCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-red-300 text-sm font-semibold">Alertes HACCP</p>
-                  <h2 className="text-[48px] font-black text-white leading-none mt-3">
+                  <h2 className="text-[40px] sm:text-[48px] font-black text-white leading-none mt-2 sm:mt-3">
                     {alertsCount}
                   </h2>
                   {alertsCount > 0 && <p className="text-red-400/70 text-xs mt-1 font-bold">Action requise</p>}
                 </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/20">
-                  <AlertTriangle size={20} className={`text-red-300 ${alertsCount > 0 ? "animate-pulse" : ""}`} />
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/20 shrink-0">
+                  <AlertTriangle size={18} className={`text-red-300 ${alertsCount > 0 ? "animate-pulse" : ""}`} />
                 </div>
               </div>
             </div>
@@ -387,7 +373,7 @@ export default function EquipmentsPage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {equipments.map((equipment) => {
                 const currentTemp = temperatures[equipment.name?.toLowerCase().trim()];
                 const isAlert = currentTemp !== undefined && (currentTemp < equipment.temp_min || currentTemp > equipment.temp_max);
@@ -396,22 +382,20 @@ export default function EquipmentsPage() {
                 return (
                   <div
                     key={equipment.id}
-                    className={`
-                      rounded-[24px] border p-5 transition-all
-                      ${isAlert
+                    className={`rounded-[24px] border p-4 sm:p-5 transition-all ${
+                      isAlert
                         ? "border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-900/5"
                         : isOnline
                         ? "border-green-500/20 bg-gradient-to-br from-green-500/[0.07] to-green-900/5"
-                        : "border-white/[0.08] bg-white/[0.02]"}
-                    `}
+                        : "border-white/[0.08] bg-white/[0.02]"
+                    }`}
                   >
                     {/* Card header */}
                     <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`
-                          w-10 h-10 rounded-2xl flex items-center justify-center shrink-0
-                          ${isAlert ? "bg-red-500/20 border border-red-500/30" : "bg-cyan-500/20 border border-cyan-500/20"}
-                        `}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                          isAlert ? "bg-red-500/20 border border-red-500/30" : "bg-cyan-500/20 border border-cyan-500/20"
+                        }`}>
                           <Snowflake size={18} className={isAlert ? "text-red-300" : "text-cyan-300"} />
                         </div>
                         <div className="min-w-0">
@@ -422,7 +406,6 @@ export default function EquipmentsPage() {
                         </div>
                       </div>
 
-                      {/* Status badge */}
                       {isAlert ? (
                         <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold">
                           <AlertTriangle size={9} /> ALERTE
@@ -451,10 +434,11 @@ export default function EquipmentsPage() {
                     </div>
 
                     {/* Temperature display */}
-                    <div className={`
-                      rounded-2xl p-4 mb-4 flex items-center justify-between
-                      ${isAlert ? "bg-red-500/10 border border-red-500/20" : isOnline ? "bg-green-500/10 border border-green-500/20" : "bg-white/[0.03] border border-white/[0.06]"}
-                    `}>
+                    <div className={`rounded-2xl p-4 mb-4 flex items-center justify-between ${
+                      isAlert ? "bg-red-500/10 border border-red-500/20"
+                      : isOnline ? "bg-green-500/10 border border-green-500/20"
+                      : "bg-white/[0.03] border border-white/[0.06]"
+                    }`}>
                       <div>
                         <p className="text-white/30 text-xs mb-1">Température live</p>
                         <p className={`text-3xl font-black ${isAlert ? "text-red-400" : isOnline ? "text-green-300" : "text-white/20"}`}>
@@ -487,14 +471,7 @@ export default function EquipmentsPage() {
               {/* Add card */}
               <button
                 onClick={() => { setEditingEquipment(null); setShowModal(true); }}
-                className="
-                  rounded-[24px] border-2 border-dashed border-white/10
-                  bg-transparent hover:bg-white/[0.02] hover:border-white/20
-                  p-5 transition-all
-                  flex flex-col items-center justify-center gap-3
-                  min-h-[200px]
-                  text-white/25 hover:text-white/50
-                "
+                className="rounded-[24px] border-2 border-dashed border-white/10 bg-transparent hover:bg-white/[0.02] hover:border-white/20 p-5 transition-all flex flex-col items-center justify-center gap-3 min-h-[200px] text-white/25 hover:text-white/50"
               >
                 <div className="w-12 h-12 rounded-2xl border-2 border-dashed border-white/15 flex items-center justify-center">
                   <Plus size={20} />
@@ -505,9 +482,9 @@ export default function EquipmentsPage() {
           )}
 
           {/* ── SETTINGS SECTION ───────────────────── */}
-          <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5">
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-4 sm:p-5">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shrink-0">
                 <Settings2 size={16} className="text-white/40" />
               </div>
               <div>
@@ -516,8 +493,8 @@ export default function EquipmentsPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto -mx-1 px-1">
+              <table className="w-full text-sm min-w-[480px]">
                 <thead>
                   <tr className="border-b border-white/[0.06]">
                     {["Équipement", "Zone", "Type", "Min", "Max", "Statut"].map((h) => (
