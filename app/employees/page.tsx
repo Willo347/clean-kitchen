@@ -36,6 +36,7 @@ interface Employee {
   phone?: string;
   pin_code: string;
   is_active: boolean;
+  is_admin: boolean;
   created_at: string;
 }
 
@@ -239,6 +240,10 @@ function EmployeeModal({
                 <option value="false">INACTIF</option>
               </select>
             </div>
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+            <input type="checkbox" id="is_admin" checked={form.is_admin || false} onChange={(e) => setForm({ ...form, is_admin: e.target.checked })} className="w-4 h-4 rounded accent-cyan-400" />
+            <label htmlFor="is_admin" className="text-white/60 text-sm cursor-pointer flex-1">Administrateur <span className="text-white/30 text-xs">(accès complet avec son PIN)</span></label>
           </div>
         </div>
         <div className="flex gap-3 mt-6">
@@ -689,10 +694,10 @@ export default function EmployeesPage() {
     if (!form.full_name || !form.role || !form.pin_code) return;
     setIsSaving(true);
     if (form.id) {
-      await supabase.from("employees").update({ full_name: form.full_name, role: form.role, pin_code: form.pin_code, is_active: form.is_active, email: form.email || null }).eq("id", form.id);
+      await supabase.from("employees").update({ full_name: form.full_name, role: form.role, pin_code: form.pin_code, is_active: form.is_active, is_admin: form.is_admin ?? false, email: form.email || null }).eq("id", form.id);
       addToast(`${form.full_name} modifié`, "success");
     } else {
-      await supabase.from("employees").insert({ full_name: form.full_name, role: form.role, pin_code: form.pin_code, is_active: form.is_active ?? true, email: form.email || null });
+      await supabase.from("employees").insert({ full_name: form.full_name, role: form.role, pin_code: form.pin_code, is_active: form.is_active ?? true, is_admin: form.is_admin ?? false, email: form.email || null });
       addToast(`${form.full_name} ajouté`, "success");
     }
     await fetchEmployees();
@@ -750,7 +755,7 @@ export default function EmployeesPage() {
         <PinModal
           title="Accès administrateur"
           subtitle="Entrez le code PIN admin"
-          validatePin={(pin) => pin === ADMIN_PIN}
+          validatePin={(pin) => pin === ADMIN_PIN || employees.some((e) => e.is_admin && e.pin_code === pin)}
           onSuccess={() => { setIsAdmin(true); setShowAdminPin(false); addToast("Mode admin activé", "success"); }}
           onClose={() => setShowAdminPin(false)}
         />
@@ -870,9 +875,16 @@ export default function EmployeesPage() {
                             <p className="text-white/40 text-xs">{employee.role}</p>
                           </div>
                         </div>
-                        <span className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${employee.is_active ? "bg-green-500/15 border-green-500/30 text-green-300" : "bg-white/[0.05] border-white/10 text-white/30"}`}>
-                          {employee.is_active ? "ACTIF" : "INACTIF"}
-                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${employee.is_active ? "bg-green-500/15 border-green-500/30 text-green-300" : "bg-white/[0.05] border-white/10 text-white/30"}`}>
+                            {employee.is_active ? "ACTIF" : "INACTIF"}
+                          </span>
+                          {employee.is_admin && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300 text-[10px] font-bold">
+                              ADMIN
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-1.5 mb-4">
