@@ -198,6 +198,7 @@ export default function DashboardPage() {
   const [lowStockCount, setLowStockCount] = useState(0)
   const [equipmentCount, setEquipmentCount] = useState(0)
   const [avgTemp, setAvgTemp] = useState<string>("—")
+  const [pmsPendingCount, setPmsPendingCount] = useState(0)
 
   // Météo
   const [weatherTemp, setWeatherTemp] = useState<string>("—")
@@ -367,6 +368,20 @@ export default function DashboardPage() {
 
       const { count: lowCount } = await supabase.from("traceability_products").select("*", { count: "exact", head: true }).lte("quantity", 2)
       if (lowCount !== null) setLowStockCount(lowCount)
+
+      // PMS — tâches en attente aujourd'hui
+      const dayIndex = new Date().getDay()
+      const mapped = [6, 0, 1, 2, 3, 4, 5][dayIndex]
+      const days = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"]
+      const todayDay = days[mapped]
+      const { data: pmsTasks } = await supabase.from("pms_tasks").select("*").neq("status", "validated")
+      if (pmsTasks) {
+        const pending = pmsTasks.filter((t) =>
+          t.frequency === "Quotidien" ||
+          (t.frequency === "Hebdomadaire" && t.day_of_week === todayDay)
+        ).length
+        setPmsPendingCount(pending)
+      }
     }
     init()
   }, [])
@@ -484,7 +499,7 @@ export default function DashboardPage() {
                   <ClipboardCheck className="h-4 w-4 text-cyan-300" />
                 </div>
               </div>
-              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">22</div>
+              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{pmsPendingCount}</div>
               <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">tâches à effectuer</p>
               <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-cyan-300 group-hover:gap-2 transition-all">
                 Voir <ChevronRight className="h-3 w-3" />
