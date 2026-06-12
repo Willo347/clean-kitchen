@@ -378,6 +378,46 @@ function HoursPanel({
     setIsExporting(false);
   }
 
+  function exportMonthPDF() {
+    setIsExporting(true);
+    const doc = new jsPDF();
+    doc.setFillColor(10, 20, 40);
+    doc.rect(0, 0, 210, 40, "F");
+    doc.setTextColor(100, 220, 240);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Fiche mensuelle — ${employee.full_name}`, 14, 18);
+    doc.setTextColor(180, 220, 240);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Poste : ${employee.role}  |  Mois : ${monthLabel}`, 14, 28);
+    doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 34);
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Récapitulatif mensuel", 14, 52);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total heures : ${formatHours(monthTotal)}  |  Jours travaillés : ${monthDays}  |  Base : 151h`, 14, 60);
+    doc.text(`Taux : ${Math.round((monthTotal / 151) * 100)}%`, 14, 66);
+    autoTable(doc, {
+      startY: 74,
+      head: [["Date", "Arrivée", "Départ", "Total", "Note"]],
+      body: monthLogs.map((log) => [formatDateFR(log.date), log.arrival || "—", log.departure || "—", formatHours(log.total_hours || 0), log.note || "—"]),
+      headStyles: { fillColor: [10, 40, 80], textColor: [100, 220, 240], fontStyle: "bold", fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      alternateRowStyles: { fillColor: [245, 248, 255] },
+    });
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Page ${i} / ${pageCount} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
+    }
+    doc.save(`Heures_${employee.full_name.replace(/ /g, "_")}_${monthLabel.replace(" ", "_")}.pdf`);
+    setIsExporting(false);
+  }
+
   return (
     // ── FIX MOBILE : overflow-y-auto sur le fond, items-start pour scroll depuis le haut
     <div className="fixed inset-0 z-[50] bg-black/70 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
@@ -464,9 +504,14 @@ function HoursPanel({
                   <button onClick={() => setMonthOffset((m) => m + 1)} className="w-9 h-9 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] flex items-center justify-center transition text-white/60 hover:text-white"><ChevronRight size={16} /></button>
                   <button onClick={() => setMonthOffset(0)} className="px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white/40 text-xs font-bold transition">Ce mois</button>
                 </div>
-                <div className="text-right">
-                  <p className="text-cyan-300 font-black text-2xl">{formatHours(monthTotal)}</p>
-                  <p className="text-white/25 text-[10px]">{monthDays} jour(s) travaillé(s)</p>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-cyan-300 font-black text-2xl">{formatHours(monthTotal)}</p>
+                    <p className="text-white/25 text-[10px]">{monthDays} jour(s) travaillé(s)</p>
+                  </div>
+                  <button onClick={exportMonthPDF} disabled={isExporting || monthLogs.length === 0} className="h-9 px-4 rounded-xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black text-xs font-black flex items-center gap-1.5">
+                    {isExporting ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />} PDF
+                  </button>
                 </div>
               </div>
 
