@@ -1,566 +1,174 @@
 "use client";
 
-import { useState } from "react";
-
+import { useState, useEffect } from "react";
 import {
   Settings,
-  Bell,
-  Shield,
-  Database,
-  Moon,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  RotateCcw,
+  CheckCircle2,
   Save,
-  UserCog,
-  Globe,
 } from "lucide-react";
 
+import {
+  DEFAULT_MENU_ITEMS,
+  ICON_MAP,
+  SIDEBAR_ORDER_KEY,
+  getSidebarItems,
+} from "@/components/Sidebar";
+
+type MenuItem = typeof DEFAULT_MENU_ITEMS[number];
+
 export default function SettingsPage() {
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [saved, setSaved] = useState(false);
 
-  const [notifications, setNotifications] =
-    useState(true);
+  useEffect(() => {
+    setItems(getSidebarItems());
+  }, []);
 
-  const [darkMode, setDarkMode] =
-    useState(true);
+  function moveUp(index: number) {
+    if (index === 0) return;
+    const newItems = [...items];
+    [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
+    setItems(newItems);
+    setSaved(false);
+  }
 
-  const [autoBackup, setAutoBackup] =
-    useState(true);
+  function moveDown(index: number) {
+    if (index === items.length - 1) return;
+    const newItems = [...items];
+    [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+    setItems(newItems);
+    setSaved(false);
+  }
 
-  const [multiUsers, setMultiUsers] =
-    useState(true);
+  function handleSave() {
+    const ids = items.map((item) => item.id);
+    localStorage.setItem(SIDEBAR_ORDER_KEY, JSON.stringify(ids));
+    window.dispatchEvent(new Event("ck_sidebar_updated"));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  }
+
+  function handleReset() {
+    localStorage.removeItem(SIDEBAR_ORDER_KEY);
+    window.dispatchEvent(new Event("ck_sidebar_updated"));
+    setItems([...DEFAULT_MENU_ITEMS]);
+    setSaved(false);
+  }
 
   return (
+    <div className="min-h-screen bg-[#020817] text-white p-3 sm:p-5 overflow-x-hidden">
+      <div className="mx-auto max-w-[900px] rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#030b1d] p-4 sm:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-4 sm:space-y-5">
 
-    <div className="space-y-6 md:space-y-8">
-
-      {/* HEADER */}
-      <div className="space-y-3">
-
-        <div className="flex items-center gap-3">
-
-          <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
-
-          <p className="text-cyan-400 tracking-[0.2em] md:tracking-[0.25em] uppercase font-semibold text-[10px] md:text-sm">
-            SYSTEM SETTINGS
-          </p>
-
-        </div>
-
-        <h1 className="text-4xl sm:text-5xl xl:text-7xl font-black text-white leading-none">
-          Settings
-        </h1>
-
-        <p className="text-white/50 text-base md:text-xl">
-          Paramètres système HACCP
-        </p>
-
-      </div>
-
-      {/* GRID */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 md:gap-6">
-
-        {/* NOTIFICATIONS */}
-        <div
-          className="
-            rounded-[30px]
-
-            border
-            border-cyan-500/20
-
-            bg-cyan-500/10
-
-            backdrop-blur-xl
-
-            p-5 md:p-6
-          "
-        >
-
-          <div className="flex items-center justify-between gap-4">
-
-            <div className="min-w-0">
-
-              <div className="flex items-center gap-3 mb-4">
-
-                <Bell className="text-cyan-300" />
-
-                <h2 className="text-2xl md:text-3xl font-black text-white">
-                  Notifications
-                </h2>
-
-              </div>
-
-              <p className="text-cyan-100/60 text-sm md:text-base">
-                Alertes HACCP en temps réel
-              </p>
-
+        {/* HEADER */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+              <p className="uppercase tracking-[0.2em] text-cyan-400 font-semibold text-xs">PARAMÈTRES</p>
             </div>
-
-            <button
-              onClick={() =>
-                setNotifications(
-                  !notifications
-                )
-              }
-              className={`
-                w-16
-                h-9
-
-                rounded-full
-
-                transition
-
-                relative
-
-                ${
-                  notifications
-                    ? "bg-cyan-400"
-                    : "bg-white/20"
-                }
-              `}
-            >
-
-              <div
-                className={`
-                  absolute
-                  top-1
-
-                  w-7
-                  h-7
-
-                  rounded-full
-                  bg-white
-
-                  transition-all
-
-                  ${
-                    notifications
-                      ? "left-8"
-                      : "left-1"
-                  }
-                `}
-              />
-
-            </button>
-
-          </div>
-
-        </div>
-
-        {/* SECURITY */}
-        <div
-          className="
-            rounded-[30px]
-
-            border
-            border-green-500/20
-
-            bg-green-500/10
-
-            backdrop-blur-xl
-
-            p-5 md:p-6
-          "
-        >
-
-          <div className="flex items-center gap-3 mb-4">
-
-            <Shield className="text-green-300" />
-
-            <h2 className="text-2xl md:text-3xl font-black text-white">
-              Sécurité
-            </h2>
-
-          </div>
-
-          <p className="text-green-100/60 text-sm md:text-base">
-            Niveau sécurité HACCP :
-          </p>
-
-          <h3 className="text-3xl md:text-5xl font-black text-green-300 mt-4">
-            MAXIMUM
-          </h3>
-
-        </div>
-
-        {/* DATABASE */}
-        <div
-          className="
-            rounded-[30px]
-
-            border
-            border-orange-500/20
-
-            bg-orange-500/10
-
-            backdrop-blur-xl
-
-            p-5 md:p-6
-          "
-        >
-
-          <div className="flex items-center justify-between gap-4">
-
-            <div className="min-w-0">
-
-              <div className="flex items-center gap-3 mb-4">
-
-                <Database className="text-orange-300" />
-
-                <h2 className="text-2xl md:text-3xl font-black text-white">
-                  Sauvegarde
-                </h2>
-
-              </div>
-
-              <p className="text-orange-100/60 text-sm md:text-base">
-                Backup automatique cloud
-              </p>
-
-            </div>
-
-            <button
-              onClick={() =>
-                setAutoBackup(
-                  !autoBackup
-                )
-              }
-              className={`
-                w-16
-                h-9
-
-                rounded-full
-
-                transition
-
-                relative
-
-                ${
-                  autoBackup
-                    ? "bg-orange-400"
-                    : "bg-white/20"
-                }
-              `}
-            >
-
-              <div
-                className={`
-                  absolute
-                  top-1
-
-                  w-7
-                  h-7
-
-                  rounded-full
-                  bg-white
-
-                  transition-all
-
-                  ${
-                    autoBackup
-                      ? "left-8"
-                      : "left-1"
-                  }
-                `}
-              />
-
-            </button>
-
-          </div>
-
-        </div>
-
-        {/* DARK MODE */}
-        <div
-          className="
-            rounded-[30px]
-
-            border
-            border-blue-500/20
-
-            bg-blue-500/10
-
-            backdrop-blur-xl
-
-            p-5 md:p-6
-          "
-        >
-
-          <div className="flex items-center justify-between gap-4">
-
-            <div className="min-w-0">
-
-              <div className="flex items-center gap-3 mb-4">
-
-                <Moon className="text-blue-300" />
-
-                <h2 className="text-2xl md:text-3xl font-black text-white">
-                  Interface
-                </h2>
-
-              </div>
-
-              <p className="text-blue-100/60 text-sm md:text-base">
-                Mode sombre premium
-              </p>
-
-            </div>
-
-            <button
-              onClick={() =>
-                setDarkMode(
-                  !darkMode
-                )
-              }
-              className={`
-                w-16
-                h-9
-
-                rounded-full
-
-                transition
-
-                relative
-
-                ${
-                  darkMode
-                    ? "bg-blue-400"
-                    : "bg-white/20"
-                }
-              `}
-            >
-
-              <div
-                className={`
-                  absolute
-                  top-1
-
-                  w-7
-                  h-7
-
-                  rounded-full
-                  bg-white
-
-                  transition-all
-
-                  ${
-                    darkMode
-                      ? "left-8"
-                      : "left-1"
-                  }
-                `}
-              />
-
-            </button>
-
-          </div>
-
-        </div>
-
-        {/* USERS */}
-        <div
-          className="
-            rounded-[30px]
-
-            border
-            border-purple-500/20
-
-            bg-purple-500/10
-
-            backdrop-blur-xl
-
-            p-5 md:p-6
-          "
-        >
-
-          <div className="flex items-center justify-between gap-4">
-
-            <div className="min-w-0">
-
-              <div className="flex items-center gap-3 mb-4">
-
-                <UserCog className="text-purple-300" />
-
-                <h2 className="text-2xl md:text-3xl font-black text-white">
-                  Multi-utilisateurs
-                </h2>
-
-              </div>
-
-              <p className="text-purple-100/60 text-sm md:text-base">
-                Gestion équipe HACCP
-              </p>
-
-            </div>
-
-            <button
-              onClick={() =>
-                setMultiUsers(
-                  !multiUsers
-                )
-              }
-              className={`
-                w-16
-                h-9
-
-                rounded-full
-
-                transition
-
-                relative
-
-                ${
-                  multiUsers
-                    ? "bg-purple-400"
-                    : "bg-white/20"
-                }
-              `}
-            >
-
-              <div
-                className={`
-                  absolute
-                  top-1
-
-                  w-7
-                  h-7
-
-                  rounded-full
-                  bg-white
-
-                  transition-all
-
-                  ${
-                    multiUsers
-                      ? "left-8"
-                      : "left-1"
-                  }
-                `}
-              />
-
-            </button>
-
-          </div>
-
-        </div>
-
-        {/* CLOUD */}
-        <div
-          className="
-            rounded-[30px]
-
-            border
-            border-pink-500/20
-
-            bg-pink-500/10
-
-            backdrop-blur-xl
-
-            p-5 md:p-6
-          "
-        >
-
-          <div className="flex items-center gap-3 mb-4">
-
-            <Globe className="text-pink-300" />
-
-            <h2 className="text-2xl md:text-3xl font-black text-white">
-              Cloud HACCP
-            </h2>
-
-          </div>
-
-          <p className="text-pink-100/60 text-sm md:text-base">
-            Synchronisation globale sécurisée
-          </p>
-
-          <h3 className="text-3xl md:text-5xl font-black text-pink-300 mt-4">
-            CONNECTED
-          </h3>
-
-        </div>
-
-      </div>
-
-      {/* SAVE */}
-      <div
-        className="
-          rounded-[30px]
-
-          border
-          border-white/10
-
-          bg-white/[0.03]
-
-          backdrop-blur-xl
-
-          p-5 md:p-6
-        "
-      >
-
-        <div
-          className="
-            flex
-            flex-col
-            lg:flex-row
-            lg:items-center
-            lg:justify-between
-
-            gap-5
-          "
-        >
-
-          <div>
-
-            <div className="flex items-center gap-3 mb-3">
-
-              <Settings className="text-cyan-300" />
-
-              <h2 className="text-2xl md:text-3xl font-black text-white">
-                Paramètres système
-              </h2>
-
-            </div>
-
-            <p className="text-white/50 text-sm md:text-base">
-              Sauvegarde des préférences HACCP
+            <h1 className="text-[32px] sm:text-[48px] font-black leading-[0.95] tracking-[-0.04em] text-white">
+              Paramètres
+            </h1>
+            <p className="text-white/40 text-sm sm:text-base mt-2">
+              Personnalisation de l'application
             </p>
+          </div>
+        </div>
 
+        {/* SECTION — Ordre du menu */}
+        <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-4 sm:p-5 space-y-4">
+
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shrink-0">
+                <Settings size={16} className="text-cyan-400" />
+              </div>
+              <div>
+                <h2 className="text-base font-black text-white">Ordre du menu</h2>
+                <p className="text-white/30 text-xs mt-0.5">Utilisez les flèches pour réorganiser les modules</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleReset}
+                className="h-9 px-4 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white transition text-xs font-bold flex items-center gap-2"
+              >
+                <RotateCcw size={13} /> Réinitialiser
+              </button>
+              <button
+                onClick={handleSave}
+                className={`h-9 px-4 rounded-xl text-xs font-black flex items-center gap-2 transition ${
+                  saved
+                    ? "bg-green-400 hover:bg-green-300 text-black"
+                    : "bg-cyan-400 hover:bg-cyan-300 text-black"
+                }`}
+              >
+                {saved ? <CheckCircle2 size={13} /> : <Save size={13} />}
+                {saved ? "Sauvegardé !" : "Sauvegarder"}
+              </button>
+            </div>
           </div>
 
-          <button
-            className="
-              w-full
-              lg:w-auto
+          {/* Liste réorganisable */}
+          <div className="space-y-2">
+            {items.map((item, index) => {
+              const Icon = ICON_MAP[item.icon];
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 rounded-[18px] border border-white/[0.07] bg-white/[0.02] p-3 sm:p-4 transition hover:bg-white/[0.04]"
+                >
+                  {/* Grip icon */}
+                  <GripVertical size={16} className="text-white/20 shrink-0" />
 
-              px-8
-              py-4
+                  {/* Position */}
+                  <span className="text-white/25 text-xs font-bold w-5 text-center shrink-0">
+                    {index + 1}
+                  </span>
 
-              rounded-2xl
+                  {/* Icon */}
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.05] border border-white/10 shrink-0">
+                    {Icon && <Icon size={16} className="text-cyan-300" />}
+                  </div>
 
-              bg-cyan-400
+                  {/* Name */}
+                  <span className="text-white font-bold text-sm flex-1 min-w-0 truncate">
+                    {item.name}
+                  </span>
 
-              text-black
-              font-black
+                  {/* Buttons */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => moveUp(index)}
+                      disabled={index === 0}
+                      className="w-8 h-8 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] disabled:opacity-20 disabled:cursor-not-allowed transition flex items-center justify-center text-white/60 hover:text-white"
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                    <button
+                      onClick={() => moveDown(index)}
+                      disabled={index === items.length - 1}
+                      className="w-8 h-8 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] disabled:opacity-20 disabled:cursor-not-allowed transition flex items-center justify-center text-white/60 hover:text-white"
+                    >
+                      <ChevronDown size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-              hover:scale-[1.02]
-
-              transition
-
-              flex
-              items-center
-              justify-center
-              gap-3
-            "
-          >
-
-            <Save size={20} />
-
-            Sauvegarder
-
-          </button>
-
+          <p className="text-white/20 text-xs">
+            💡 Les modifications sont appliquées immédiatement dans le menu après avoir cliqué sur "Sauvegarder".
+          </p>
         </div>
 
       </div>
-
     </div>
   );
 }
