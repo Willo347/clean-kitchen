@@ -4,9 +4,10 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import {
-  Bell, Activity, ClipboardCheck, Thermometer, Boxes, FileText,
-  ChevronRight, ChevronLeft, MapPin, CalendarDays, Truck,
-  ShieldCheck, CheckCircle2, Wifi, Package, X, AlertTriangle, Wrench, Clock,
+  Bell, ClipboardCheck, Thermometer, Boxes, FileText,
+  ChevronRight, ChevronLeft, MapPin, CalendarDays,
+  CheckCircle2, Wifi, X, AlertTriangle, Wrench, Clock,
+  ShieldCheck,
 } from "lucide-react"
 
 const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
@@ -16,15 +17,15 @@ function getDaysInMonth(year: number, month: number) { return new Date(year, mon
 function getFirstDayOfMonth(year: number, month: number) { return new Date(year, month, 1).getDay() }
 
 function getWeatherInfo(code: number): { emoji: string; label: string } {
-  if (code === 0)               return { emoji: "☀️",  label: "Ensoleillé" }
-  if (code <= 2)                return { emoji: "⛅",  label: "Partiellement nuageux" }
-  if (code === 3)               return { emoji: "☁️",  label: "Couvert" }
-  if (code <= 49)               return { emoji: "🌫️", label: "Brouillard" }
-  if (code <= 59)               return { emoji: "🌦️", label: "Bruine" }
-  if (code <= 69)               return { emoji: "🌧️", label: "Pluie" }
-  if (code <= 79)               return { emoji: "❄️",  label: "Neige" }
-  if (code <= 84)               return { emoji: "🌧️", label: "Averses" }
-  if (code <= 94)               return { emoji: "⛈️",  label: "Orages" }
+  if (code === 0)  return { emoji: "☀️",  label: "Ensoleillé" }
+  if (code <= 2)   return { emoji: "⛅",  label: "Partiellement nuageux" }
+  if (code === 3)  return { emoji: "☁️",  label: "Couvert" }
+  if (code <= 49)  return { emoji: "🌫️", label: "Brouillard" }
+  if (code <= 59)  return { emoji: "🌦️", label: "Bruine" }
+  if (code <= 69)  return { emoji: "🌧️", label: "Pluie" }
+  if (code <= 79)  return { emoji: "❄️",  label: "Neige" }
+  if (code <= 84)  return { emoji: "🌧️", label: "Averses" }
+  if (code <= 94)  return { emoji: "⛈️",  label: "Orages" }
   return { emoji: "⛈️", label: "Orages violents" }
 }
 
@@ -60,12 +61,7 @@ function PanneauAlertes({
   ]
   return (
     <>
-      {/* Fond cliquable — même z-index que le panneau pour éviter les conflits iOS */}
-      <div
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      {/* Panneau — z-index plus élevé */}
+      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="fixed right-0 top-0 h-full w-full sm:max-w-md z-[60] bg-[#030b1d] border-l border-white/10 shadow-2xl flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/[0.07]">
           <div className="flex items-center gap-3">
@@ -77,12 +73,7 @@ function PanneauAlertes({
               <p className="text-white/35 text-xs">{totalAlertes} alerte{totalAlertes !== 1 ? "s" : ""} active{totalAlertes !== 1 ? "s" : ""}</p>
             </div>
           </div>
-          {/* Bouton croix agrandi pour mobile */}
-          <button
-            onClick={onClose}
-            className="w-12 h-12 rounded-xl bg-white/[0.05] hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition active:bg-white/20"
-            style={{ touchAction: "manipulation" }}
-          >
+          <button onClick={onClose} className="w-12 h-12 rounded-xl bg-white/[0.05] hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition active:bg-white/20" style={{ touchAction: "manipulation" }}>
             <X size={18} />
           </button>
         </div>
@@ -149,9 +140,7 @@ function MiniCalendar() {
           <button onClick={prevMonth} className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition">
             <ChevronLeft className="h-3 w-3 text-white/60" />
           </button>
-          <span className="w-[100px] text-center text-[11px] font-bold text-white">
-            {MONTHS_FR[currentMonth]} {currentYear}
-          </span>
+          <span className="w-[100px] text-center text-[11px] font-bold text-white">{MONTHS_FR[currentMonth]} {currentYear}</span>
           <button onClick={nextMonth} className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition">
             <ChevronRight className="h-3 w-3 text-white/60" />
           </button>
@@ -159,9 +148,7 @@ function MiniCalendar() {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: "4px" }}>
         {DAYS_FR.map((d, i) => (
-          <div key={i} style={{ textAlign: "center", fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.3)", padding: "4px 0" }}>
-            {d}
-          </div>
+          <div key={i} style={{ textAlign: "center", fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.3)", padding: "4px 0" }}>{d}</div>
         ))}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: "2px" }}>
@@ -170,15 +157,7 @@ function MiniCalendar() {
           const isToday = isCurrentMonth && day === today
           return (
             <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2px 0" }}>
-              <div style={{
-                width: "28px", height: "28px",
-                borderRadius: "50%",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "12px", fontWeight: isToday ? 900 : 600,
-                background: isToday ? "#22d3ee" : "transparent",
-                color: isToday ? "#000" : "rgba(255,255,255,0.7)",
-                cursor: "pointer",
-              }}>
+              <div style={{ width: "28px", height: "28px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: isToday ? 900 : 600, background: isToday ? "#22d3ee" : "transparent", color: isToday ? "#000" : "rgba(255,255,255,0.7)", cursor: "pointer" }}>
                 {day}
               </div>
             </div>
@@ -188,6 +167,10 @@ function MiniCalendar() {
     </div>
   )
 }
+
+// ─── Types pour PMS et Maintenance ────────────
+interface PmsTask { id: string; title: string; frequency: string; status: string; day_of_week?: string }
+interface MaintenanceReport { id: number; equipment_name: string; description: string; priority: string; status: string; created_at: string }
 
 export default function DashboardPage() {
   const now = new Date()
@@ -201,6 +184,8 @@ export default function DashboardPage() {
   const [equipmentCount, setEquipmentCount] = useState(0)
   const [avgTemp, setAvgTemp] = useState<string>("—")
   const [pmsPendingCount, setPmsPendingCount] = useState(0)
+  const [pmsTodayTasks, setPmsTodayTasks] = useState<PmsTask[]>([])
+  const [recentReports, setRecentReports] = useState<MaintenanceReport[]>([])
 
   const [weatherTemp, setWeatherTemp] = useState<string>("—")
   const [weatherEmoji, setWeatherEmoji] = useState("⛅")
@@ -221,22 +206,18 @@ export default function DashboardPage() {
         const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=fr`)
         const geoData = await geoRes.json()
         const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || "Localisation"
-        const country = geoData.address?.country || ""
-        cityName = `${city}, ${country}`
+        cityName = `${city}, ${geoData.address?.country || ""}`
       }
       const meteoRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&timezone=auto`)
       const meteoData = await meteoRes.json()
       const temp = Math.round(meteoData.current.temperature_2m)
-      const code = meteoData.current.weathercode
-      const info = getWeatherInfo(code)
+      const info = getWeatherInfo(meteoData.current.weathercode)
       setWeatherTemp(`${temp}°C`)
       setWeatherEmoji(info.emoji)
       setWeatherLabel(info.label)
       setWeatherCity(cityName)
     } catch {
-      setWeatherTemp("—")
-      setWeatherLabel("Indisponible")
-      setWeatherCity("—")
+      setWeatherTemp("—"); setWeatherLabel("Indisponible"); setWeatherCity("—")
     }
   }
 
@@ -248,8 +229,7 @@ export default function DashboardPage() {
       const { latitude, longitude, name, country } = geoData.results[0]
       await fetchWeatherByCoords(latitude, longitude, `${name}, ${country}`)
     } catch {
-      setWeatherTemp("—")
-      setWeatherLabel("Erreur réseau")
+      setWeatherTemp("—"); setWeatherLabel("Erreur réseau")
     }
   }
 
@@ -263,9 +243,7 @@ export default function DashboardPage() {
           else { setWeatherTemp("—"); setWeatherLabel("Activez la géolocalisation"); setWeatherCity("—") }
         }
       )
-    } else {
-      setWeatherLabel("Non supporté")
-    }
+    } else { setWeatherLabel("Non supporté") }
   }, [])
 
   async function handleCitySubmit() {
@@ -318,7 +296,11 @@ export default function DashboardPage() {
       const { data: reports } = await supabase.from("maintenance_reports").select("*").neq("status", "Résolu")
       const { data: certs }   = await supabase.from("maintenance_certificates").select("*")
       const maintFound: Alerte[] = []
-      if (reports) reports.forEach((r) => maintFound.push({ id: `r-${r.id}`, message: `${r.equipment_name} — ${r.description}`, detail: `Statut : ${r.status}`, level: r.priority === "Critique" ? "danger" : "warning" }))
+      if (reports) {
+        // Dernières pannes pour le widget dashboard (3 max)
+        setRecentReports(reports.slice(0, 3))
+        reports.forEach((r) => maintFound.push({ id: `r-${r.id}`, message: `${r.equipment_name} — ${r.description}`, detail: `Statut : ${r.status}`, level: r.priority === "Critique" ? "danger" : "warning" }))
+      }
       if (certs) {
         const todayD = new Date()
         certs.forEach((c) => {
@@ -349,36 +331,25 @@ export default function DashboardPage() {
       const { count: lowCount } = await supabase.from("traceability_products").select("*", { count: "exact", head: true }).lte("quantity", 2)
       if (lowCount !== null) setLowStockCount(lowCount)
 
+      // PMS — tâches en attente aujourd'hui
       const dayIndex = new Date().getDay()
       const mapped = [6, 0, 1, 2, 3, 4, 5][dayIndex]
       const days = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"]
       const todayDay = days[mapped]
-      const { data: pmsTasks } = await supabase.from("pms_tasks").select("*").neq("status", "validated")
+      const { data: pmsTasks } = await supabase.from("pms_tasks").select("*")
       if (pmsTasks) {
-        const pending = pmsTasks.filter((t) =>
+        const todayTasks = pmsTasks.filter((t) =>
           t.frequency === "Quotidien" ||
           (t.frequency === "Hebdomadaire" && t.day_of_week === todayDay)
-        ).length
-        setPmsPendingCount(pending)
+        )
+        setPmsPendingCount(todayTasks.filter((t) => t.status !== "validated").length)
+        setPmsTodayTasks(todayTasks.slice(0, 4))
       }
     }
     init()
   }, [])
 
   const totalAlertes = tempAlertes.length + maintenanceAlertes.length + dlcAlertes.length
-
-  const recentActivity = [
-    { icon: Truck,          color: "text-violet-300", bg: "bg-violet-500/15 border-violet-500/20", title: "Livraison réceptionnée",  subtitle: "Fournisseur Metro", time: "10:35" },
-    { icon: Thermometer,    color: "text-orange-300", bg: "bg-orange-500/15 border-orange-500/20", title: "Température normalisée",  subtitle: "Chambre froide 1",  time: "09:42" },
-    { icon: ClipboardCheck, color: "text-cyan-300",   bg: "bg-cyan-500/15 border-cyan-500/20",     title: "Tâche terminée",          subtitle: "Nettoyage hotte",   time: "09:15" },
-    { icon: Package,        color: "text-pink-300",   bg: "bg-pink-500/15 border-pink-500/20",     title: "Stock faible",            subtitle: "Sauce tomate",      time: "08:50" },
-  ]
-
-  const haccpItems = [
-    { label: "Audit HACCP",       time: "14:00" },
-    { label: "Contrôle DLC",      time: "16:00" },
-    { label: "Export conformité", time: "18:30" },
-  ]
 
   const WeatherBlock = ({ compact = false }: { compact?: boolean }) => (
     <div className={`flex items-center gap-3 ${compact ? "" : "mb-4"}`}>
@@ -394,22 +365,12 @@ export default function DashboardPage() {
     <div className={compact ? "ml-auto flex items-center gap-2" : ""}>
       {showCityInput ? (
         <div className="flex items-center gap-2 w-full">
-          <input
-            value={cityInput}
-            onChange={(e) => setCityInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCitySubmit()}
-            placeholder="Ex: Paris, Lyon..."
-            autoFocus
-            className="flex-1 h-8 rounded-xl bg-white/[0.08] border border-white/15 px-3 text-white text-xs outline-none min-w-0"
-          />
+          <input value={cityInput} onChange={(e) => setCityInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleCitySubmit()} placeholder="Ex: Paris, Lyon..." autoFocus className="flex-1 h-8 rounded-xl bg-white/[0.08] border border-white/15 px-3 text-white text-xs outline-none min-w-0" />
           <button onClick={handleCitySubmit} className="h-8 px-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black text-xs font-black transition shrink-0">OK</button>
           <button onClick={() => setShowCityInput(false)} className="text-white/30 hover:text-white transition shrink-0"><X size={13} /></button>
         </div>
       ) : (
-        <button
-          onClick={() => setShowCityInput(true)}
-          className={`flex items-center gap-2 hover:opacity-80 transition ${compact ? "" : "w-full"}`}
-        >
+        <button onClick={() => setShowCityInput(true)} className={`flex items-center gap-2 hover:opacity-80 transition ${compact ? "" : "w-full"}`}>
           <MapPin className="h-3.5 w-3.5 text-cyan-300 shrink-0" />
           <span className="text-[12px] text-white/70 truncate">{weatherCity}</span>
           {!compact && <ChevronRight className="h-3.5 w-3.5 text-white/30 ml-auto shrink-0" />}
@@ -421,12 +382,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#020817] p-3 sm:p-5 text-white">
       {showAlertes && (
-        <PanneauAlertes
-          onClose={() => setShowAlertes(false)}
-          tempAlertes={tempAlertes}
-          maintenanceAlertes={maintenanceAlertes}
-          dlcAlertes={dlcAlertes}
-        />
+        <PanneauAlertes onClose={() => setShowAlertes(false)} tempAlertes={tempAlertes} maintenanceAlertes={maintenanceAlertes} dlcAlertes={dlcAlertes} />
       )}
 
       <div className="mx-auto max-w-[1450px] rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#030b1d] p-4 sm:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)]">
@@ -438,104 +394,24 @@ export default function DashboardPage() {
               <div className="h-2 w-2 shrink-0 rounded-full bg-cyan-400 animate-pulse" />
               <span className="text-[11px] font-semibold tracking-[0.2em] text-cyan-300 truncate">{restaurantName}</span>
             </div>
-            <h1 className="text-[32px] sm:text-[40px] lg:text-[60px] font-black leading-[0.95] tracking-[-0.04em] break-words">
-              Tableau de bord
-            </h1>
-            <p className="mt-2 hidden sm:block text-[13px] lg:text-[15px] text-white/45">
-              Vue d'ensemble de votre activité en temps réel
-            </p>
+            <h1 className="text-[32px] sm:text-[40px] lg:text-[60px] font-black leading-[0.95] tracking-[-0.04em] break-words">Tableau de bord</h1>
+            <p className="mt-2 hidden sm:block text-[13px] lg:text-[15px] text-white/45">Vue d'ensemble de votre activité en temps réel</p>
           </div>
           <div className="flex gap-2 shrink-0">
             <button
               onClick={() => setShowAlertes(true)}
-              className={`relative flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border transition
-                ${totalAlertes > 0 ? "border-red-500/30 bg-red-500/10 hover:bg-red-500/20" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+              className={`relative flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border transition ${totalAlertes > 0 ? "border-red-500/30 bg-red-500/10 hover:bg-red-500/20" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
             >
               <Bell className={`h-4 w-4 sm:h-5 sm:w-5 ${totalAlertes > 0 ? "text-red-300" : "text-white/70"}`} />
               {totalAlertes > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">
-                  {totalAlertes}
-                </span>
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">{totalAlertes}</span>
               )}
             </button>
-            <Link href="/monitoring">
-              <button className="flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
-                <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-white/70" />
-              </button>
-            </Link>
           </div>
         </div>
 
-        {/* CARTES STAT */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-
-          <Link href="/pms-entretien" className="block">
-            <div className="group rounded-[20px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-blue-900/15 p-4 transition-all hover:scale-[1.02] hover:border-cyan-400/50">
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <p className="text-[9px] font-black tracking-[0.15em] text-cyan-200/90 leading-tight">PMS ENTRETIEN</p>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/20">
-                  <ClipboardCheck className="h-4 w-4 text-cyan-300" />
-                </div>
-              </div>
-              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{pmsPendingCount}</div>
-              <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">tâches à effectuer</p>
-              <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-cyan-300 group-hover:gap-2 transition-all">
-                Voir <ChevronRight className="h-3 w-3" />
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/temperatures" className="block">
-            <div className="group rounded-[20px] border border-orange-400/25 bg-gradient-to-br from-orange-500/20 via-amber-600/10 to-purple-900/15 p-4 transition-all hover:scale-[1.02] hover:border-orange-400/50">
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <p className="text-[9px] font-black tracking-[0.15em] text-orange-200/90 leading-tight">TEMPÉRATURES</p>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-orange-400/20 bg-orange-500/20">
-                  <Thermometer className="h-4 w-4 text-orange-300" />
-                </div>
-              </div>
-              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{tempAlertes.length}</div>
-              <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">alertes actives</p>
-              <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-orange-300 group-hover:gap-2 transition-all">
-                Voir <ChevronRight className="h-3 w-3" />
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/stocks" className="block">
-            <div className="group rounded-[20px] border border-pink-400/25 bg-gradient-to-br from-pink-500/20 via-rose-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-pink-400/50">
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <p className="text-[9px] font-black tracking-[0.15em] text-pink-200/90 leading-tight">STOCKS</p>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-pink-400/20 bg-pink-500/20">
-                  <Boxes className="h-4 w-4 text-pink-300" />
-                </div>
-              </div>
-              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{lowStockCount}</div>
-              <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">produits faibles</p>
-              <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-pink-300 group-hover:gap-2 transition-all">
-                Voir <ChevronRight className="h-3 w-3" />
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/traceability" className="block">
-            <div className="group rounded-[20px] border border-violet-400/25 bg-gradient-to-br from-violet-500/20 via-purple-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-violet-400/50">
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <p className="text-[9px] font-black tracking-[0.15em] text-violet-200/90 leading-tight">TRAÇABILITÉ</p>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-500/20">
-                  <FileText className="h-4 w-4 text-violet-300" />
-                </div>
-              </div>
-              <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{traceabilityCount}</div>
-              <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">produits tracés</p>
-              <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-violet-300 group-hover:gap-2 transition-all">
-                Voir <ChevronRight className="h-3 w-3" />
-              </div>
-            </div>
-          </Link>
-        </div>
-
         {/* Widget météo/date mobile */}
-        <div className="mt-3 sm:mt-4 flex lg:hidden rounded-[20px] border border-white/10 bg-[#071224] p-4 items-center gap-4 flex-wrap">
+        <div className="mt-0 mb-3 flex lg:hidden rounded-[20px] border border-white/10 bg-[#071224] p-4 items-center gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/15 shrink-0">
               <CalendarDays className="h-4 w-4 text-cyan-300" />
@@ -547,32 +423,88 @@ export default function DashboardPage() {
             </div>
           </div>
           <WeatherBlock compact />
-          <div className="w-full">
-            <CityBlock compact />
-          </div>
+          <div className="w-full"><CityBlock compact /></div>
         </div>
 
-        {/* SECTION BAS */}
-        <div className="mt-3 sm:mt-4 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-3 sm:gap-4">
+        {/* LAYOUT PRINCIPAL */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3 sm:gap-4">
 
-          {/* Colonne gauche */}
+          {/* ── COLONNE GAUCHE ── */}
           <div className="flex flex-col gap-3 sm:gap-4">
 
-            {/* Monitoring */}
+            {/* 4 KPI CARDS */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <Link href="/pms-entretien" className="block">
+                <div className="group rounded-[20px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-blue-900/15 p-4 transition-all hover:scale-[1.02] hover:border-cyan-400/50">
+                  <div className="mb-3 flex items-start justify-between gap-2">
+                    <p className="text-[9px] font-black tracking-[0.15em] text-cyan-200/90 leading-tight">PMS ENTRETIEN</p>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/20">
+                      <ClipboardCheck className="h-4 w-4 text-cyan-300" />
+                    </div>
+                  </div>
+                  <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{pmsPendingCount}</div>
+                  <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">tâches à effectuer</p>
+                  <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-cyan-300 group-hover:gap-2 transition-all">Voir <ChevronRight className="h-3 w-3" /></div>
+                </div>
+              </Link>
+
+              <Link href="/temperatures" className="block">
+                <div className="group rounded-[20px] border border-orange-400/25 bg-gradient-to-br from-orange-500/20 via-amber-600/10 to-purple-900/15 p-4 transition-all hover:scale-[1.02] hover:border-orange-400/50">
+                  <div className="mb-3 flex items-start justify-between gap-2">
+                    <p className="text-[9px] font-black tracking-[0.15em] text-orange-200/90 leading-tight">TEMPÉRATURES</p>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-orange-400/20 bg-orange-500/20">
+                      <Thermometer className="h-4 w-4 text-orange-300" />
+                    </div>
+                  </div>
+                  <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{tempAlertes.length}</div>
+                  <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">alertes actives</p>
+                  <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-orange-300 group-hover:gap-2 transition-all">Voir <ChevronRight className="h-3 w-3" /></div>
+                </div>
+              </Link>
+
+              <Link href="/stocks" className="block">
+                <div className="group rounded-[20px] border border-pink-400/25 bg-gradient-to-br from-pink-500/20 via-rose-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-pink-400/50">
+                  <div className="mb-3 flex items-start justify-between gap-2">
+                    <p className="text-[9px] font-black tracking-[0.15em] text-pink-200/90 leading-tight">STOCKS</p>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-pink-400/20 bg-pink-500/20">
+                      <Boxes className="h-4 w-4 text-pink-300" />
+                    </div>
+                  </div>
+                  <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{lowStockCount}</div>
+                  <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">produits faibles</p>
+                  <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-pink-300 group-hover:gap-2 transition-all">Voir <ChevronRight className="h-3 w-3" /></div>
+                </div>
+              </Link>
+
+              <Link href="/traceability" className="block">
+                <div className="group rounded-[20px] border border-violet-400/25 bg-gradient-to-br from-violet-500/20 via-purple-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-violet-400/50">
+                  <div className="mb-3 flex items-start justify-between gap-2">
+                    <p className="text-[9px] font-black tracking-[0.15em] text-violet-200/90 leading-tight">TRAÇABILITÉ</p>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-500/20">
+                      <FileText className="h-4 w-4 text-violet-300" />
+                    </div>
+                  </div>
+                  <div className="text-[40px] sm:text-[48px] font-black leading-none tracking-tight text-white">{traceabilityCount}</div>
+                  <p className="mt-1 text-[11px] sm:text-[12px] text-white/60">produits tracés</p>
+                  <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-violet-300 group-hover:gap-2 transition-all">Voir <ChevronRight className="h-3 w-3" /></div>
+                </div>
+              </Link>
+            </div>
+
+            {/* MONITORING */}
             <div className="rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5">
               <div className="mb-4 flex items-start justify-between gap-3 flex-wrap">
                 <div>
-                  <div className="mb-1 flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-cyan-300" />
-                    <p className="text-[11px] font-bold tracking-[0.28em] text-cyan-300">MONITORING LIVE</p>
-                  </div>
+                  <p className="text-[11px] font-bold tracking-[0.28em] text-cyan-300 mb-1">MONITORING LIVE</p>
                   <h2 className="text-[18px] sm:text-[20px] font-black">Températures (°C)</h2>
                 </div>
-                <button className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-[12px] text-white/60 hover:bg-white/10 transition flex items-center gap-2 whitespace-nowrap">
-                  Toutes les zones <ChevronRight className="h-3.5 w-3.5" />
-                </button>
+                <Link href="/temperatures">
+                  <button className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-[12px] text-white/60 hover:bg-white/10 transition flex items-center gap-2 whitespace-nowrap">
+                    Toutes les zones <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </Link>
               </div>
-              <div className="relative h-[160px] sm:h-[200px] overflow-hidden rounded-[16px] border border-white/5 bg-[#020817]">
+              <div className="relative h-[160px] sm:h-[180px] overflow-hidden rounded-[16px] border border-white/5 bg-[#020817]">
                 <div className="absolute inset-0 opacity-15">
                   <div className="h-full w-full bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:40px_40px]" />
                 </div>
@@ -597,11 +529,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div className="mt-3 flex items-center gap-4 flex-wrap">
-                {[
-                  { color: "bg-cyan-400",    label: "Chambre froide 1" },
-                  { color: "bg-sky-300",     label: "Chambre froide 2" },
-                  { color: "bg-fuchsia-500", label: "Congélateur" },
-                ].map((item) => (
+                {[{ color: "bg-cyan-400", label: "Chambre froide 1" }, { color: "bg-sky-300", label: "Chambre froide 2" }, { color: "bg-fuchsia-500", label: "Congélateur" }].map((item) => (
                   <div key={item.label} className="flex items-center gap-2">
                     <div className={`h-2 w-2 rounded-full ${item.color}`} />
                     <span className="text-[11px] text-white/50">{item.label}</span>
@@ -610,47 +538,107 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Activité récente */}
-            <div className="rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-pink-300" />
-                  <p className="text-[11px] font-bold tracking-[0.28em] text-pink-300">ACTIVITÉ RÉCENTE</p>
-                </div>
-                <button className="text-[12px] text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1 whitespace-nowrap shrink-0">
-                  Voir tout <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {recentActivity.map((item, index) => (
-                  <div key={index} className={`rounded-[16px] border p-3 ${item.bg} transition hover:scale-[1.02] cursor-default`}>
-                    <div className="mb-2 flex items-center justify-between">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                        <item.icon className={`h-3.5 w-3.5 ${item.color}`} />
-                      </div>
-                      <span className="text-[11px] font-bold text-white/40 shrink-0">{item.time}</span>
-                    </div>
-                    <p className="text-[12px] sm:text-[13px] font-bold text-white leading-tight">{item.title}</p>
-                    <p className="mt-0.5 text-[11px] text-white/45">{item.subtitle}</p>
+            {/* TÂCHES PMS + PANNES côte à côte */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+
+              {/* Tâches PMS du jour */}
+              <div className="rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <ClipboardCheck className="h-4 w-4 text-cyan-300" />
+                    <p className="text-[11px] font-bold tracking-[0.28em] text-cyan-300">TÂCHES DU JOUR</p>
                   </div>
-                ))}
+                  <Link href="/pms-entretien">
+                    <button className="text-[12px] text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1 whitespace-nowrap shrink-0">
+                      Voir tout <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </Link>
+                </div>
+                {pmsTodayTasks.length === 0 ? (
+                  <div className="flex items-center gap-2 p-3 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                    <CheckCircle2 size={14} className="text-green-400 shrink-0" />
+                    <p className="text-white/30 text-xs">Aucune tâche aujourd'hui</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {pmsTodayTasks.map((task) => (
+                      <div key={task.id} className={`flex items-center justify-between gap-3 rounded-2xl border p-3 ${task.status === "validated" ? "border-green-500/20 bg-green-500/[0.05]" : "border-white/[0.06] bg-white/[0.02]"}`}>
+                        <p className={`text-sm font-medium truncate ${task.status === "validated" ? "text-white/40 line-through" : "text-white/80"}`}>{task.title}</p>
+                        {task.status === "validated" ? (
+                          <span className="shrink-0 flex items-center gap-1 text-green-400 text-xs font-bold"><CheckCircle2 size={12} /> OK</span>
+                        ) : (
+                          <span className="shrink-0 px-2 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/25 text-orange-300 text-[10px] font-bold">À faire</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Dernières pannes */}
+              <div className="rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-orange-300" />
+                    <p className="text-[11px] font-bold tracking-[0.28em] text-orange-300">PANNES EN COURS</p>
+                  </div>
+                  <Link href="/maintenance">
+                    <button className="text-[12px] text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1 whitespace-nowrap shrink-0">
+                      Voir tout <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </Link>
+                </div>
+                {recentReports.length === 0 ? (
+                  <div className="flex items-center gap-2 p-3 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                    <CheckCircle2 size={14} className="text-green-400 shrink-0" />
+                    <p className="text-white/30 text-xs">Aucune panne en cours</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {recentReports.map((report) => (
+                      <div key={report.id} className={`rounded-2xl border p-3 ${report.priority === "Critique" ? "border-red-500/30 bg-red-500/[0.08]" : report.priority === "Urgent" ? "border-orange-500/25 bg-orange-500/[0.07]" : "border-white/[0.06] bg-white/[0.02]"}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-black text-white truncate">{report.equipment_name}</p>
+                          <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold border ${report.priority === "Critique" ? "bg-red-500/15 border-red-500/25 text-red-300" : report.priority === "Urgent" ? "bg-orange-500/15 border-orange-500/25 text-orange-300" : "bg-blue-500/15 border-blue-500/25 text-blue-300"}`}>
+                            {report.priority}
+                          </span>
+                        </div>
+                        <p className="text-white/40 text-xs mt-0.5 truncate">{report.description}</p>
+                        <p className="text-white/25 text-[10px] mt-1">{report.status}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
+
           </div>
 
-          {/* Colonne droite */}
+          {/* ── COLONNE DROITE ── */}
           <div className="flex flex-col gap-3 sm:gap-4">
 
-            {/* Widget date+météo desktop */}
+            {/* Date + Météo + Cloche — desktop */}
             <div className="hidden lg:block rounded-[24px] border border-white/10 bg-[#071224] p-5">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15 shrink-0">
                   <CalendarDays className="h-5 w-5 text-cyan-300" />
                 </div>
-                <div className="text-right">
-                  <p className="text-[12px] text-white/50">{dayName}</p>
-                  <p className="text-[46px] font-black leading-none">{dayNumber}</p>
-                  <p className="text-[11px] text-white/35">{monthName} {year}</p>
+                <div className="flex items-center gap-2">
+                  {/* Cloche alertes */}
+                  <button
+                    onClick={() => setShowAlertes(true)}
+                    className={`relative flex h-10 w-10 items-center justify-center rounded-2xl border transition ${totalAlertes > 0 ? "border-red-500/30 bg-red-500/10 hover:bg-red-500/20" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+                  >
+                    <Bell className={`h-4 w-4 ${totalAlertes > 0 ? "text-red-300" : "text-white/70"}`} />
+                    {totalAlertes > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">{totalAlertes}</span>
+                    )}
+                  </button>
+                  <div className="text-right">
+                    <p className="text-[12px] text-white/50">{dayName}</p>
+                    <p className="text-[46px] font-black leading-none">{dayNumber}</p>
+                    <p className="text-[11px] text-white/35">{monthName} {year}</p>
+                  </div>
                 </div>
               </div>
               <WeatherBlock />
@@ -659,28 +647,10 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Calendrier */}
             <MiniCalendar />
 
-            {/* HACCP */}
-            <div className="rounded-[24px] border border-white/10 bg-[#071224] p-4 sm:p-5">
-              <div className="mb-3 flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-cyan-300" />
-                <p className="text-[11px] font-bold tracking-[0.28em] text-cyan-300">HACCP</p>
-              </div>
-              <div className="space-y-2">
-                {haccpItems.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 sm:px-4 py-3 hover:bg-white/[0.05] transition cursor-pointer">
-                    <span className="text-[13px] font-semibold text-white/80 truncate mr-2">{item.label}</span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[13px] font-bold text-cyan-400">{item.time}</span>
-                      <CheckCircle2 className="h-4 w-4 text-green-400" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Stats mini — dynamiques */}
+            {/* Stats mini */}
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-[20px] border border-orange-500/20 bg-gradient-to-br from-orange-500/15 to-orange-900/10 p-4">
                 <div className="mb-2 flex items-center gap-2">
@@ -698,6 +668,7 @@ export default function DashboardPage() {
                 <p className="text-[11px] text-green-400/70 mt-1">actifs</p>
               </div>
             </div>
+
           </div>
         </div>
       </div>
