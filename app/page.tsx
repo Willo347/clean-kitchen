@@ -15,6 +15,23 @@ const DAYS_FR = ["L","M","M","J","V","S","D"]
 function getDaysInMonth(year: number, month: number) { return new Date(year, month + 1, 0).getDate() }
 function getFirstDayOfMonth(year: number, month: number) { return new Date(year, month, 1).getDay() }
 
+// ─────────────────────────────────────────────
+// MÉTÉO — codes WMO → emoji + description
+// ─────────────────────────────────────────────
+
+function getWeatherInfo(code: number): { emoji: string; label: string } {
+  if (code === 0)               return { emoji: "☀️",  label: "Ensoleillé" }
+  if (code <= 2)                return { emoji: "⛅",  label: "Partiellement nuageux" }
+  if (code === 3)               return { emoji: "☁️",  label: "Couvert" }
+  if (code <= 49)               return { emoji: "🌫️", label: "Brouillard" }
+  if (code <= 59)               return { emoji: "🌦️", label: "Bruine" }
+  if (code <= 69)               return { emoji: "🌧️", label: "Pluie" }
+  if (code <= 79)               return { emoji: "❄️",  label: "Neige" }
+  if (code <= 84)               return { emoji: "🌧️", label: "Averses" }
+  if (code <= 94)               return { emoji: "⛈️",  label: "Orages" }
+  return { emoji: "⛈️", label: "Orages violents" }
+}
+
 interface Alerte { id: string; message: string; detail?: string; time?: string; level: "danger" | "warning" }
 
 function AlerteItem({ message, detail, time, level }: Alerte) {
@@ -40,10 +57,10 @@ function PanneauAlertes({
 }) {
   const totalAlertes = tempAlertes.length + maintenanceAlertes.length + dlcAlertes.length
   const sections = [
-    { key: "temperatures", label: "Températures",    icon: Thermometer, color: "text-orange-300", data: tempAlertes },
-    { key: "maintenance",  label: "Maintenance",     icon: Wrench,      color: "text-cyan-300",   data: maintenanceAlertes },
-    { key: "dlc",          label: "DLC / Traçabilité", icon: FileText,  color: "text-violet-300", data: dlcAlertes },
-    { key: "stocks",       label: "Stocks",          icon: Boxes,       color: "text-pink-300",   data: [] as Alerte[] },
+    { key: "temperatures", label: "Températures",      icon: Thermometer, color: "text-orange-300", data: tempAlertes },
+    { key: "maintenance",  label: "Maintenance",       icon: Wrench,      color: "text-cyan-300",   data: maintenanceAlertes },
+    { key: "dlc",          label: "DLC / Traçabilité", icon: FileText,    color: "text-violet-300", data: dlcAlertes },
+    { key: "stocks",       label: "Stocks",            icon: Boxes,       color: "text-pink-300",   data: [] as Alerte[] },
   ]
   return (
     <>
@@ -166,6 +183,10 @@ function MiniCalendar() {
   )
 }
 
+// ─────────────────────────────────────────────
+// MAIN PAGE
+// ─────────────────────────────────────────────
+
 export default function DashboardPage() {
   const now = new Date()
   const [showAlertes, setShowAlertes] = useState(false)
@@ -175,6 +196,16 @@ export default function DashboardPage() {
   const [restaurantName, setRestaurantName] = useState("SMART KITCHEN")
   const [traceabilityCount, setTraceabilityCount] = useState(0)
   const [lowStockCount, setLowStockCount] = useState(0)
+  const [equipmentCount, setEquipmentCount] = useState(0)
+  const [avgTemp, setAvgTemp] = useState<string>("—")
+
+  // Météo
+  const [weatherTemp, setWeatherTemp] = useState<string>("—")
+  const [weatherEmoji, setWeatherEmoji] = useState("⛅")
+  const [weatherLabel, setWeatherLabel] = useState("Chargement...")
+  const [weatherCity, setWeatherCity] = useState("Localisation...")
+  const [showCityInput, setShowCityInput] = useState(false)
+  const [cityInput, setCityInput] = useState("")
 
   const dayNames = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"]
   const dayName   = dayNames[now.getDay()]
@@ -182,6 +213,87 @@ export default function DashboardPage() {
   const monthName = MONTHS_FR[now.getMonth()]
   const year      = now.getFullYear()
 
+  // ── Fetch météo par coordonnées ─────────────
+  async function fetchWeatherByCoords(lat: number, lon: number, cityName?: string) {
+    try {
+      // Géocodage inverse si pas de nom de ville
+      if (!cityName) {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=fr`
+        )
+        const geoData = await geoRes.json()
+        const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || "Localisation"
+        const country = geoData.address?.country || ""
+        cityName = `${city}, ${country}`
+      }
+
+      const meteoRes = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&timezone=auto`
+      )
+      const meteoData = await meteoRes.json()
+      const temp = Math.round(meteoData.current.temperature_2m)
+      const code = meteoData.current.weathercode
+      const info = getWeatherInfo(code)
+
+      setWeatherTemp(`${temp}°C`)
+      setWeatherEmoji(info.emoji)
+      setWeatherLabel(info.label)
+      setWeatherCity(cityName)
+    } catch {
+      setWeatherTemp("—")
+      setWeatherLabel("Indisponible")
+      setWeatherCity("—")
+    }
+  }
+
+  // ── Fetch météo par nom de ville ────────────
+  async function fetchWeatherByCity(city: string) {
+    try {
+      const geoRes = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=fr&format=json`
+      )
+      const geoData = await geoRes.json()
+      if (!geoData.results?.length) {
+        setWeatherLabel("Ville introuvable")
+        return
+      }
+      const { latitude, longitude, name, country } = geoData.results[0]
+      await fetchWeatherByCoords(latitude, longitude, `${name}, ${country}`)
+    } catch {
+      setWeatherTemp("—")
+      setWeatherLabel("Erreur réseau")
+    }
+  }
+
+  // ── Géolocalisation au chargement ──────────
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => fetchWeatherByCoords(pos.coords.latitude, pos.coords.longitude),
+        async () => {
+          // Refus géoloc → fallback ville depuis settings
+          const { data } = await supabase.from("settings").select("city").single()
+          if (data?.city) fetchWeatherByCity(data.city)
+          else { setWeatherTemp("—"); setWeatherLabel("Activez la géolocalisation"); setWeatherCity("—") }
+        }
+      )
+    } else {
+      setWeatherLabel("Non supporté")
+    }
+  }, [])
+
+  // ── Sauvegarde ville manuelle ───────────────
+  async function handleCitySubmit() {
+    if (!cityInput.trim()) return
+    setShowCityInput(false)
+    setWeatherLabel("Chargement...")
+    await fetchWeatherByCity(cityInput.trim())
+    // Sauvegarde dans settings
+    await supabase.from("settings").upsert({ id: 1, city: cityInput.trim() })
+    setCityInput("")
+  }
+
+  // ── Fetch données Supabase ──────────────────
   useEffect(() => {
     async function init() {
       const { data: settings } = await supabase.from("settings").select("restaurant_name").single()
@@ -189,6 +301,23 @@ export default function DashboardPage() {
 
       const { data: equipments } = await supabase.from("equipments").select("*")
       const { data: tempLogs }   = await supabase.from("temperature_logs").select("*").order("created_at", { ascending: false })
+
+      // Count équipements actifs
+      if (equipments) setEquipmentCount(equipments.length)
+
+      // Température moyenne (derniers relevés par équipement)
+      if (equipments && tempLogs && tempLogs.length > 0) {
+        const latestTemps: number[] = []
+        equipments.forEach((eq) => {
+          const latest = tempLogs.find((l) => l.equipment?.toLowerCase().trim() === eq.name?.toLowerCase().trim())
+          if (latest) latestTemps.push(latest.temperature)
+        })
+        if (latestTemps.length > 0) {
+          const avg = latestTemps.reduce((a, b) => a + b, 0) / latestTemps.length
+          setAvgTemp(`${avg.toFixed(1).replace(".", ",")}°C`)
+        }
+      }
+
       const tempFound: Alerte[] = []
       if (equipments && tempLogs) {
         equipments.forEach((eq) => {
@@ -214,8 +343,8 @@ export default function DashboardPage() {
         certs.forEach((c) => {
           if (!c.next_date) return
           const diff = Math.ceil((new Date(c.next_date).getTime() - todayD.getTime()) / 86400000)
-          if (diff < 0)        maintFound.push({ id: `ce-${c.id}`, message: `Certificat expiré — ${c.name}`,        detail: `Équipement : ${c.equipment}`, level: "danger" })
-          else if (diff <= 30) maintFound.push({ id: `cs-${c.id}`, message: `Certificat à renouveler — ${c.name}`,  detail: `Dans ${diff} jour(s)`,         level: "warning" })
+          if (diff < 0)        maintFound.push({ id: `ce-${c.id}`, message: `Certificat expiré — ${c.name}`,       detail: `Équipement : ${c.equipment}`, level: "danger" })
+          else if (diff <= 30) maintFound.push({ id: `cs-${c.id}`, message: `Certificat à renouveler — ${c.name}`, detail: `Dans ${diff} jour(s)`,         level: "warning" })
         })
       }
       setMaintenanceAlertes(maintFound)
@@ -227,23 +356,16 @@ export default function DashboardPage() {
         products.forEach((p) => {
           if (!p.dlc) return
           const diff = Math.ceil((new Date(p.dlc).getTime() - todayD.getTime()) / 86400000)
-          if (diff < 0)       dlcFound.push({ id: `de-${p.id}`, message: `DLC expirée — ${p.product}`,            detail: `Lot : ${p.lot || "—"}`, level: "danger" })
+          if (diff < 0)       dlcFound.push({ id: `de-${p.id}`, message: `DLC expirée — ${p.product}`,             detail: `Lot : ${p.lot || "—"}`, level: "danger" })
           else if (diff <= 3) dlcFound.push({ id: `ds-${p.id}`, message: `DLC dans ${diff} jour(s) — ${p.product}`, detail: `Lot : ${p.lot || "—"}`, level: "warning" })
         })
       }
       setDlcAlertes(dlcFound)
 
-      // Count traçabilité
-      const { count } = await supabase
-        .from("traceability_products")
-        .select("*", { count: "exact", head: true })
+      const { count } = await supabase.from("traceability_products").select("*", { count: "exact", head: true })
       if (count !== null) setTraceabilityCount(count)
 
-      // Count stocks faibles (quantity <= 2, même logique que app/stocks/page.tsx)
-      const { count: lowCount } = await supabase
-        .from("traceability_products")
-        .select("*", { count: "exact", head: true })
-        .lte("quantity", 2)
+      const { count: lowCount } = await supabase.from("traceability_products").select("*", { count: "exact", head: true }).lte("quantity", 2)
       if (lowCount !== null) setLowStockCount(lowCount)
     }
     init()
@@ -252,10 +374,10 @@ export default function DashboardPage() {
   const totalAlertes = tempAlertes.length + maintenanceAlertes.length + dlcAlertes.length
 
   const recentActivity = [
-    { icon: Truck,          color: "text-violet-300", bg: "bg-violet-500/15 border-violet-500/20", title: "Livraison réceptionnée",   subtitle: "Fournisseur Metro", time: "10:35" },
-    { icon: Thermometer,    color: "text-orange-300", bg: "bg-orange-500/15 border-orange-500/20", title: "Température normalisée",   subtitle: "Chambre froide 1",  time: "09:42" },
-    { icon: ClipboardCheck, color: "text-cyan-300",   bg: "bg-cyan-500/15 border-cyan-500/20",     title: "Tâche terminée",           subtitle: "Nettoyage hotte",   time: "09:15" },
-    { icon: Package,        color: "text-pink-300",   bg: "bg-pink-500/15 border-pink-500/20",     title: "Stock faible",             subtitle: "Sauce tomate",      time: "08:50" },
+    { icon: Truck,          color: "text-violet-300", bg: "bg-violet-500/15 border-violet-500/20", title: "Livraison réceptionnée",  subtitle: "Fournisseur Metro", time: "10:35" },
+    { icon: Thermometer,    color: "text-orange-300", bg: "bg-orange-500/15 border-orange-500/20", title: "Température normalisée",  subtitle: "Chambre froide 1",  time: "09:42" },
+    { icon: ClipboardCheck, color: "text-cyan-300",   bg: "bg-cyan-500/15 border-cyan-500/20",     title: "Tâche terminée",          subtitle: "Nettoyage hotte",   time: "09:15" },
+    { icon: Package,        color: "text-pink-300",   bg: "bg-pink-500/15 border-pink-500/20",     title: "Stock faible",            subtitle: "Sauce tomate",      time: "08:50" },
   ]
 
   const haccpItems = [
@@ -263,6 +385,45 @@ export default function DashboardPage() {
     { label: "Contrôle DLC",      time: "16:00" },
     { label: "Export conformité", time: "18:30" },
   ]
+
+  // ── Bloc météo réutilisable ─────────────────
+  const WeatherBlock = ({ compact = false }: { compact?: boolean }) => (
+    <div className={`flex items-center gap-3 ${compact ? "" : "mb-4"}`}>
+      <span className={compact ? "text-[28px]" : "text-[32px]"}>{weatherEmoji}</span>
+      <div className="flex-1 min-w-0">
+        <p className={`font-black leading-none ${compact ? "text-[28px]" : "text-[34px]"}`}>{weatherTemp}</p>
+        <p className="text-[11px] text-white/45 truncate">{weatherLabel}</p>
+      </div>
+    </div>
+  )
+
+  const CityBlock = ({ compact = false }: { compact?: boolean }) => (
+    <div className={compact ? "ml-auto flex items-center gap-2" : ""}>
+      {showCityInput ? (
+        <div className="flex items-center gap-2 w-full">
+          <input
+            value={cityInput}
+            onChange={(e) => setCityInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCitySubmit()}
+            placeholder="Ex: Paris, Lyon..."
+            autoFocus
+            className="flex-1 h-8 rounded-xl bg-white/[0.08] border border-white/15 px-3 text-white text-xs outline-none min-w-0"
+          />
+          <button onClick={handleCitySubmit} className="h-8 px-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black text-xs font-black transition shrink-0">OK</button>
+          <button onClick={() => setShowCityInput(false)} className="text-white/30 hover:text-white transition shrink-0"><X size={13} /></button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowCityInput(true)}
+          className={`flex items-center gap-2 hover:opacity-80 transition ${compact ? "" : "w-full"}`}
+        >
+          <MapPin className="h-3.5 w-3.5 text-cyan-300 shrink-0" />
+          <span className="text-[12px] text-white/70 truncate">{weatherCity}</span>
+          {!compact && <ChevronRight className="h-3.5 w-3.5 text-white/30 ml-auto shrink-0" />}
+        </button>
+      )}
+    </div>
+  )
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#020817] p-3 sm:p-5 text-white">
@@ -315,7 +476,6 @@ export default function DashboardPage() {
         {/* CARTES STAT */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 
-          {/* PMS Entretien */}
           <Link href="/pms-entretien" className="block">
             <div className="group rounded-[20px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-blue-900/15 p-4 transition-all hover:scale-[1.02] hover:border-cyan-400/50">
               <div className="mb-3 flex items-start justify-between gap-2">
@@ -332,7 +492,6 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* Températures */}
           <Link href="/temperatures" className="block">
             <div className="group rounded-[20px] border border-orange-400/25 bg-gradient-to-br from-orange-500/20 via-amber-600/10 to-purple-900/15 p-4 transition-all hover:scale-[1.02] hover:border-orange-400/50">
               <div className="mb-3 flex items-start justify-between gap-2">
@@ -349,7 +508,6 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* Stocks — chiffre dynamique depuis Supabase */}
           <Link href="/stocks" className="block">
             <div className="group rounded-[20px] border border-pink-400/25 bg-gradient-to-br from-pink-500/20 via-rose-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-pink-400/50">
               <div className="mb-3 flex items-start justify-between gap-2">
@@ -366,7 +524,6 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* Traçabilité — chiffre réel depuis Supabase */}
           <Link href="/traceability" className="block">
             <div className="group rounded-[20px] border border-violet-400/25 bg-gradient-to-br from-violet-500/20 via-purple-600/10 to-indigo-900/15 p-4 transition-all hover:scale-[1.02] hover:border-violet-400/50">
               <div className="mb-3 flex items-start justify-between gap-2">
@@ -385,7 +542,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Widget météo/date mobile */}
-        <div className="mt-3 sm:mt-4 flex lg:hidden rounded-[20px] border border-white/10 bg-[#071224] p-4 items-center gap-6">
+        <div className="mt-3 sm:mt-4 flex lg:hidden rounded-[20px] border border-white/10 bg-[#071224] p-4 items-center gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/15 shrink-0">
               <CalendarDays className="h-4 w-4 text-cyan-300" />
@@ -396,16 +553,9 @@ export default function DashboardPage() {
               <p className="text-[11px] text-white/35">{monthName} {year}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[28px]">⛅</span>
-            <div>
-              <p className="text-[28px] font-black leading-none">18°C</p>
-              <p className="text-[11px] text-white/45">Partiellement nuageux</p>
-            </div>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <MapPin className="h-3.5 w-3.5 text-cyan-300" />
-            <span className="text-[12px] text-white/70">Lyon, France</span>
+          <WeatherBlock compact />
+          <div className="w-full">
+            <CityBlock compact />
           </div>
         </div>
 
@@ -510,19 +660,9 @@ export default function DashboardPage() {
                   <p className="text-[11px] text-white/35">{monthName} {year}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[32px]">⛅</span>
-                <div>
-                  <p className="text-[34px] font-black leading-none">18°C</p>
-                  <p className="text-[11px] text-white/45">Partiellement nuageux</p>
-                </div>
-              </div>
+              <WeatherBlock />
               <div className="flex h-10 items-center justify-between rounded-xl border border-white/10 bg-[#050d1c] px-3">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-3.5 w-3.5 text-cyan-300" />
-                  <span className="text-[12px] text-white/70">Lyon, France</span>
-                </div>
-                <ChevronRight className="h-3.5 w-3.5 text-white/30" />
+                <CityBlock />
               </div>
             </div>
 
@@ -547,21 +687,21 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Stats mini */}
+            {/* Stats mini — dynamiques */}
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-[20px] border border-orange-500/20 bg-gradient-to-br from-orange-500/15 to-orange-900/10 p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <Thermometer className="h-4 w-4 shrink-0 text-orange-300" />
                   <p className="text-[9px] sm:text-[10px] font-bold tracking-wider text-orange-300/80 leading-tight">TEMP. MOYENNE</p>
                 </div>
-                <p className="text-[28px] sm:text-[32px] font-black leading-none text-white">4,2°C</p>
+                <p className="text-[28px] sm:text-[32px] font-black leading-none text-white">{avgTemp}</p>
               </div>
               <div className="rounded-[20px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <Wifi className="h-4 w-4 shrink-0 text-green-300" />
                   <p className="text-[9px] sm:text-[10px] font-bold tracking-wider text-green-300/80 leading-tight">ÉQUIPEMENTS</p>
                 </div>
-                <p className="text-[28px] sm:text-[32px] font-black leading-none text-white">8</p>
+                <p className="text-[28px] sm:text-[32px] font-black leading-none text-white">{equipmentCount}</p>
                 <p className="text-[11px] text-green-400/70 mt-1">actifs</p>
               </div>
             </div>
