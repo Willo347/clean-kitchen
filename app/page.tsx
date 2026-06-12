@@ -15,10 +15,6 @@ const DAYS_FR = ["L","M","M","J","V","S","D"]
 function getDaysInMonth(year: number, month: number) { return new Date(year, month + 1, 0).getDate() }
 function getFirstDayOfMonth(year: number, month: number) { return new Date(year, month, 1).getDay() }
 
-// ─────────────────────────────────────────────
-// MÉTÉO — codes WMO → emoji + description
-// ─────────────────────────────────────────────
-
 function getWeatherInfo(code: number): { emoji: string; label: string } {
   if (code === 0)               return { emoji: "☀️",  label: "Ensoleillé" }
   if (code <= 2)                return { emoji: "⛅",  label: "Partiellement nuageux" }
@@ -64,8 +60,13 @@ function PanneauAlertes({
   ]
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed right-0 top-0 h-full w-full sm:max-w-md z-50 bg-[#030b1d] border-l border-white/10 shadow-2xl flex flex-col overflow-hidden">
+      {/* Fond cliquable — même z-index que le panneau pour éviter les conflits iOS */}
+      <div
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      {/* Panneau — z-index plus élevé */}
+      <div className="fixed right-0 top-0 h-full w-full sm:max-w-md z-[60] bg-[#030b1d] border-l border-white/10 shadow-2xl flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/[0.07]">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center">
@@ -76,8 +77,13 @@ function PanneauAlertes({
               <p className="text-white/35 text-xs">{totalAlertes} alerte{totalAlertes !== 1 ? "s" : ""} active{totalAlertes !== 1 ? "s" : ""}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition">
-            <X size={15} />
+          {/* Bouton croix agrandi pour mobile */}
+          <button
+            onClick={onClose}
+            className="w-12 h-12 rounded-xl bg-white/[0.05] hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition active:bg-white/20"
+            style={{ touchAction: "manipulation" }}
+          >
+            <X size={18} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5">
@@ -101,7 +107,7 @@ function PanneauAlertes({
         </div>
         <div className="p-4 sm:p-5 border-t border-white/[0.07]">
           <Link href="/alerts" onClick={onClose}>
-            <button className="w-full h-11 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black font-black text-sm flex items-center justify-center gap-2">
+            <button className="w-full h-12 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black font-black text-sm flex items-center justify-center gap-2 active:bg-cyan-200">
               Voir toutes les alertes <ChevronRight size={16} />
             </button>
           </Link>
@@ -183,10 +189,6 @@ function MiniCalendar() {
   )
 }
 
-// ─────────────────────────────────────────────
-// MAIN PAGE
-// ─────────────────────────────────────────────
-
 export default function DashboardPage() {
   const now = new Date()
   const [showAlertes, setShowAlertes] = useState(false)
@@ -200,7 +202,6 @@ export default function DashboardPage() {
   const [avgTemp, setAvgTemp] = useState<string>("—")
   const [pmsPendingCount, setPmsPendingCount] = useState(0)
 
-  // Météo
   const [weatherTemp, setWeatherTemp] = useState<string>("—")
   const [weatherEmoji, setWeatherEmoji] = useState("⛅")
   const [weatherLabel, setWeatherLabel] = useState("Chargement...")
@@ -214,28 +215,20 @@ export default function DashboardPage() {
   const monthName = MONTHS_FR[now.getMonth()]
   const year      = now.getFullYear()
 
-  // ── Fetch météo par coordonnées ─────────────
   async function fetchWeatherByCoords(lat: number, lon: number, cityName?: string) {
     try {
-      // Géocodage inverse si pas de nom de ville
       if (!cityName) {
-        const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=fr`
-        )
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=fr`)
         const geoData = await geoRes.json()
         const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || "Localisation"
         const country = geoData.address?.country || ""
         cityName = `${city}, ${country}`
       }
-
-      const meteoRes = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&timezone=auto`
-      )
+      const meteoRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&timezone=auto`)
       const meteoData = await meteoRes.json()
       const temp = Math.round(meteoData.current.temperature_2m)
       const code = meteoData.current.weathercode
       const info = getWeatherInfo(code)
-
       setWeatherTemp(`${temp}°C`)
       setWeatherEmoji(info.emoji)
       setWeatherLabel(info.label)
@@ -247,17 +240,11 @@ export default function DashboardPage() {
     }
   }
 
-  // ── Fetch météo par nom de ville ────────────
   async function fetchWeatherByCity(city: string) {
     try {
-      const geoRes = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=fr&format=json`
-      )
+      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=fr&format=json`)
       const geoData = await geoRes.json()
-      if (!geoData.results?.length) {
-        setWeatherLabel("Ville introuvable")
-        return
-      }
+      if (!geoData.results?.length) { setWeatherLabel("Ville introuvable"); return }
       const { latitude, longitude, name, country } = geoData.results[0]
       await fetchWeatherByCoords(latitude, longitude, `${name}, ${country}`)
     } catch {
@@ -266,13 +253,11 @@ export default function DashboardPage() {
     }
   }
 
-  // ── Géolocalisation au chargement ──────────
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => fetchWeatherByCoords(pos.coords.latitude, pos.coords.longitude),
         async () => {
-          // Refus géoloc → fallback ville depuis settings
           const { data } = await supabase.from("settings").select("city").single()
           if (data?.city) fetchWeatherByCity(data.city)
           else { setWeatherTemp("—"); setWeatherLabel("Activez la géolocalisation"); setWeatherCity("—") }
@@ -283,18 +268,15 @@ export default function DashboardPage() {
     }
   }, [])
 
-  // ── Sauvegarde ville manuelle ───────────────
   async function handleCitySubmit() {
     if (!cityInput.trim()) return
     setShowCityInput(false)
     setWeatherLabel("Chargement...")
     await fetchWeatherByCity(cityInput.trim())
-    // Sauvegarde dans settings
     await supabase.from("settings").upsert({ id: 1, city: cityInput.trim() })
     setCityInput("")
   }
 
-  // ── Fetch données Supabase ──────────────────
   useEffect(() => {
     async function init() {
       const { data: settings } = await supabase.from("settings").select("restaurant_name").single()
@@ -303,10 +285,8 @@ export default function DashboardPage() {
       const { data: equipments } = await supabase.from("equipments").select("*")
       const { data: tempLogs }   = await supabase.from("temperature_logs").select("*").order("created_at", { ascending: false })
 
-      // Count équipements actifs
       if (equipments) setEquipmentCount(equipments.length)
 
-      // Température moyenne (derniers relevés par équipement)
       if (equipments && tempLogs && tempLogs.length > 0) {
         const latestTemps: number[] = []
         equipments.forEach((eq) => {
@@ -357,7 +337,7 @@ export default function DashboardPage() {
         products.forEach((p) => {
           if (!p.dlc) return
           const diff = Math.ceil((new Date(p.dlc).getTime() - todayD.getTime()) / 86400000)
-          if (diff < 0)       dlcFound.push({ id: `de-${p.id}`, message: `DLC expirée — ${p.product}`,             detail: `Lot : ${p.lot || "—"}`, level: "danger" })
+          if (diff < 0)       dlcFound.push({ id: `de-${p.id}`, message: `DLC expirée — ${p.product}`,              detail: `Lot : ${p.lot || "—"}`, level: "danger" })
           else if (diff <= 3) dlcFound.push({ id: `ds-${p.id}`, message: `DLC dans ${diff} jour(s) — ${p.product}`, detail: `Lot : ${p.lot || "—"}`, level: "warning" })
         })
       }
@@ -369,7 +349,6 @@ export default function DashboardPage() {
       const { count: lowCount } = await supabase.from("traceability_products").select("*", { count: "exact", head: true }).lte("quantity", 2)
       if (lowCount !== null) setLowStockCount(lowCount)
 
-      // PMS — tâches en attente aujourd'hui
       const dayIndex = new Date().getDay()
       const mapped = [6, 0, 1, 2, 3, 4, 5][dayIndex]
       const days = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"]
@@ -401,7 +380,6 @@ export default function DashboardPage() {
     { label: "Export conformité", time: "18:30" },
   ]
 
-  // ── Bloc météo réutilisable ─────────────────
   const WeatherBlock = ({ compact = false }: { compact?: boolean }) => (
     <div className={`flex items-center gap-3 ${compact ? "" : "mb-4"}`}>
       <span className={compact ? "text-[28px]" : "text-[32px]"}>{weatherEmoji}</span>
