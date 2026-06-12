@@ -16,7 +16,7 @@ import {
   ICON_MAP,
   SIDEBAR_ORDER_KEY,
   getSidebarItems,
-} from "@/components/Sidebar";
+} from "../components/Sidebar";
 
 type MenuItem = typeof DEFAULT_MENU_ITEMS[number];
 
@@ -123,25 +123,20 @@ export default function SettingsPage() {
                   key={item.id}
                   className="flex items-center gap-3 rounded-[18px] border border-white/[0.07] bg-white/[0.02] p-3 sm:p-4 transition hover:bg-white/[0.04]"
                 >
-                  {/* Grip icon */}
                   <GripVertical size={16} className="text-white/20 shrink-0" />
 
-                  {/* Position */}
                   <span className="text-white/25 text-xs font-bold w-5 text-center shrink-0">
                     {index + 1}
                   </span>
 
-                  {/* Icon */}
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.05] border border-white/10 shrink-0">
                     {Icon && <Icon size={16} className="text-cyan-300" />}
                   </div>
 
-                  {/* Name */}
                   <span className="text-white font-bold text-sm flex-1 min-w-0 truncate">
                     {item.name}
                   </span>
 
-                  {/* Buttons */}
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => moveUp(index)}
