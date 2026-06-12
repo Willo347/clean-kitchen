@@ -25,7 +25,7 @@ import autoTable from "jspdf-autotable";
 import { supabase } from "@/lib/supabase";
 
 // ─────────────────────────────────────────────
-// CATEGORIES (identiques à stocks)
+// CATEGORIES
 // ─────────────────────────────────────────────
 
 type Category = {
@@ -100,6 +100,25 @@ function getDLCLabel(dlc: string): string {
   return "OK";
 }
 
+// ── Calcule le lundi de la semaine d'une date ─
+function getWeekMonday(dateStr: string): string {
+  const d = new Date(dateStr);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split("T")[0];
+}
+
+function formatWeekLabel(mondayStr: string): string {
+  const monday = new Date(mondayStr);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const MONTHS = ["jan","fév","mar","avr","mai","jun","jul","aoû","sep","oct","nov","déc"];
+  const d1 = `${monday.getDate()} ${MONTHS[monday.getMonth()]}`;
+  const d2 = `${sunday.getDate()} ${MONTHS[sunday.getMonth()]} ${sunday.getFullYear()}`;
+  return `${d1} — ${d2}`;
+}
+
 // ─────────────────────────────────────────────
 // IMAGE MODAL
 // ─────────────────────────────────────────────
@@ -146,8 +165,6 @@ function ProductRow({ item }: { item: Product }) {
       }`}>
         <div className="flex items-center justify-between gap-4 p-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-
-            {/* Photo ou emoji catégorie */}
             {item.image_url ? (
               <button onClick={() => setShowImage(true)} className="w-10 h-10 rounded-2xl overflow-hidden shrink-0 border border-white/10 hover:border-violet-500/40 transition">
                 <img src={item.image_url} alt={item.product} className="w-full h-full object-cover" />
@@ -237,16 +254,10 @@ function ProductRow({ item }: { item: Product }) {
 }
 
 // ─────────────────────────────────────────────
-// CATEGORY SECTION
+// CATEGORY SECTION (dans une semaine)
 // ─────────────────────────────────────────────
 
-function CategorySection({
-  category,
-  products,
-}: {
-  category: Category;
-  products: Product[];
-}) {
+function CategorySection({ category, products }: { category: Category; products: Product[] }) {
   const [collapsed, setCollapsed] = useState(false);
   const expiredCount = products.filter((p) => getDLCStatus(p.dlc) === "expired").length;
   const soonCount = products.filter((p) => getDLCStatus(p.dlc) === "soon").length;
@@ -254,27 +265,27 @@ function CategorySection({
   if (products.length === 0) return null;
 
   return (
-    <div className={`rounded-[24px] border ${category.color} overflow-hidden`}>
+    <div className={`rounded-[20px] border ${category.color} overflow-hidden`}>
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="w-full flex items-center justify-between gap-4 p-4 hover:bg-white/[0.02] transition"
+        className="w-full flex items-center justify-between gap-4 p-3 sm:p-4 hover:bg-white/[0.02] transition"
       >
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{category.emoji}</span>
+          <span className="text-xl">{category.emoji}</span>
           <div className="text-left">
-            <h3 className={`font-black text-base ${category.text}`}>{category.id}</h3>
+            <h3 className={`font-black text-sm ${category.text}`}>{category.id}</h3>
             <p className="text-white/30 text-xs">{products.length} produit(s)</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {expiredCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-bold">
-              <AlertTriangle size={10} /> {expiredCount} périmé
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-bold">
+              <AlertTriangle size={9} /> {expiredCount} périmé
             </span>
           )}
           {soonCount > 0 && expiredCount === 0 && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-300 text-xs font-bold">
-              <Clock size={10} /> {soonCount} bientôt
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-300 text-xs font-bold">
+              <Clock size={9} /> {soonCount} bientôt
             </span>
           )}
           <span className={`text-white/30 text-xs transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`}>▼</span>
@@ -282,12 +293,103 @@ function CategorySection({
       </button>
 
       {!collapsed && (
-        <div className="px-4 pb-4 space-y-2 border-t border-white/[0.06]">
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-2 border-t border-white/[0.06]">
           <div className="mt-2 space-y-2">
             {products.map((item) => (
               <ProductRow key={item.id} item={item} />
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// WEEK SECTION
+// ─────────────────────────────────────────────
+
+function WeekSection({ weekLabel, products, weekKey }: { weekLabel: string; products: Product[]; weekKey: string }) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const expiredCount = products.filter((p) => getDLCStatus(p.dlc) === "expired").length;
+  const soonCount = products.filter((p) => getDLCStatus(p.dlc) === "soon").length;
+  const withPhotoCount = products.filter((p) => p.image_url).length;
+
+  // Groupement par catégorie dans la semaine
+  const productsByCategory = CATEGORIES.map((cat) => ({
+    category: cat,
+    products: products.filter((p) => (p.category || "") === cat.id),
+  }));
+  const uncategorized = products.filter(
+    (p) => !p.category || !CATEGORIES.find((c) => c.id === p.category)
+  );
+
+  const isCurrentWeek = weekKey === getWeekMonday(new Date().toISOString());
+
+  return (
+    <div className={`rounded-[28px] border overflow-hidden ${
+      isCurrentWeek ? "border-cyan-500/30 bg-gradient-to-br from-cyan-500/[0.06] to-blue-900/5" : "border-white/10 bg-white/[0.02]"
+    }`}>
+      {/* Week header */}
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="w-full flex items-center justify-between gap-4 p-4 sm:p-5 hover:bg-white/[0.02] transition"
+      >
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border shrink-0 ${
+            isCurrentWeek ? "border-cyan-400/30 bg-cyan-500/20" : "border-white/10 bg-white/[0.05]"
+          }`}>
+            <Calendar size={16} className={isCurrentWeek ? "text-cyan-300" : "text-white/40"} />
+          </div>
+          <div className="text-left min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className={`font-black text-base ${isCurrentWeek ? "text-cyan-300" : "text-white"}`}>
+                {weekLabel}
+              </h3>
+              {isCurrentWeek && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-[10px] font-bold">
+                  Cette semaine
+                </span>
+              )}
+            </div>
+            <p className="text-white/30 text-xs mt-0.5">
+              {products.length} produit(s) · {withPhotoCount} avec photo
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {expiredCount > 0 && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-bold">
+              <AlertTriangle size={10} /> {expiredCount}
+            </span>
+          )}
+          {soonCount > 0 && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-300 text-xs font-bold">
+              <Clock size={10} /> {soonCount}
+            </span>
+          )}
+          <span className={`text-white/30 text-xs transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`}>▼</span>
+        </div>
+      </button>
+
+      {/* Week content */}
+      {!collapsed && (
+        <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-white/[0.06] space-y-3 pt-4">
+          {productsByCategory.map(({ category, products: catProducts }) => (
+            <CategorySection
+              key={category.id}
+              category={category}
+              products={catProducts}
+            />
+          ))}
+          {uncategorized.length > 0 && (
+            <CategorySection
+              category={CAT_AUTRE}
+              products={uncategorized}
+            />
+          )}
         </div>
       )}
     </div>
@@ -346,22 +448,22 @@ export default function TraceabilityPage() {
     return matchSearch && matchStatus && matchCategory;
   });
 
+  // ── Groupement par semaine ─────────────────
+  const weekMap = new Map<string, Product[]>();
+  filteredProducts.forEach((p) => {
+    const monday = getWeekMonday(p.created_at);
+    if (!weekMap.has(monday)) weekMap.set(monday, []);
+    weekMap.get(monday)!.push(p);
+  });
+  // Tri semaines du plus récent au plus ancien
+  const weeks = Array.from(weekMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+
   const expiredCount = products.filter((p) => getDLCStatus(p.dlc) === "expired").length;
   const soonCount = products.filter((p) => getDLCStatus(p.dlc) === "soon").length;
   const okCount = products.filter((p) => getDLCStatus(p.dlc) === "ok").length;
   const withPhotoCount = products.filter((p) => p.image_url).length;
 
-  // Groupement par catégorie
-  const productsByCategory = CATEGORIES.map((cat) => ({
-    category: cat,
-    products: filteredProducts.filter((p) => (p.category || "") === cat.id),
-  }));
-  const uncategorized = filteredProducts.filter(
-    (p) => !p.category || !CATEGORIES.find((c) => c.id === p.category)
-  );
-
   // ── PDF Export ─────────────────────────────
-
   async function exportPDF() {
     setIsExporting(true);
     const doc = new jsPDF();
@@ -370,7 +472,7 @@ export default function TraceabilityPage() {
     doc.setTextColor(100, 220, 240);
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("Rapport Traçabilité HACCP", 14, 18);
+    doc.text("Rapport Traçabilité", 14, 18);
     doc.setTextColor(180, 220, 240);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
@@ -388,20 +490,22 @@ export default function TraceabilityPage() {
 
     autoTable(doc, {
       startY: 78,
-      head: [["Catégorie", "Produit", "Lot", "DLC", "Fournisseur", "Qté", "Statut"]],
-      body: filteredProducts.map((item) => {
-        const status = getDLCStatus(item.dlc);
-        const cat = getCategoryInfo(item.category || "");
-        return [
-          `${cat.emoji} ${item.category || "—"}`,
-          item.product || "—",
-          item.lot || "—",
-          formatDateFR(item.dlc),
-          item.supplier || "—",
-          item.quantity || 0,
-          status === "expired" ? "PÉRIMÉ" : status === "soon" ? "Bientôt périmé" : "OK",
-        ];
-      }),
+      head: [["Semaine", "Catégorie", "Produit", "Lot", "DLC", "Fournisseur", "Statut"]],
+      body: weeks.flatMap(([monday, weekProducts]) =>
+        weekProducts.map((item) => {
+          const status = getDLCStatus(item.dlc);
+          const cat = getCategoryInfo(item.category || "");
+          return [
+            formatWeekLabel(monday),
+            `${cat.emoji} ${item.category || "—"}`,
+            item.product || "—",
+            item.lot || "—",
+            formatDateFR(item.dlc),
+            item.supplier || "—",
+            status === "expired" ? "PÉRIMÉ" : status === "soon" ? "Bientôt périmé" : "OK",
+          ];
+        })
+      ),
       headStyles: { fillColor: [10, 40, 80], textColor: [100, 220, 240], fontStyle: "bold", fontSize: 8 },
       bodyStyles: { fontSize: 8 },
       alternateRowStyles: { fillColor: [245, 248, 255] },
@@ -419,9 +523,9 @@ export default function TraceabilityPage() {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Page ${i} / ${pageCount} — Clean Kitchen HACCP`, 14, doc.internal.pageSize.height - 8);
+      doc.text(`Page ${i} / ${pageCount} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
     }
-    doc.save(`Tracabilite_HACCP_${new Date().toISOString().slice(0, 10)}.pdf`);
+    doc.save(`Tracabilite_${new Date().toISOString().slice(0, 10)}.pdf`);
     setIsExporting(false);
   }
 
@@ -430,83 +534,83 @@ export default function TraceabilityPage() {
   // ─────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#020817] text-white p-5">
-      <div className="mx-auto max-w-[1450px] rounded-[32px] border border-white/5 bg-[#030b1d] p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
+    <div className="min-h-screen bg-[#020817] text-white p-3 sm:p-5 overflow-x-hidden">
+      <div className="mx-auto max-w-[1450px] rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#030b1d] p-4 sm:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-4 sm:space-y-5">
 
         {/* HEADER */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              <p className="uppercase tracking-[0.32em] text-cyan-400 font-semibold text-xs">TRACEABILITY SYSTEM</p>
+              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+              <p className="uppercase tracking-[0.2em] text-cyan-400 font-semibold text-xs truncate">TRACEABILITY SYSTEM</p>
             </div>
-            <h1 className="text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">Traçabilité HACCP</h1>
-            <p className="text-white/40 text-base mt-2">Suivi produits et conformité sanitaire</p>
+            <h1 className="text-[32px] sm:text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">Traçabilité</h1>
+            <p className="text-white/40 text-sm sm:text-base mt-2">Suivi produits et conformité sanitaire</p>
           </div>
-          <button onClick={handleRefresh} disabled={isRefreshing} className="mt-2 h-10 px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white hover:border-white/20 transition flex items-center gap-2 text-sm font-bold disabled:opacity-50">
+          <button onClick={handleRefresh} disabled={isRefreshing} className="mt-1 h-10 px-3 sm:px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white hover:border-white/20 transition flex items-center gap-2 text-sm font-bold disabled:opacity-50 shrink-0">
             <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
             <span className="hidden sm:inline">Actualiser</span>
           </button>
         </div>
 
         {/* KPI CARDS */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button onClick={() => setFilterStatus("all")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStatus === "all" ? "border-cyan-400/50 ring-2 ring-cyan-400/20 bg-gradient-to-br from-cyan-500/20 to-blue-900/15" : "border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10"}`}>
-            <div className="flex items-start justify-between gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <button onClick={() => setFilterStatus("all")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStatus === "all" ? "border-cyan-400/50 ring-2 ring-cyan-400/20 bg-gradient-to-br from-cyan-500/20 to-blue-900/15" : "border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10"}`}>
+            <div className="flex items-start justify-between gap-2 sm:gap-3">
               <div>
                 <p className="text-cyan-300 text-xs font-semibold">Produits tracés</p>
-                <h2 className="text-[42px] font-black text-white leading-none mt-2">{products.length}</h2>
+                <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{products.length}</h2>
                 <p className="text-cyan-400/50 text-xs mt-1">{withPhotoCount} avec photo 📷</p>
               </div>
-              <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStatus === "all" ? "border-cyan-400/40 bg-cyan-400/30" : "border-cyan-400/20 bg-cyan-500/20"}`}>
-                <Package size={18} className="text-cyan-300" />
+              <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStatus === "all" ? "border-cyan-400/40 bg-cyan-400/30" : "border-cyan-400/20 bg-cyan-500/20"}`}>
+                <Package size={16} className="text-cyan-300" />
               </div>
             </div>
           </button>
 
-          <button onClick={() => setFilterStatus(filterStatus === "ok" ? "all" : "ok")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStatus === "ok" ? "border-green-400/50 ring-2 ring-green-400/20 bg-gradient-to-br from-green-500/20 to-green-900/15" : "border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10"}`}>
-            <div className="flex items-start justify-between gap-3">
+          <button onClick={() => setFilterStatus(filterStatus === "ok" ? "all" : "ok")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStatus === "ok" ? "border-green-400/50 ring-2 ring-green-400/20 bg-gradient-to-br from-green-500/20 to-green-900/15" : "border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10"}`}>
+            <div className="flex items-start justify-between gap-2 sm:gap-3">
               <div>
                 <p className="text-green-300 text-xs font-semibold">Conformes</p>
-                <h2 className="text-[42px] font-black text-white leading-none mt-2">{okCount}</h2>
+                <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{okCount}</h2>
                 <p className="text-green-400/50 text-xs mt-1">{filterStatus === "ok" ? "✓ Filtre actif" : "cliquer pour filtrer"}</p>
               </div>
-              <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStatus === "ok" ? "border-green-400/40 bg-green-400/30" : "border-green-400/20 bg-green-500/20"}`}>
-                <CheckCircle2 size={18} className="text-green-300" />
+              <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStatus === "ok" ? "border-green-400/40 bg-green-400/30" : "border-green-400/20 bg-green-500/20"}`}>
+                <CheckCircle2 size={16} className="text-green-300" />
               </div>
             </div>
           </button>
 
-          <button onClick={() => setFilterStatus(filterStatus === "soon" ? "all" : "soon")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStatus === "soon" ? "border-orange-400/50 ring-2 ring-orange-400/20 bg-gradient-to-br from-orange-500/20 to-orange-900/15" : soonCount > 0 ? "border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-orange-900/10" : "border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-orange-900/5"}`}>
-            <div className="flex items-start justify-between gap-3">
+          <button onClick={() => setFilterStatus(filterStatus === "soon" ? "all" : "soon")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStatus === "soon" ? "border-orange-400/50 ring-2 ring-orange-400/20 bg-gradient-to-br from-orange-500/20 to-orange-900/15" : soonCount > 0 ? "border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-orange-900/10" : "border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-orange-900/5"}`}>
+            <div className="flex items-start justify-between gap-2 sm:gap-3">
               <div>
                 <p className="text-orange-300 text-xs font-semibold">Bientôt périmés</p>
-                <h2 className="text-[42px] font-black text-white leading-none mt-2">{soonCount}</h2>
+                <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{soonCount}</h2>
                 <p className="text-orange-400/50 text-xs mt-1">{filterStatus === "soon" ? "✓ Filtre actif" : "cliquer pour filtrer"}</p>
               </div>
-              <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStatus === "soon" ? "border-orange-400/40 bg-orange-400/30" : "border-orange-400/20 bg-orange-500/20"}`}>
-                <Clock size={18} className={`text-orange-300 ${soonCount > 0 && filterStatus !== "soon" ? "animate-pulse" : ""}`} />
+              <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStatus === "soon" ? "border-orange-400/40 bg-orange-400/30" : "border-orange-400/20 bg-orange-500/20"}`}>
+                <Clock size={16} className={`text-orange-300 ${soonCount > 0 && filterStatus !== "soon" ? "animate-pulse" : ""}`} />
               </div>
             </div>
           </button>
 
-          <button onClick={() => setFilterStatus(filterStatus === "expired" ? "all" : "expired")} className={`rounded-[24px] border p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStatus === "expired" ? "border-red-400/50 ring-2 ring-red-400/20 bg-gradient-to-br from-red-500/25 to-red-900/15" : expiredCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
-            <div className="flex items-start justify-between gap-3">
+          <button onClick={() => setFilterStatus(filterStatus === "expired" ? "all" : "expired")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStatus === "expired" ? "border-red-400/50 ring-2 ring-red-400/20 bg-gradient-to-br from-red-500/25 to-red-900/15" : expiredCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
+            <div className="flex items-start justify-between gap-2 sm:gap-3">
               <div>
                 <p className="text-red-300 text-xs font-semibold">Périmés</p>
-                <h2 className="text-[42px] font-black text-white leading-none mt-2">{expiredCount}</h2>
+                <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{expiredCount}</h2>
                 <p className="text-red-400/50 text-xs mt-1">{filterStatus === "expired" ? "✓ Filtre actif" : expiredCount > 0 ? "⚠ Action requise" : "cliquer pour filtrer"}</p>
               </div>
-              <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${filterStatus === "expired" ? "border-red-400/40 bg-red-400/30" : "border-red-400/20 bg-red-500/20"}`}>
-                <AlertTriangle size={18} className={`text-red-300 ${expiredCount > 0 && filterStatus !== "expired" ? "animate-pulse" : ""}`} />
+              <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStatus === "expired" ? "border-red-400/40 bg-red-400/30" : "border-red-400/20 bg-red-500/20"}`}>
+                <AlertTriangle size={16} className={`text-red-300 ${expiredCount > 0 && filterStatus !== "expired" ? "animate-pulse" : ""}`} />
               </div>
             </div>
           </button>
         </div>
 
         {/* FILTERS + EXPORT */}
-        <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 space-y-3">
-          <div className="flex flex-col xl:flex-row gap-3 xl:items-end xl:justify-between">
+        <div className="rounded-[24px] sm:rounded-[28px] border border-white/10 bg-white/[0.02] p-4 sm:p-5 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-end sm:justify-between">
             <div className="flex flex-col sm:flex-row gap-3 flex-1">
               <div className="flex-1">
                 <label className="text-white/30 text-xs mb-1.5 block">Date début</label>
@@ -531,24 +635,22 @@ export default function TraceabilityPage() {
 
           {/* Filtres statut + catégorie */}
           <div className="flex flex-wrap gap-2">
-            {/* Statut DLC */}
             {(["all", "ok", "soon", "expired"] as const).map((status) => (
-              <button key={status} onClick={() => setFilterStatus(status)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition ${filterStatus === status ? status === "expired" ? "bg-red-500/25 border-red-500/50 text-red-300" : status === "soon" ? "bg-orange-500/25 border-orange-500/50 text-orange-300" : status === "ok" ? "bg-green-500/25 border-green-500/50 text-green-300" : "bg-white/10 border-white/20 text-white" : "bg-transparent border-white/10 text-white/35 hover:text-white/60"}`}>
+              <button key={status} onClick={() => setFilterStatus(status)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition whitespace-nowrap ${filterStatus === status ? status === "expired" ? "bg-red-500/25 border-red-500/50 text-red-300" : status === "soon" ? "bg-orange-500/25 border-orange-500/50 text-orange-300" : status === "ok" ? "bg-green-500/25 border-green-500/50 text-green-300" : "bg-white/10 border-white/20 text-white" : "bg-transparent border-white/10 text-white/35 hover:text-white/60"}`}>
                 {status === "all" ? "Tous" : status === "ok" ? "✓ OK" : status === "soon" ? "⏱ Bientôt" : "⚠ Périmés"}
               </button>
             ))}
 
             <div className="w-px bg-white/10 mx-1" />
 
-            {/* Catégories */}
-            <button onClick={() => setFilterCategory("all")} className={`px-3 py-2 rounded-xl border text-xs font-bold transition ${filterCategory === "all" ? "bg-white/10 border-white/20 text-white" : "border-white/10 text-white/35 hover:text-white/60"}`}>
+            <button onClick={() => setFilterCategory("all")} className={`px-3 py-2 rounded-xl border text-xs font-bold transition whitespace-nowrap ${filterCategory === "all" ? "bg-white/10 border-white/20 text-white" : "border-white/10 text-white/35 hover:text-white/60"}`}>
               Toutes catégories
             </button>
             {CATEGORIES.map((cat) => {
               const count = products.filter((p) => (p.category || "") === cat.id).length;
               if (count === 0) return null;
               return (
-                <button key={cat.id} onClick={() => setFilterCategory(cat.id)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 ${filterCategory === cat.id ? cat.badge : "border-white/10 text-white/35 hover:text-white/60"}`}>
+                <button key={cat.id} onClick={() => setFilterCategory(cat.id)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${filterCategory === cat.id ? cat.badge : "border-white/10 text-white/35 hover:text-white/60"}`}>
                   <span>{cat.emoji}</span> {cat.id} <span className="opacity-60">({count})</span>
                 </button>
               );
@@ -563,40 +665,37 @@ export default function TraceabilityPage() {
           </div>
         </div>
 
-        {/* PRODUCTS BY CATEGORY */}
+        {/* HISTORIQUE PAR SEMAINE */}
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shrink-0">
               <ShieldCheck size={16} className="text-cyan-400" />
             </div>
             <div>
               <h2 className="text-lg font-black text-white">Historique traçabilité</h2>
-              <p className="text-white/30 text-xs">{filteredProducts.length} / {products.length} produits · {withPhotoCount} avec photo</p>
+              <p className="text-white/30 text-xs">
+                {filteredProducts.length} / {products.length} produits · {weeks.length} semaine(s) · {withPhotoCount} avec photo
+              </p>
             </div>
           </div>
 
           {isLoading ? (
             <div className="flex items-center justify-center py-16"><Loader2 size={28} className="animate-spin text-cyan-400" /></div>
-          ) : filteredProducts.length === 0 ? (
+          ) : weeks.length === 0 ? (
             <div className="text-center py-12 text-white/25">
               <Package size={32} className="mx-auto mb-3 opacity-40" />
               <p className="text-sm">Aucun produit trouvé</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {productsByCategory.map(({ category, products: catProducts }) => (
-                <CategorySection
-                  key={category.id}
-                  category={category}
-                  products={catProducts}
+              {weeks.map(([monday, weekProducts]) => (
+                <WeekSection
+                  key={monday}
+                  weekKey={monday}
+                  weekLabel={formatWeekLabel(monday)}
+                  products={weekProducts}
                 />
               ))}
-              {uncategorized.length > 0 && (
-                <CategorySection
-                  category={CAT_AUTRE}
-                  products={uncategorized}
-                />
-              )}
             </div>
           )}
         </div>
