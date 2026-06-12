@@ -15,6 +15,9 @@ import {
   Thermometer,
   MapPin,
   Settings2,
+  ShieldCheck,
+  Lock,
+  Unlock,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -31,6 +34,8 @@ type Equipment = {
   temp_min: number;
   temp_max: number;
 };
+
+const ADMIN_PIN = "2405";
 
 // ─────────────────────────────────────────────
 // MODAL COMPONENT
@@ -173,6 +178,12 @@ export default function EquipmentsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<Partial<Equipment> | null>(null);
 
+  // Admin PIN
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showPinInput, setShowPinInput] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState(false);
+
   // ── Fetch ──────────────────────────────────
 
   const loadEquipments = useCallback(async () => {
@@ -209,6 +220,20 @@ export default function EquipmentsPage() {
     }
     init();
   }, [loadEquipments, loadTemperatures]);
+
+  // ── PIN ────────────────────────────────────
+
+  function checkPin() {
+    if (pin === ADMIN_PIN) {
+      setIsAdmin(true);
+      setShowPinInput(false);
+      setPin("");
+      setPinError(false);
+    } else {
+      setPinError(true);
+      setTimeout(() => setPinError(false), 2000);
+    }
+  }
 
   // ── Save (add or edit) ─────────────────────
 
@@ -269,7 +294,7 @@ export default function EquipmentsPage() {
 
   return (
     <>
-      {showModal && (
+      {showModal && isAdmin && (
         <EquipmentModal
           equipment={editingEquipment}
           onClose={() => { setShowModal(false); setEditingEquipment(null); }}
@@ -294,17 +319,58 @@ export default function EquipmentsPage() {
                 Équipements
               </h1>
               <p className="text-white/40 text-sm sm:text-base mt-2">
-                Gestion intelligente des équipements HACCP
+                Gestion des équipements de température
               </p>
             </div>
 
-            <button
-              onClick={() => { setEditingEquipment(null); setShowModal(true); }}
-              className="mt-1 h-10 px-4 sm:px-5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2 shrink-0"
-            >
-              <Plus size={16} />
-              <span className="hidden sm:inline">Ajouter</span>
-            </button>
+            {/* Boutons header — admin seulement */}
+            <div className="flex items-center gap-2 mt-1 shrink-0">
+              {isAdmin ? (
+                <>
+                  <button
+                    onClick={() => { setEditingEquipment(null); setShowModal(true); }}
+                    className="h-10 px-4 sm:px-5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    <span className="hidden sm:inline">Ajouter</span>
+                  </button>
+                  <button
+                    onClick={() => setIsAdmin(false)}
+                    className="h-10 px-3 sm:px-4 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition flex items-center gap-2 text-sm font-bold"
+                  >
+                    <Unlock size={14} /> <span className="hidden sm:inline">Admin</span>
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {showPinInput ? (
+                    <>
+                      <input
+                        type="password"
+                        maxLength={4}
+                        value={pin}
+                        onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                        onKeyDown={(e) => e.key === "Enter" && checkPin()}
+                        placeholder="PIN"
+                        autoFocus
+                        className={`h-10 w-16 sm:w-20 rounded-2xl border px-3 text-white text-sm outline-none text-center ${pinError ? "border-red-500/60 bg-red-500/10" : "border-white/10 bg-white/[0.05]"}`}
+                      />
+                      <button onClick={checkPin} className="h-10 px-3 sm:px-4 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black">OK</button>
+                      <button onClick={() => { setShowPinInput(false); setPin(""); }} className="h-10 w-10 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 flex items-center justify-center transition">
+                        <X size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setShowPinInput(true)}
+                      className="h-10 px-3 sm:px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white hover:border-white/20 transition flex items-center gap-2 text-sm font-bold"
+                    >
+                      <Lock size={14} /> <span className="hidden sm:inline">Mode admin</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* ── KPI CARDS ──────────────────────────── */}
@@ -343,7 +409,7 @@ export default function EquipmentsPage() {
             <div className={`rounded-[24px] border p-4 sm:p-5 ${alertsCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-red-300 text-sm font-semibold">Alertes HACCP</p>
+                  <p className="text-red-300 text-sm font-semibold">Alertes</p>
                   <h2 className="text-[40px] sm:text-[48px] font-black text-white leading-none mt-2 sm:mt-3">
                     {alertsCount}
                   </h2>
@@ -365,12 +431,14 @@ export default function EquipmentsPage() {
             <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-12 text-center">
               <Snowflake size={40} className="mx-auto mb-4 text-white/20" />
               <p className="text-white/30 text-sm">Aucun équipement enregistré</p>
-              <button
-                onClick={() => { setEditingEquipment(null); setShowModal(true); }}
-                className="mt-4 px-5 py-2.5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2 mx-auto"
-              >
-                <Plus size={14} /> Ajouter le premier équipement
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => { setEditingEquipment(null); setShowModal(true); }}
+                  className="mt-4 px-5 py-2.5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2 mx-auto"
+                >
+                  <Plus size={14} /> Ajouter le premier équipement
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -429,7 +497,7 @@ export default function EquipmentsPage() {
                       </div>
                       <div className="flex items-center gap-2 text-white/40 text-xs">
                         <Thermometer size={12} className="text-white/25 shrink-0" />
-                        <span>HACCP : <span className="text-white/60 font-medium">{equipment.temp_min}°C → {equipment.temp_max}°C</span></span>
+                        <span>Seuils : <span className="text-white/60 font-medium">{equipment.temp_min}°C → {equipment.temp_max}°C</span></span>
                       </div>
                     </div>
 
@@ -449,35 +517,39 @@ export default function EquipmentsPage() {
                       {!isAlert && isOnline && <CheckCircle2 size={24} className="text-green-400" />}
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => { setEditingEquipment(equipment); setShowModal(true); }}
-                        className="flex-1 h-9 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/60 hover:text-white transition text-xs font-bold flex items-center justify-center gap-1.5"
-                      >
-                        <Pencil size={12} /> Modifier
-                      </button>
-                      <button
-                        onClick={() => deleteEquipment(equipment.id)}
-                        className="h-9 w-9 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
+                    {/* Actions — admin seulement */}
+                    {isAdmin && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => { setEditingEquipment(equipment); setShowModal(true); }}
+                          className="flex-1 h-9 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/60 hover:text-white transition text-xs font-bold flex items-center justify-center gap-1.5"
+                        >
+                          <Pencil size={12} /> Modifier
+                        </button>
+                        <button
+                          onClick={() => deleteEquipment(equipment.id)}
+                          className="h-9 w-9 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
 
-              {/* Add card */}
-              <button
-                onClick={() => { setEditingEquipment(null); setShowModal(true); }}
-                className="rounded-[24px] border-2 border-dashed border-white/10 bg-transparent hover:bg-white/[0.02] hover:border-white/20 p-5 transition-all flex flex-col items-center justify-center gap-3 min-h-[200px] text-white/25 hover:text-white/50"
-              >
-                <div className="w-12 h-12 rounded-2xl border-2 border-dashed border-white/15 flex items-center justify-center">
-                  <Plus size={20} />
-                </div>
-                <p className="text-sm font-bold">Ajouter un équipement</p>
-              </button>
+              {/* Add card — admin seulement */}
+              {isAdmin && (
+                <button
+                  onClick={() => { setEditingEquipment(null); setShowModal(true); }}
+                  className="rounded-[24px] border-2 border-dashed border-white/10 bg-transparent hover:bg-white/[0.02] hover:border-white/20 p-5 transition-all flex flex-col items-center justify-center gap-3 min-h-[200px] text-white/25 hover:text-white/50"
+                >
+                  <div className="w-12 h-12 rounded-2xl border-2 border-dashed border-white/15 flex items-center justify-center">
+                    <Plus size={20} />
+                  </div>
+                  <p className="text-sm font-bold">Ajouter un équipement</p>
+                </button>
+              )}
             </div>
           )}
 
@@ -488,7 +560,7 @@ export default function EquipmentsPage() {
                 <Settings2 size={16} className="text-white/40" />
               </div>
               <div>
-                <h2 className="text-base font-black text-white">Récapitulatif des zones HACCP</h2>
+                <h2 className="text-base font-black text-white">Récapitulatif des zones</h2>
                 <p className="text-white/30 text-xs">Plages de températures réglementaires</p>
               </div>
             </div>
@@ -535,6 +607,24 @@ export default function EquipmentsPage() {
               </table>
             </div>
           </div>
+
+          {/* ── ADMIN BANNER ───────────────────────── */}
+          {!isAdmin && (
+            <div className="rounded-[20px] border border-white/[0.06] bg-white/[0.02] p-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0">
+                <ShieldCheck size={16} className="text-white/30" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white/40 text-xs font-medium">Accès administrateur requis pour ajouter ou modifier des équipements.</p>
+              </div>
+              <button
+                onClick={() => setShowPinInput(true)}
+                className="h-9 px-4 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white transition text-xs font-bold flex items-center gap-2 shrink-0"
+              >
+                <Lock size={12} /> Déverrouiller
+              </button>
+            </div>
+          )}
 
         </div>
       </div>
