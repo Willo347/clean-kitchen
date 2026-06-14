@@ -1,6 +1,6 @@
 "use client";
 
-import { useAdminPin } from "@/hooks/useAdminPin";
+import { useAdminPin } from "../hooks/useAdminPin";
 import { useEffect, useState, useCallback } from "react";
 
 import {
