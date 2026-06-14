@@ -1,5 +1,7 @@
 "use client";
 
+import { useAdminPin } from "@/hooks/useAdminPin";
+
 import { useEffect, useState, useCallback } from "react";
 
 import {
@@ -62,7 +64,6 @@ interface HourLog {
 type ToastType = "success" | "error";
 interface Toast { id: number; message: string; type: ToastType; }
 
-const ADMIN_PIN = "2405";
 const DAYS_FR = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
 const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 
@@ -642,6 +643,7 @@ function HoursPanel({
 }
 
 export default function EmployeesPage() {
+  const adminPin = useAdminPin();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -745,7 +747,7 @@ export default function EmployeesPage() {
         <PinModal
           title={showPinFor.full_name}
           subtitle="Entrez votre code PIN pour accéder à vos heures"
-          validatePin={(pin) => showPinFor.pin_code === pin || pin === ADMIN_PIN}
+          validatePin={(pin) => showPinFor.pin_code === pin || pin === adminPin}
           onSuccess={() => { setShowHoursFor(showPinFor); setShowPinFor(null); }}
           onClose={() => setShowPinFor(null)}
         />
@@ -755,7 +757,7 @@ export default function EmployeesPage() {
         <PinModal
           title="Accès administrateur"
           subtitle="Entrez le code PIN admin"
-          validatePin={(pin) => pin === ADMIN_PIN || employees.some((e) => e.is_admin && e.pin_code === pin)}
+          validatePin={(pin) => pin === adminPin || employees.some((e) => e.is_admin && e.pin_code === pin)}
           onSuccess={() => { setIsAdmin(true); setShowAdminPin(false); addToast("Mode admin activé", "success"); }}
           onClose={() => setShowAdminPin(false)}
         />

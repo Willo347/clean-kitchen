@@ -1,5 +1,7 @@
 "use client";
 
+import { useAdminPin } from "@/hooks/useAdminPin";
+
 import { useEffect, useState, useCallback } from "react";
 
 import {
@@ -60,7 +62,6 @@ interface Toast {
   type: ToastType;
 }
 
-const ADMIN_PIN = "2405";
 
 // ─────────────────────────────────────────────
 // UTILS
@@ -223,6 +224,7 @@ function EquipmentCard({ equipment, logs, onQuickAdd }: { equipment: Equipment; 
 // ─────────────────────────────────────────────
 
 export default function TemperaturesPage() {
+  const adminPin = useAdminPin();
 
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [logs, setLogs] = useState<TemperatureLog[]>([]);
@@ -287,7 +289,7 @@ export default function TemperaturesPage() {
 
   // ── PIN ─────────────────────────────────────
   function checkPin() {
-    if (pin === ADMIN_PIN) {
+    if (pin === adminPin) {
       setIsAdmin(true);
       setShowPinInput(false);
       setPin("");
