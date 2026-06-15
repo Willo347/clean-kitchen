@@ -26,12 +26,35 @@ export async function GET(request: NextRequest) {
     }
   )
 
+  let error = null
+
   if (code) {
-    await supabase.auth.exchangeCodeForSession(code)
+    const result = await supabase.auth.exchangeCodeForSession(code)
+    error = result.error
   } else if (token_hash && type) {
-    await supabase.auth.verifyOtp({ token_hash, type })
+    const result = await supabase.auth.verifyOtp({ token_hash, type })
+    error = result.error
   } else if (token && type) {
-    await supabase.auth.verifyOtp({ token_hash: token, type })
+    const result = await supabase.auth.verifyOtp({ token_hash: token, type })
+    error = result.error
+  }
+
+  if (error) {
+    return NextResponse.redirect(`${origin}/login?error=token_invalid`)
+  }
+
+  // Vérifier si le restaurant est déjà configuré
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: settings } = await supabase
+      .from('settings')
+      .select('id')
+      .eq('restaurant_id', user.id)
+      .single()
+
+    if (settings) {
+      return NextResponse.redirect(`${origin}/`)
+    }
   }
 
   return NextResponse.redirect(`${origin}/setup`)
