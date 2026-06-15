@@ -65,7 +65,6 @@ export function getSidebarItems() {
     const ordered = savedIds
       .map((id) => DEFAULT_MENU_ITEMS.find((item) => item.id === id))
       .filter(Boolean) as typeof DEFAULT_MENU_ITEMS;
-    // Ajoute les items manquants à la fin (nouveaux modules ajoutés)
     const missing = DEFAULT_MENU_ITEMS.filter((item) => !savedIds.includes(item.id));
     return [...ordered, ...missing];
   } catch {
@@ -74,15 +73,14 @@ export function getSidebarItems() {
 }
 
 export default function Sidebar() {
-
   const pathname = usePathname();
+  if (pathname === '/login') return null;
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuItems, setMenuItems] = useState(DEFAULT_MENU_ITEMS);
 
-  // Charge l'ordre personnalisé depuis localStorage
   useEffect(() => {
     setMenuItems(getSidebarItems());
-    // Écoute les changements (quand l'utilisateur réorganise depuis les paramètres)
     function handleStorageChange() {
       setMenuItems(getSidebarItems());
     }
