@@ -27,15 +27,15 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Pas connecté → login
-  if (!user && !request.nextUrl.pathname.startsWith('/login')) {
+  // Pas connecté → login (sauf /login et /auth)
+  if (!user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
   // Connecté → vérifier si le restaurant est configuré
-  if (user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/setup')) {
+  if (user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/setup') && !request.nextUrl.pathname.startsWith('/auth')) {
     const { data: settings } = await supabase
       .from('settings')
       .select('restaurant_name')
