@@ -58,8 +58,7 @@ export default function SetupPage() {
       return
     }
 
-    router.push('/')
-    router.refresh()
+    window.location.href = '/'
   }
 
   return (
