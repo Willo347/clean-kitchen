@@ -7,7 +7,8 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
-  const type = searchParams.get('type')
+  const token = searchParams.get('token')
+  const type = searchParams.get('type') as 'invite' | 'recovery' | 'email' | null
 
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -28,7 +29,9 @@ export async function GET(request: NextRequest) {
   if (code) {
     await supabase.auth.exchangeCodeForSession(code)
   } else if (token_hash && type) {
-    await supabase.auth.verifyOtp({ token_hash, type: type as any })
+    await supabase.auth.verifyOtp({ token_hash, type })
+  } else if (token && type) {
+    await supabase.auth.verifyOtp({ token_hash: token, type })
   }
 
   return NextResponse.redirect(`${origin}/setup`)
