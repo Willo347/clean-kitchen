@@ -43,7 +43,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=token_invalid`)
   }
 
-  // Redirection selon le type
   if (type === 'recovery') {
     return NextResponse.redirect(`${origin}/auth/reset`)
   }
