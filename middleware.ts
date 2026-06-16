@@ -28,19 +28,29 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   // Pas connecté → login (sauf /login et /auth)
-  if (!user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth')) {
+  if (
+    !user &&
+    !request.nextUrl.pathname.startsWith('/login') &&
+    !request.nextUrl.pathname.startsWith('/auth')
+  ) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
   // Connecté → vérifier si le restaurant est configuré
-  if (user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/setup') && !request.nextUrl.pathname.startsWith('/auth')) {
+  if (
+    user &&
+    !request.nextUrl.pathname.startsWith('/login') &&
+    !request.nextUrl.pathname.startsWith('/setup') &&
+    !request.nextUrl.pathname.startsWith('/auth')
+  ) {
+    // ✅ maybeSingle() au lieu de single() — ne plante pas si 0 résultat
     const { data: settings } = await supabase
       .from('settings')
       .select('restaurant_name')
       .eq('restaurant_id', user.id)
-      .single()
+      .maybeSingle()
 
     if (!settings?.restaurant_name) {
       const url = request.nextUrl.clone()

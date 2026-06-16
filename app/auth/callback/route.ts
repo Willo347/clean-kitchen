@@ -34,29 +34,39 @@ export async function GET(request: NextRequest) {
   } else if (token_hash && type) {
     const result = await supabase.auth.verifyOtp({ token_hash, type })
     error = result.error
+    // ✅ Laisser le temps à la session de s'écrire dans les cookies
+    await new Promise(r => setTimeout(r, 500))
   } else if (token && type) {
     const result = await supabase.auth.verifyOtp({ token_hash: token, type })
     error = result.error
+    await new Promise(r => setTimeout(r, 500))
   }
 
   if (error) {
+    console.error('[auth/callback] error:', error.message)
     return NextResponse.redirect(`${origin}/login?error=token_invalid`)
   }
 
+  // ✅ Récupération du mot de passe oublié → page reset
   if (type === 'recovery') {
     return NextResponse.redirect(`${origin}/auth/reset`)
   }
 
-  // Vérifier si le restaurant est déjà configuré
+  // ✅ Invitation → toujours vers /setup (le mot de passe n'est pas encore défini)
+  if (type === 'invite') {
+    return NextResponse.redirect(`${origin}/setup`)
+  }
+
+  // Connexion normale → vérifier si le restaurant est déjà configuré
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
     const { data: settings } = await supabase
       .from('settings')
-      .select('id')
+      .select('restaurant_name')
       .eq('restaurant_id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (settings) {
+    if (settings?.restaurant_name) {
       return NextResponse.redirect(`${origin}/`)
     }
   }

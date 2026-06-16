@@ -17,6 +17,7 @@ export default function SetupPage() {
 
   async function handleSetup(e: React.FormEvent) {
     e.preventDefault()
+
     if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
       setError('Le PIN doit être 4 chiffres')
       return
@@ -34,7 +35,10 @@ export default function SetupPage() {
     setError('')
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    if (!user) {
+      router.push('/login')
+      return
+    }
 
     // 1. Définir le mot de passe
     const { error: passwordError } = await supabase.auth.updateUser({ password })
@@ -58,7 +62,19 @@ export default function SetupPage() {
       return
     }
 
-    window.location.href = '/'
+    // ✅ Rafraîchir la session après updateUser avant de rediriger
+    // (updateUser peut invalider le token — refreshSession le renouvelle)
+    const { error: refreshError } = await supabase.auth.refreshSession()
+    if (refreshError) {
+      // Si le refresh échoue, on renvoie vers login proprement
+      router.push('/login')
+      return
+    }
+
+    // ✅ router.push + router.refresh() au lieu de window.location.href
+    // pour que Next.js recharge le middleware avec la nouvelle session
+    router.push('/')
+    router.refresh()
   }
 
   return (
