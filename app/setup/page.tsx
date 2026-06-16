@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SetupPage() {
@@ -12,7 +11,6 @@ export default function SetupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const router = useRouter()
   const supabase = createClient()
 
   async function handleSetup(e: React.FormEvent) {
@@ -36,7 +34,7 @@ export default function SetupPage() {
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      router.push('/login')
+      window.location.replace('/login')
       return
     }
 
@@ -62,19 +60,9 @@ export default function SetupPage() {
       return
     }
 
-    // ✅ Rafraîchir la session après updateUser avant de rediriger
-    // (updateUser peut invalider le token — refreshSession le renouvelle)
-    const { error: refreshError } = await supabase.auth.refreshSession()
-    if (refreshError) {
-      // Si le refresh échoue, on renvoie vers login proprement
-      router.push('/login')
-      return
-    }
-
-    // ✅ router.push + router.refresh() au lieu de window.location.href
-    // pour que Next.js recharge le middleware avec la nouvelle session
-    router.push('/')
-    router.refresh()
+    // ✅ Rechargement complet pour que le middleware voie la nouvelle session
+    // replace() évite que /setup reste dans l'historique du navigateur
+    window.location.replace('/')
   }
 
   return (
