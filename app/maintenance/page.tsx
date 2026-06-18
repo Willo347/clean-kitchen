@@ -215,10 +215,23 @@ export default function MaintenancePage() {
     }
   }
 
+  // ✅ CORRIGÉ — restaurant_id ajouté
   async function saveReport() {
     if (!equipmentName || !description || !reportedBy) { addToast("Remplissez tous les champs obligatoires", "error"); return; }
     setIsSavingReport(true);
-    const { error } = await supabase.from("maintenance_reports").insert({ equipment_name: equipmentName, description, priority, status: "En attente", reported_by: reportedBy });
+
+    // ✅ Récupérer l'utilisateur connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { addToast("Session expirée, reconnectez-vous", "error"); setIsSavingReport(false); return; }
+
+    const { error } = await supabase.from("maintenance_reports").insert({
+      equipment_name: equipmentName,
+      description,
+      priority,
+      status: "En attente",
+      reported_by: reportedBy,
+      restaurant_id: user.id, // ✅ FIX
+    });
     setIsSavingReport(false);
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
     addToast(`Panne déclarée : ${equipmentName}`, "success");
@@ -237,9 +250,15 @@ export default function MaintenancePage() {
     addToast("Panne supprimée", "success"); await fetchData();
   }
 
+  // ✅ CORRIGÉ — restaurant_id ajouté
   async function saveCertificate() {
     if (!certName || !certEquipment) { addToast("Remplissez les champs obligatoires", "error"); return; }
     setIsSavingCert(true);
+
+    // ✅ Récupérer l'utilisateur connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { addToast("Session expirée, reconnectez-vous", "error"); setIsSavingCert(false); return; }
+
     let fileUrl = "";
     if (certFile) {
       const ext = certFile.name.split(".").pop();
@@ -252,7 +271,14 @@ export default function MaintenancePage() {
       fileUrl = urlData.publicUrl;
       setUploadProgress(100);
     }
-    const { error } = await supabase.from("maintenance_certificates").insert({ name: certName, equipment: certEquipment, file_url: fileUrl, maintenance_date: certMaintenanceDate || null, next_date: certNextDate || null });
+    const { error } = await supabase.from("maintenance_certificates").insert({
+      name: certName,
+      equipment: certEquipment,
+      file_url: fileUrl,
+      maintenance_date: certMaintenanceDate || null,
+      next_date: certNextDate || null,
+      restaurant_id: user.id, // ✅ FIX
+    });
     setIsSavingCert(false); setUploadProgress(0);
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
     addToast(`Certificat ajouté : ${certName}`, "success");
