@@ -296,7 +296,6 @@ function WeekSection({ weekKey, weekLabel, deliveries, onDelete, restaurantName 
     setIsExporting(true);
     const doc = new jsPDF();
 
-    // Header
     doc.setFillColor(10, 20, 40);
     doc.rect(0, 0, 210, 42, "F");
     doc.setTextColor(100, 220, 240);
@@ -310,7 +309,6 @@ function WeekSection({ weekKey, weekLabel, deliveries, onDelete, restaurantName 
     doc.text(`Semaine : ${weekLabel}`, 14, 32);
     doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 38);
 
-    // Résumé
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
@@ -325,7 +323,6 @@ function WeekSection({ weekKey, weekLabel, deliveries, onDelete, restaurantName 
       doc.setTextColor(0, 0, 0);
     }
 
-    // Tableau
     autoTable(doc, {
       startY: expiredCount > 0 ? 80 : 74,
       head: [["Date", "Produit", "Catégorie", "Fournisseur", "Lot", "Qté", "DLC", "Statut"]],
@@ -371,7 +368,6 @@ function WeekSection({ weekKey, weekLabel, deliveries, onDelete, restaurantName 
 
   return (
     <div className={`rounded-[28px] border overflow-hidden ${isCurrentWeek ? "border-cyan-500/30 bg-gradient-to-br from-cyan-500/[0.06] to-blue-900/5" : "border-white/10 bg-white/[0.02]"}`}>
-      {/* Week header */}
       <div className="flex items-center justify-between gap-3 p-4 sm:p-5">
         <button onClick={() => setCollapsed(!collapsed)} className="flex items-center gap-4 flex-1 min-w-0 text-left">
           <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border shrink-0 ${isCurrentWeek ? "border-cyan-400/30 bg-cyan-500/20" : "border-white/10 bg-white/[0.05]"}`}>
@@ -388,7 +384,6 @@ function WeekSection({ weekKey, weekLabel, deliveries, onDelete, restaurantName 
         </button>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Export PDF semaine */}
           <button onClick={exportWeekPDF} disabled={isExporting} className="h-9 px-3 sm:px-4 rounded-xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black text-xs font-black flex items-center gap-1.5">
             {isExporting ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
             <span className="hidden sm:inline">PDF</span>
@@ -399,7 +394,6 @@ function WeekSection({ weekKey, weekLabel, deliveries, onDelete, restaurantName 
         </div>
       </div>
 
-      {/* Week content */}
       {!collapsed && (
         <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-white/[0.06] space-y-2 pt-3">
           {deliveries.map((delivery) => (
@@ -437,7 +431,6 @@ export default function DeliveriesPage() {
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<"scan" | "manual">("scan");
 
-  // Bon de livraison
   const [deliveryNoteFile, setDeliveryNoteFile] = useState<File | null>(null);
   const [deliveryNotePreview, setDeliveryNotePreview] = useState<string | null>(null);
   const [isUploadingNote, setIsUploadingNote] = useState(false);
@@ -545,6 +538,7 @@ export default function DeliveriesPage() {
     e.target.value = "";
   }
 
+  // ✅ FONCTION CORRIGÉE — restaurant_id ajouté
   async function handleSave() {
     if (!product.trim()) { addToast("Veuillez saisir un produit", "error"); return; }
     if (!supplier.trim()) { addToast("Veuillez saisir un fournisseur", "error"); return; }
@@ -553,6 +547,14 @@ export default function DeliveriesPage() {
     setIsSaving(true);
     let imageUrl = "";
     let deliveryNoteUrl = "";
+
+    // ✅ Récupérer l'utilisateur connecté pour le restaurant_id
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      addToast("Session expirée, reconnectez-vous", "error");
+      setIsSaving(false);
+      return;
+    }
 
     if (capturedFile) {
       try { imageUrl = await uploadPhoto(capturedFile, "traceability-images", "livraison"); }
@@ -576,6 +578,7 @@ export default function DeliveriesPage() {
       category: category || null,
       image_url: imageUrl || null,
       delivery_note_url: deliveryNoteUrl || null,
+      restaurant_id: user.id, // ✅ FIX : restaurant_id ajouté
     });
 
     setIsSaving(false);
@@ -595,7 +598,6 @@ export default function DeliveriesPage() {
     addToast("Livraison supprimée", "success");
   }
 
-  // ── Computed ───────────────────────────────
   const expiredCount = deliveries.filter((d) => isExpired(d.dlc)).length;
   const expiringSoonCount = deliveries.filter((d) => isExpiringSoon(d.dlc)).length;
   const todayCount = deliveries.filter((d) => d.created_at && new Date(d.created_at).toISOString().split("T")[0] === new Date().toISOString().split("T")[0]).length;
@@ -607,7 +609,6 @@ export default function DeliveriesPage() {
     return true;
   });
 
-  // Groupement par semaine
   const weekMap = new Map<string, Delivery[]>();
   filteredDeliveries.forEach((d) => {
     const monday = getWeekMonday(d.created_at);
@@ -758,7 +759,6 @@ export default function DeliveriesPage() {
                   </div>
                 </div>
 
-                {/* Photo étiquette preview */}
                 {scanPreview && capturedFile && (
                   <div className="flex items-center gap-3 p-3 rounded-2xl bg-violet-500/10 border border-violet-500/20">
                     <img src={scanPreview} alt="Photo" className="w-12 h-12 rounded-xl object-cover shrink-0" />

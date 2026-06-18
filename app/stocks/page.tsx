@@ -398,9 +398,18 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
     e.target.value = "";
   }
 
+  // ✅ FONCTION CORRIGÉE — restaurant_id ajouté
   async function handleSave() {
     if (!newProduct.trim()) { addToast("Veuillez saisir un nom de produit", "error"); return; }
     setIsSaving(true);
+
+    // ✅ Récupérer l'utilisateur connecté pour le restaurant_id
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      addToast("Session expirée, reconnectez-vous", "error");
+      setIsSaving(false);
+      return;
+    }
 
     let imageUrl = "";
     if (capturedFile) {
@@ -416,6 +425,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
       dlc: newDlc || null,
       category: newCategory,
       image_url: imageUrl || null,
+      restaurant_id: user.id, // ✅ FIX : restaurant_id ajouté
     });
 
     setIsSaving(false);
@@ -637,7 +647,6 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                     </div>
                   )}
 
-                  {/* Category picker */}
                   <div>
                     <label className="text-white/30 text-xs mb-2 block">Catégorie *</label>
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
