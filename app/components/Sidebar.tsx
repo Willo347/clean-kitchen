@@ -20,6 +20,7 @@ import {
   X,
   Wrench,
   Bell,
+  Factory,
 } from "lucide-react";
 
 export const DEFAULT_MENU_ITEMS = [
@@ -34,6 +35,7 @@ export const DEFAULT_MENU_ITEMS = [
   { id: "maintenance",   name: "Maintenance",     href: "/maintenance",   icon: "Wrench" },
   { id: "monitoring",    name: "Monitoring",      href: "/monitoring",    icon: "Activity" },
   { id: "employees",     name: "Employés",        href: "/employees",     icon: "Users" },
+  { id: "production",    name: "Production",      href: "/production",    icon: "Factory" },
   { id: "notifications", name: "Notifications",   href: "/notifications", icon: "Bell" },
   { id: "settings",      name: "Paramètres",      href: "/settings",      icon: "Settings" },
 ];
@@ -52,6 +54,7 @@ export const ICON_MAP: Record<string, React.ElementType> = {
   Settings,
   Wrench,
   Bell,
+  Factory,
 };
 
 export const SIDEBAR_ORDER_KEY = "ck_sidebar_order";
