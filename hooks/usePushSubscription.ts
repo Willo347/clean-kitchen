@@ -26,6 +26,13 @@ export function usePushSubscription() {
   async function subscribe() {
     setIsLoading(true)
     try {
+      // ✅ Récupérer l'utilisateur connecté
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.error('Utilisateur non connecté')
+        return
+      }
+
       const reg = await navigator.serviceWorker.ready
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -35,8 +42,14 @@ export function usePushSubscription() {
         endpoint: string
         keys: { p256dh: string; auth: string }
       }
+
       const { error } = await supabase.from('push_subscriptions').upsert(
-        { endpoint, p256dh: keys.p256dh, auth: keys.auth },
+        {
+          endpoint,
+          p256dh: keys.p256dh,
+          auth: keys.auth,
+          user_id: user.id, // ✅ FIX : user_id ajouté
+        },
         { onConflict: 'endpoint' }
       )
       if (error) {
