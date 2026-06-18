@@ -35,10 +35,6 @@ import autoTable from "jspdf-autotable";
 
 import { supabase } from "@/lib/supabase";
 
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
-
 interface Equipment {
   id: number;
   name: string;
@@ -62,22 +58,13 @@ interface Toast {
   type: ToastType;
 }
 
-
-// ─────────────────────────────────────────────
-// UTILS
-// ─────────────────────────────────────────────
-
 function toDateStringUTC(dateStr: string): string {
   return new Date(dateStr).toISOString().split("T")[0];
 }
 
 function formatDateFR(dateStr: string): string {
   return new Date(dateStr).toLocaleString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
   });
 }
 
@@ -99,10 +86,6 @@ function getTempTrend(equipmentName: string, logs: TemperatureLog[]): "up" | "do
   return diff > 0 ? "up" : "down";
 }
 
-// ─────────────────────────────────────────────
-// TOAST
-// ─────────────────────────────────────────────
-
 function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: number) => void }) {
   return (
     <div className="fixed top-6 right-4 z-50 flex flex-col gap-3 w-[calc(100vw-2rem)] max-w-sm pointer-events-none">
@@ -118,10 +101,6 @@ function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: 
     </div>
   );
 }
-
-// ─────────────────────────────────────────────
-// EQUIPMENT CARD
-// ─────────────────────────────────────────────
 
 function EquipmentCard({ equipment, logs, onQuickAdd }: { equipment: Equipment; logs: TemperatureLog[]; onQuickAdd: (name: string) => void }) {
   const [expanded, setExpanded] = useState(false);
@@ -219,10 +198,6 @@ function EquipmentCard({ equipment, logs, onQuickAdd }: { equipment: Equipment; 
   );
 }
 
-// ─────────────────────────────────────────────
-// MAIN PAGE
-// ─────────────────────────────────────────────
-
 export default function TemperaturesPage() {
   const adminPin = useAdminPin();
 
@@ -245,7 +220,6 @@ export default function TemperaturesPage() {
   const [quickAddTemp, setQuickAddTemp] = useState("");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
-  // Admin
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPinInput, setShowPinInput] = useState(false);
   const [pin, setPin] = useState("");
@@ -273,11 +247,21 @@ export default function TemperaturesPage() {
 
   useEffect(() => {
     fetchData();
-    const channel = supabase
-      .channel("temperature-page")
-      .on("postgres_changes", { event: "*", schema: "public", table: "temperature_logs" }, () => fetchData())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    // ✅ Filtrer le channel Realtime par restaurant_id
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const channel = supabase
+        .channel("temperature-page")
+        .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "temperature_logs",
+          filter: `restaurant_id=eq.${user.id}`, // ✅ uniquement ce restaurant
+        }, () => fetchData())
+        .subscribe();
+      return () => { supabase.removeChannel(channel); };
+    });
   }, [fetchData]);
 
   async function handleRefresh() {
@@ -287,13 +271,9 @@ export default function TemperaturesPage() {
     addToast("Données actualisées", "success");
   }
 
-  // ── PIN ─────────────────────────────────────
   function checkPin() {
     if (pin === adminPin) {
-      setIsAdmin(true);
-      setShowPinInput(false);
-      setPin("");
-      setPinError(false);
+      setIsAdmin(true); setShowPinInput(false); setPin(""); setPinError(false);
       addToast("Mode admin activé", "success");
     } else {
       setPinError(true);
@@ -301,7 +281,6 @@ export default function TemperaturesPage() {
     }
   }
 
-  // ── Delete log ──────────────────────────────
   async function deleteLog(id: number) {
     if (!confirm("Supprimer ce relevé ?")) return;
     await supabase.from("temperature_logs").delete().eq("id", id);
@@ -309,7 +288,6 @@ export default function TemperaturesPage() {
     addToast("Relevé supprimé", "success");
   }
 
-  // ── Delete all logs ─────────────────────────
   async function deleteAllLogs() {
     if (!confirm("Supprimer TOUS les relevés de température ? Cette action est irréversible.")) return;
     await supabase.from("temperature_logs").delete().neq("id", 0);
@@ -317,12 +295,22 @@ export default function TemperaturesPage() {
     addToast("Tous les relevés supprimés", "success");
   }
 
+  // ✅ CORRIGÉ — restaurant_id ajouté
   async function addTemperature() {
     if (!selectedEquipment || !temperature) { addToast("Sélectionnez un équipement et entrez une température", "error"); return; }
     const tempNum = Number(temperature);
     if (isNaN(tempNum)) { addToast("Température invalide", "error"); return; }
+
+    // ✅ Récupérer l'utilisateur connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { addToast("Session expirée, reconnectez-vous", "error"); return; }
+
     setIsAdding(true);
-    const { error } = await supabase.from("temperature_logs").insert([{ equipment: selectedEquipment, temperature: tempNum }]);
+    const { error } = await supabase.from("temperature_logs").insert([{
+      equipment: selectedEquipment,
+      temperature: tempNum,
+      restaurant_id: user.id, // ✅ FIX
+    }]);
     setIsAdding(false);
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
     const eq = equipments.find((e) => e.name === selectedEquipment);
@@ -341,12 +329,22 @@ export default function TemperaturesPage() {
     setShowQuickAdd(true);
   }
 
+  // ✅ CORRIGÉ — restaurant_id ajouté
   async function submitQuickAdd() {
     if (!quickAddEquipment || !quickAddTemp) { addToast("Entrez une température", "error"); return; }
     const tempNum = Number(quickAddTemp);
     if (isNaN(tempNum)) { addToast("Température invalide", "error"); return; }
+
+    // ✅ Récupérer l'utilisateur connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { addToast("Session expirée, reconnectez-vous", "error"); return; }
+
     setIsAdding(true);
-    const { error } = await supabase.from("temperature_logs").insert([{ equipment: quickAddEquipment, temperature: tempNum }]);
+    const { error } = await supabase.from("temperature_logs").insert([{
+      equipment: quickAddEquipment,
+      temperature: tempNum,
+      restaurant_id: user.id, // ✅ FIX
+    }]);
     setIsAdding(false);
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
     const eq = equipments.find((e) => e.name === quickAddEquipment);
@@ -432,8 +430,6 @@ export default function TemperaturesPage() {
     setIsExporting(false);
   }
 
-  // ── Computed ────────────────────────────────
-
   const today = new Date().toISOString().split("T")[0];
 
   const missingLogsEquipments = equipments.filter((equipment) => {
@@ -468,15 +464,10 @@ export default function TemperaturesPage() {
     return isEquip && isAfter && isBefore;
   }).length;
 
-  // ─────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────
-
   return (
     <>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
 
-      {/* QUICK ADD MODAL */}
       {showQuickAdd && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" onClick={() => setShowQuickAdd(false)}>
           <div className="bg-[#030b1d] border border-white/10 rounded-[28px] p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -502,7 +493,6 @@ export default function TemperaturesPage() {
       <div className="text-white w-full overflow-x-hidden">
         <div className="w-full rounded-[32px] border border-white/5 bg-[#030b1d] p-4 md:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-5">
 
-          {/* ── HEADER ─────────────────────────────── */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -514,7 +504,6 @@ export default function TemperaturesPage() {
             </div>
 
             <div className="flex items-center gap-2 mt-2 shrink-0">
-              {/* Admin PIN */}
               {isAdmin ? (
                 <button onClick={() => setIsAdmin(false)} className="h-10 px-3 sm:px-4 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition flex items-center gap-2 text-sm font-bold">
                   <Unlock size={14} /> <span className="hidden sm:inline">Admin</span>
@@ -544,7 +533,6 @@ export default function TemperaturesPage() {
             </div>
           </div>
 
-          {/* ── KPI CARDS ──────────────────────────── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4">
             <div className="rounded-[24px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10 p-5">
               <div className="flex items-start justify-between gap-4">
@@ -605,7 +593,6 @@ export default function TemperaturesPage() {
             </div>
           </div>
 
-          {/* ── ADD TEMPERATURE ─────────────────────── */}
           <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-4 md:p-6">
             <div className="flex items-center gap-3 mb-5">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20 shrink-0">
@@ -654,7 +641,6 @@ export default function TemperaturesPage() {
             })()}
           </div>
 
-          {/* ── EQUIPMENT CARDS ─────────────────────── */}
           <div>
             <h2 className="text-xl font-black text-white mb-4">Équipements</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -664,7 +650,6 @@ export default function TemperaturesPage() {
             </div>
           </div>
 
-          {/* ── LOGS TABLE ──────────────────────────── */}
           <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-4 md:p-6">
             <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
               <div className="flex items-center gap-3">
@@ -676,13 +661,8 @@ export default function TemperaturesPage() {
                   <p className="text-white/30 text-xs">{filteredTableLogs.length} / {logs.length} relevés</p>
                 </div>
               </div>
-
-              {/* Bouton supprimer tout — admin seulement */}
               {isAdmin && logs.length > 0 && (
-                <button
-                  onClick={deleteAllLogs}
-                  className="h-9 px-4 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition text-xs font-bold flex items-center gap-2"
-                >
+                <button onClick={deleteAllLogs} className="h-9 px-4 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition text-xs font-bold flex items-center gap-2">
                   <Trash2 size={13} /> Tout supprimer
                 </button>
               )}
@@ -709,7 +689,6 @@ export default function TemperaturesPage() {
               </div>
             </div>
 
-            {/* Banner admin si pas connecté */}
             {!isAdmin && (
               <div className="mb-4 flex items-center gap-3 p-3 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
                 <ShieldCheck size={14} className="text-white/30 shrink-0" />
@@ -782,7 +761,6 @@ export default function TemperaturesPage() {
             )}
           </div>
 
-          {/* ── PDF EXPORT ──────────────────────────── */}
           <div className="rounded-[28px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/[0.07] to-blue-900/5 p-4 md:p-6 space-y-5">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20 shrink-0">

@@ -191,13 +191,23 @@ export default function MaintenancePage() {
   useEffect(() => {
     async function init() { setIsLoading(true); await fetchData(); setIsLoading(false); }
     init();
-    const channel = supabase.channel("maintenance")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "maintenance_reports" }, (payload) => {
-        const r = payload.new as MaintenanceReport;
-        addToast(`🔧 Nouvelle panne : ${r.equipment_name} (${r.priority})`, r.priority === "Critique" ? "error" : "info");
-        fetchData();
-      }).subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    // ✅ Filtrer les notifications Realtime par restaurant_id
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const channel = supabase.channel("maintenance")
+        .on("postgres_changes", {
+          event: "INSERT",
+          schema: "public",
+          table: "maintenance_reports",
+          filter: `restaurant_id=eq.${user.id}`, // ✅ uniquement ce restaurant
+        }, (payload) => {
+          const r = payload.new as MaintenanceReport;
+          addToast(`🔧 Nouvelle panne : ${r.equipment_name} (${r.priority})`, r.priority === "Critique" ? "error" : "info");
+          fetchData();
+        }).subscribe();
+      return () => { supabase.removeChannel(channel); };
+    });
   }, [fetchData]);
 
   async function handleRefresh() {
