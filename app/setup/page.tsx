@@ -60,8 +60,18 @@ export default function SetupPage() {
       return
     }
 
+    // ✅ Envoyer l'email de bienvenue
+    await fetch('/api/send-welcome', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: user.email,
+        restaurantName,
+        city,
+      }),
+    })
+
     // ✅ Rechargement complet pour que le middleware voie la nouvelle session
-    // replace() évite que /setup reste dans l'historique du navigateur
     window.location.replace('/')
   }
 
