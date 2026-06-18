@@ -425,12 +425,10 @@ function HoursPanel({
   }
 
   return (
-    // ── FIX MOBILE : overflow-y-auto sur le fond, items-start pour scroll depuis le haut
     <div className="fixed inset-0 z-[50] bg-black/70 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
       <div className="min-h-full flex items-start justify-center p-4 pt-6 pb-10">
         <div className="w-full max-w-3xl rounded-[28px] sm:rounded-[32px] border border-white/10 bg-[#030b1d] p-4 sm:p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
 
-          {/* Header */}
           <div className="flex items-center justify-between gap-4 mb-5">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-cyan-500/20 border border-cyan-500/20 flex items-center justify-center shrink-0">
@@ -446,7 +444,6 @@ function HoursPanel({
             </button>
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-2 mb-4">
             {[{ id: "week" as const, label: "Semaine" }, { id: "month" as const, label: "Mois" }].map((tab) => (
               <button key={tab.id} onClick={() => setActiveView(tab.id)} className={`px-4 py-2 rounded-xl text-xs font-bold transition border ${activeView === tab.id ? "bg-cyan-400 text-black border-cyan-300" : "bg-white/[0.04] border-white/10 text-white/50 hover:text-white"}`}>
@@ -455,7 +452,6 @@ function HoursPanel({
             ))}
           </div>
 
-          {/* WEEK VIEW */}
           {activeView === "week" && (
             <div className="space-y-3 mb-4">
               <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -500,7 +496,6 @@ function HoursPanel({
             </div>
           )}
 
-          {/* MONTH VIEW */}
           {activeView === "month" && (
             <div className="space-y-3 mb-4">
               <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -553,7 +548,6 @@ function HoursPanel({
             </div>
           )}
 
-          {/* Add hours form */}
           <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4 mb-4 space-y-3">
             <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Ajouter un pointage</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -602,7 +596,6 @@ function HoursPanel({
             </div>
           </div>
 
-          {/* Logs table */}
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <div className="min-w-[480px] px-4 sm:px-0">
               <table className="w-full text-sm">
@@ -692,16 +685,31 @@ export default function EmployeesPage() {
     init();
   }, [fetchEmployees, fetchShifts]);
 
+  // ✅ CORRIGÉ — restaurant_id ajouté dans l'insert employee
   async function handleSave(form: Partial<Employee>) {
     if (!form.full_name || !form.role || !form.pin_code) return;
     setIsSaving(true);
+
     if (form.id) {
-      await supabase.from("employees").update({ full_name: form.full_name, role: form.role, pin_code: form.pin_code, is_active: form.is_active, is_admin: form.is_admin ?? false, email: form.email || null }).eq("id", form.id);
+      await supabase.from("employees").update({
+        full_name: form.full_name, role: form.role, pin_code: form.pin_code,
+        is_active: form.is_active, is_admin: form.is_admin ?? false, email: form.email || null,
+      }).eq("id", form.id);
       addToast(`${form.full_name} modifié`, "success");
     } else {
-      await supabase.from("employees").insert({ full_name: form.full_name, role: form.role, pin_code: form.pin_code, is_active: form.is_active ?? true, is_admin: form.is_admin ?? false, email: form.email || null });
+      // ✅ Récupérer l'utilisateur connecté
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setIsSaving(false); return; }
+
+      await supabase.from("employees").insert({
+        full_name: form.full_name, role: form.role, pin_code: form.pin_code,
+        is_active: form.is_active ?? true, is_admin: form.is_admin ?? false,
+        email: form.email || null,
+        restaurant_id: user.id, // ✅ FIX
+      });
       addToast(`${form.full_name} ajouté`, "success");
     }
+
     await fetchEmployees();
     setIsSaving(false);
     setShowEmployeeModal(false);
@@ -715,9 +723,22 @@ export default function EmployeesPage() {
     addToast("Employé supprimé", "success");
   }
 
+  // ✅ CORRIGÉ — restaurant_id ajouté dans l'insert shift
   async function saveShift() {
     if (!newShift.employee_id || !newShift.date || !newShift.start_time || !newShift.end_time) return;
-    await supabase.from("employee_shifts").insert({ employee_id: newShift.employee_id, date: newShift.date, start_time: newShift.start_time, end_time: newShift.end_time, note: newShift.note || "" });
+
+    // ✅ Récupérer l'utilisateur connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await supabase.from("employee_shifts").insert({
+      employee_id: newShift.employee_id,
+      date: newShift.date,
+      start_time: newShift.start_time,
+      end_time: newShift.end_time,
+      note: newShift.note || "",
+      restaurant_id: user.id, // ✅ FIX
+    });
     await fetchShifts();
     setShowAddShift(false);
     setNewShift({ start_time: "09:00", end_time: "17:00" });
@@ -774,7 +795,6 @@ export default function EmployeesPage() {
       <div className="min-h-screen bg-[#020817] text-white p-3 sm:p-5 overflow-x-hidden">
         <div className="mx-auto max-w-[1450px] rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#030b1d] p-4 sm:p-5 shadow-[0_0_80px_rgba(0,150,255,0.08)] space-y-4 sm:space-y-5">
 
-          {/* HEADER */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-2">
@@ -802,7 +822,6 @@ export default function EmployeesPage() {
             </div>
           </div>
 
-          {/* KPI CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div className="rounded-[24px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10 p-4 sm:p-5">
               <div className="flex items-start justify-between gap-4">
@@ -842,7 +861,6 @@ export default function EmployeesPage() {
             </div>
           </div>
 
-          {/* TABS */}
           <div className="flex gap-2 border-b border-white/[0.06] overflow-x-auto">
             {tabs.map((tab) => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 sm:px-5 py-3 rounded-t-2xl text-sm font-bold transition border-b-2 -mb-px whitespace-nowrap ${activeTab === tab.id ? "border-cyan-400 text-cyan-400 bg-cyan-500/[0.07]" : "border-transparent text-white/40 hover:text-white/70"}`}>
@@ -851,7 +869,6 @@ export default function EmployeesPage() {
             ))}
           </div>
 
-          {/* TEAM TAB */}
           {activeTab === "team" && (
             <div>
               {isLoading ? (
@@ -926,7 +943,6 @@ export default function EmployeesPage() {
             </div>
           )}
 
-          {/* PLANNING TAB */}
           {activeTab === "planning" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-4 flex-wrap">

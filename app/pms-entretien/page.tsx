@@ -46,9 +46,20 @@ export default function PMSEntretienPage() {
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
+  // ✅ CORRIGÉ — restaurant_id ajouté
   async function addTask() {
     if (!title.trim()) return;
-    const payload: Record<string, unknown> = { title: title.trim(), frequency, status: "pending" };
+
+    // ✅ Récupérer l'utilisateur connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const payload: Record<string, unknown> = {
+      title: title.trim(),
+      frequency,
+      status: "pending",
+      restaurant_id: user.id, // ✅ FIX
+    };
     if (frequency === "Hebdomadaire") payload.day_of_week = selectedDay;
     const { error } = await supabase.from("pms_tasks").insert([payload]);
     if (!error) { setTitle(""); fetchTasks(); }
