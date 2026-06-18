@@ -45,7 +45,22 @@ function EquipmentModal({ equipment, onClose, onSave, isSaving }: {
           </div>
           <div>
             <label className="text-white/40 text-xs mb-1.5 block">Type</label>
-            <select value={form.type || ""} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none">
+            <select value={form.type || ""} onChange={(e) => {
+              const type = e.target.value
+              const defaults: Record<string, { temp_min: number; temp_max: number }> = {
+                "Chambre froide": { temp_min: 0, temp_max: 4 },
+                "Congélateur": { temp_min: -25, temp_max: -18 },
+                "Réfrigérateur": { temp_min: 0, temp_max: 4 },
+                "Vitrine réfrigérée": { temp_min: 0, temp_max: 6 },
+              }
+              const d = defaults[type]
+              setForm({
+                ...form,
+                type,
+                temp_min: d ? d.temp_min : form.temp_min,
+                temp_max: d ? d.temp_max : form.temp_max,
+              })
+            }} className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none">
               <option value="">Sélectionner un type</option>
               <option value="Chambre froide">Chambre froide</option>
               <option value="Congélateur">Congélateur</option>
