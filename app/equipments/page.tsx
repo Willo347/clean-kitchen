@@ -125,14 +125,32 @@ export default function EquipmentsPage() {
     }
   }
 
+  // ✅ CORRIGÉ — restaurant_id ajouté dans l'insert
   async function handleSave(form: Partial<Equipment>) {
     if (!form.name || !form.zone) return;
     setIsSaving(true);
+
     if (form.id) {
-      await supabase.from("equipments").update({ name: form.name, zone: form.zone, type: form.type, temp_min: form.temp_min, temp_max: form.temp_max }).eq("id", form.id);
+      // Modification — pas besoin de restaurant_id
+      await supabase.from("equipments").update({
+        name: form.name, zone: form.zone, type: form.type,
+        temp_min: form.temp_min, temp_max: form.temp_max,
+      }).eq("id", form.id);
     } else {
-      await supabase.from("equipments").insert({ name: form.name, zone: form.zone, type: form.type || "Autre", temp_min: form.temp_min ?? 0, temp_max: form.temp_max ?? 4 });
+      // ✅ Récupérer l'utilisateur connecté pour le restaurant_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setIsSaving(false); return; }
+
+      await supabase.from("equipments").insert({
+        name: form.name,
+        zone: form.zone,
+        type: form.type || "Autre",
+        temp_min: form.temp_min ?? 0,
+        temp_max: form.temp_max ?? 4,
+        restaurant_id: user.id, // ✅ FIX
+      });
     }
+
     await loadEquipments();
     setIsSaving(false); setShowModal(false); setEditingEquipment(null);
   }
