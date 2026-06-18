@@ -330,8 +330,21 @@ function HoursPanel({
   async function saveHours() {
     if (!date || !arrival || !departure) return;
     const computedTotal = calcHours(arrival, departure);
+
+    // ✅ Récupérer l'utilisateur connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { addToast("Session expirée", "error"); return; }
+
     setIsSaving(true);
-    const { error } = await supabase.from("employee_hours").insert({ employee_id: employee.id, date, arrival, departure, total_hours: computedTotal, note: note.trim() });
+    const { error } = await supabase.from("employee_hours").insert({
+      employee_id: employee.id,
+      date,
+      arrival,
+      departure,
+      total_hours: computedTotal,
+      note: note.trim(),
+      restaurant_id: user.id, // ✅ FIX
+    });
     if (error) { addToast("Erreur lors de l'enregistrement", "error"); }
     else { addToast(`Pointage enregistré : ${formatHours(computedTotal)}`, "success"); }
     await fetchHourLogs();
