@@ -27,11 +27,10 @@ serve(async (req) => {
     user_ids?: string[]
   }
 
-  // ── Filtre : uniquement les abonnements de cleankitchen.fr ──
+  // ── Filtre uniquement par user_id (restaurant) ──
   let query = supabase
     .from('push_subscriptions')
     .select('*')
-    .like('endpoint', '%cleankitchen.fr%')
 
   if (body.user_ids?.length) {
     query = query.in('user_id', body.user_ids)
