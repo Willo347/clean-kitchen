@@ -27,17 +27,23 @@ serve(async (req) => {
     user_ids?: string[]
   }
 
-  let query = supabase.from('push_subscriptions').select('*')
+  // ── Filtre : uniquement les abonnements de cleankitchen.fr ──
+  let query = supabase
+    .from('push_subscriptions')
+    .select('*')
+    .like('endpoint', '%cleankitchen.fr%')
+
   if (body.user_ids?.length) {
     query = query.in('user_id', body.user_ids)
   }
+
   const { data: subs } = await query
 
   const payload = JSON.stringify({
     title: body.title,
     body: body.message,
     icon: '/icon-192.png',
-    url: body.url ?? '/',
+    url: body.url ? `https://cleankitchen.fr${body.url}` : 'https://cleankitchen.fr',
   })
 
   const results = await Promise.allSettled(
