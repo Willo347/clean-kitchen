@@ -215,6 +215,7 @@ export default function AlertesPage() {
       const today = new Date();
       products.forEach((p) => {
         if (!p.dlc) return;
+        if ((p.quantity ?? 0) <= 0) return; // ✅ FIX Bug 3 — ignorer les produits à stock zéro
         const dlcDate = new Date(p.dlc);
         const diffDays = Math.ceil((dlcDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         if (diffDays < 0) {
@@ -237,7 +238,6 @@ export default function AlertesPage() {
     setDlcAlertes(dlcAlertesFound);
 
     // ── STOCKS ────────────────────────────────
-    // Pour l'instant pas de seuil défini — section vide
     setStockAlertes([]);
   }
 
