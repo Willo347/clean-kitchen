@@ -192,7 +192,6 @@ export default function MaintenancePage() {
     async function init() { setIsLoading(true); await fetchData(); setIsLoading(false); }
     init();
 
-    // ✅ Filtrer les notifications Realtime par restaurant_id
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
       const channel = supabase.channel("maintenance")
@@ -200,7 +199,7 @@ export default function MaintenancePage() {
           event: "INSERT",
           schema: "public",
           table: "maintenance_reports",
-          filter: `restaurant_id=eq.${user.id}`, // ✅ uniquement ce restaurant
+          filter: `restaurant_id=eq.${user.id}`,
         }, (payload) => {
           const r = payload.new as MaintenanceReport;
           addToast(`🔧 Nouvelle panne : ${r.equipment_name} (${r.priority})`, r.priority === "Critique" ? "error" : "info");
@@ -225,22 +224,18 @@ export default function MaintenancePage() {
     }
   }
 
-  // ✅ CORRIGÉ — restaurant_id ajouté
   async function saveReport() {
     if (!equipmentName || !description || !reportedBy) { addToast("Remplissez tous les champs obligatoires", "error"); return; }
     setIsSavingReport(true);
-
-    // ✅ Récupérer l'utilisateur connecté
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { addToast("Session expirée, reconnectez-vous", "error"); setIsSavingReport(false); return; }
-
     const { error } = await supabase.from("maintenance_reports").insert({
       equipment_name: equipmentName,
       description,
       priority,
       status: "En attente",
       reported_by: reportedBy,
-      restaurant_id: user.id, // ✅ FIX
+      restaurant_id: user.id,
     });
     setIsSavingReport(false);
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
@@ -254,21 +249,26 @@ export default function MaintenancePage() {
     addToast(`Statut mis à jour : ${status}`, "success"); await fetchData();
   }
 
+  // ✅ FIX Bug 2 — restaurant_id ajouté sur le delete panne
   async function deleteReport(id: number) {
     if (!confirm("Supprimer cette panne ?")) return;
-    await supabase.from("maintenance_reports").delete().eq("id", id);
-    addToast("Panne supprimée", "success"); await fetchData();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { addToast("Session expirée", "error"); return; }
+    const { error } = await supabase
+      .from("maintenance_reports")
+      .delete()
+      .eq("id", id)
+      .eq("restaurant_id", user.id);
+    if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
+    addToast("Panne supprimée", "success");
+    await fetchData();
   }
 
-  // ✅ CORRIGÉ — restaurant_id ajouté
   async function saveCertificate() {
     if (!certName || !certEquipment) { addToast("Remplissez les champs obligatoires", "error"); return; }
     setIsSavingCert(true);
-
-    // ✅ Récupérer l'utilisateur connecté
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { addToast("Session expirée, reconnectez-vous", "error"); setIsSavingCert(false); return; }
-
     let fileUrl = "";
     if (certFile) {
       const ext = certFile.name.split(".").pop();
@@ -287,7 +287,7 @@ export default function MaintenancePage() {
       file_url: fileUrl,
       maintenance_date: certMaintenanceDate || null,
       next_date: certNextDate || null,
-      restaurant_id: user.id, // ✅ FIX
+      restaurant_id: user.id,
     });
     setIsSavingCert(false); setUploadProgress(0);
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
@@ -296,10 +296,19 @@ export default function MaintenancePage() {
     setShowCertForm(false); await fetchData();
   }
 
+  // ✅ FIX Bug 2 — restaurant_id ajouté sur le delete certificat
   async function deleteCertificate(id: number) {
     if (!confirm("Supprimer ce certificat ?")) return;
-    await supabase.from("maintenance_certificates").delete().eq("id", id);
-    addToast("Certificat supprimé", "success"); await fetchData();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { addToast("Session expirée", "error"); return; }
+    const { error } = await supabase
+      .from("maintenance_certificates")
+      .delete()
+      .eq("id", id)
+      .eq("restaurant_id", user.id);
+    if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
+    addToast("Certificat supprimé", "success");
+    await fetchData();
   }
 
   const pendingCount = reports.filter((r) => r.status === "En attente").length;
