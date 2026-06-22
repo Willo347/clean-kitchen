@@ -1,7 +1,9 @@
+const ORIGIN = 'https://cleankitchen.fr'
+
 self.addEventListener('push', (event) => {
   let title = 'Clean Kitchen'
   let body = 'Nouvelle notification'
-  let url = '/'
+  let url = ORIGIN
 
   try {
     if (event.data) {
@@ -10,7 +12,7 @@ self.addEventListener('push', (event) => {
         const data = JSON.parse(text)
         title = data.title || title
         body = data.body || data.message || body
-        url = data.url || url
+        url = data.url ? `${ORIGIN}${data.url}` : ORIGIN
       } catch {
         body = text
       }
@@ -31,11 +33,15 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
+  const targetUrl = event.notification.data?.url ?? ORIGIN
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-      const existing = list.find((c) => c.url.includes(self.location.origin))
-      if (existing) return existing.focus()
-      return clients.openWindow(event.notification.data?.url ?? '/')
+      const existing = list.find((c) => c.url.startsWith(ORIGIN))
+      if (existing) {
+        existing.navigate(targetUrl)
+        return existing.focus()
+      }
+      return clients.openWindow(targetUrl)
     })
   )
 })
