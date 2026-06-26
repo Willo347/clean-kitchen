@@ -72,6 +72,11 @@ type Product = {
   created_at: string;
 };
 
+interface RestaurantSettings {
+  restaurant_name: string;
+  city: string;
+}
+
 // ─────────────────────────────────────────────
 // UTILS
 // ─────────────────────────────────────────────
@@ -100,7 +105,6 @@ function getDLCLabel(dlc: string): string {
   return "OK";
 }
 
-// ── Calcule le lundi de la semaine d'une date ─
 function getWeekMonday(dateStr: string): string {
   const d = new Date(dateStr);
   const day = d.getDay();
@@ -254,7 +258,7 @@ function ProductRow({ item }: { item: Product }) {
 }
 
 // ─────────────────────────────────────────────
-// CATEGORY SECTION (dans une semaine)
+// CATEGORY SECTION
 // ─────────────────────────────────────────────
 
 function CategorySection({ category, products }: { category: Category; products: Product[] }) {
@@ -266,10 +270,7 @@ function CategorySection({ category, products }: { category: Category; products:
 
   return (
     <div className={`rounded-[20px] border ${category.color} overflow-hidden`}>
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="w-full flex items-center justify-between gap-4 p-3 sm:p-4 hover:bg-white/[0.02] transition"
-      >
+      <button onClick={() => setCollapsed(!collapsed)} className="w-full flex items-center justify-between gap-4 p-3 sm:p-4 hover:bg-white/[0.02] transition">
         <div className="flex items-center gap-3">
           <span className="text-xl">{category.emoji}</span>
           <div className="text-left">
@@ -316,7 +317,6 @@ function WeekSection({ weekLabel, products, weekKey }: { weekLabel: string; prod
   const soonCount = products.filter((p) => getDLCStatus(p.dlc) === "soon").length;
   const withPhotoCount = products.filter((p) => p.image_url).length;
 
-  // Groupement par catégorie dans la semaine
   const productsByCategory = CATEGORIES.map((cat) => ({
     category: cat,
     products: products.filter((p) => (p.category || "") === cat.id),
@@ -331,11 +331,7 @@ function WeekSection({ weekLabel, products, weekKey }: { weekLabel: string; prod
     <div className={`rounded-[28px] border overflow-hidden ${
       isCurrentWeek ? "border-cyan-500/30 bg-gradient-to-br from-cyan-500/[0.06] to-blue-900/5" : "border-white/10 bg-white/[0.02]"
     }`}>
-      {/* Week header */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="w-full flex items-center justify-between gap-4 p-4 sm:p-5 hover:bg-white/[0.02] transition"
-      >
+      <button onClick={() => setCollapsed(!collapsed)} className="w-full flex items-center justify-between gap-4 p-4 sm:p-5 hover:bg-white/[0.02] transition">
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border shrink-0 ${
             isCurrentWeek ? "border-cyan-400/30 bg-cyan-500/20" : "border-white/10 bg-white/[0.05]"
@@ -344,18 +340,14 @@ function WeekSection({ weekLabel, products, weekKey }: { weekLabel: string; prod
           </div>
           <div className="text-left min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className={`font-black text-base ${isCurrentWeek ? "text-cyan-300" : "text-white"}`}>
-                {weekLabel}
-              </h3>
+              <h3 className={`font-black text-base ${isCurrentWeek ? "text-cyan-300" : "text-white"}`}>{weekLabel}</h3>
               {isCurrentWeek && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-[10px] font-bold">
                   Cette semaine
                 </span>
               )}
             </div>
-            <p className="text-white/30 text-xs mt-0.5">
-              {products.length} produit(s) · {withPhotoCount} avec photo
-            </p>
+            <p className="text-white/30 text-xs mt-0.5">{products.length} produit(s) · {withPhotoCount} avec photo</p>
           </div>
         </div>
 
@@ -374,21 +366,13 @@ function WeekSection({ weekLabel, products, weekKey }: { weekLabel: string; prod
         </div>
       </button>
 
-      {/* Week content */}
       {!collapsed && (
         <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-white/[0.06] space-y-3 pt-4">
           {productsByCategory.map(({ category, products: catProducts }) => (
-            <CategorySection
-              key={category.id}
-              category={category}
-              products={catProducts}
-            />
+            <CategorySection key={category.id} category={category} products={catProducts} />
           ))}
           {uncategorized.length > 0 && (
-            <CategorySection
-              category={CAT_AUTRE}
-              products={uncategorized}
-            />
+            <CategorySection category={CAT_AUTRE} products={uncategorized} />
           )}
         </div>
       )}
@@ -403,6 +387,7 @@ function WeekSection({ weekLabel, products, weekKey }: { weekLabel: string; prod
 export default function TraceabilityPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [restaurantSettings, setRestaurantSettings] = useState<RestaurantSettings | null>(null); // ✅ NOM DU RESTAURANT
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [search, setSearch] = useState("");
@@ -423,14 +408,26 @@ export default function TraceabilityPage() {
     if (data) setProducts(data);
   }, [startDate, endDate]);
 
+  // ✅ Récupérer le nom du restaurant depuis settings
+  const fetchRestaurantSettings = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("settings")
+      .select("restaurant_name, city")
+      .eq("restaurant_id", user.id)
+      .single();
+    if (data) setRestaurantSettings(data);
+  }, []);
+
   useEffect(() => {
     async function init() {
       setIsLoading(true);
-      await fetchProducts();
+      await Promise.all([fetchProducts(), fetchRestaurantSettings()]);
       setIsLoading(false);
     }
     init();
-  }, [fetchProducts]);
+  }, [fetchProducts, fetchRestaurantSettings]);
 
   async function handleRefresh() {
     setIsRefreshing(true);
@@ -448,14 +445,12 @@ export default function TraceabilityPage() {
     return matchSearch && matchStatus && matchCategory;
   });
 
-  // ── Groupement par semaine ─────────────────
   const weekMap = new Map<string, Product[]>();
   filteredProducts.forEach((p) => {
     const monday = getWeekMonday(p.created_at);
     if (!weekMap.has(monday)) weekMap.set(monday, []);
     weekMap.get(monday)!.push(p);
   });
-  // Tri semaines du plus récent au plus ancien
   const weeks = Array.from(weekMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
 
   const expiredCount = products.filter((p) => getDLCStatus(p.dlc) === "expired").length;
@@ -463,33 +458,48 @@ export default function TraceabilityPage() {
   const okCount = products.filter((p) => getDLCStatus(p.dlc) === "ok").length;
   const withPhotoCount = products.filter((p) => p.image_url).length;
 
-  // ── PDF Export ─────────────────────────────
+  // ✅ PDF Export avec nom du restaurant
   async function exportPDF() {
     setIsExporting(true);
+
+    const restaurantName = restaurantSettings?.restaurant_name || "Clean Kitchen";
+    const restaurantCity = restaurantSettings?.city || "";
+
     const doc = new jsPDF();
+
+    // En-tête
     doc.setFillColor(10, 20, 40);
-    doc.rect(0, 0, 210, 40, "F");
+    doc.rect(0, 0, 210, 45, "F");
+
     doc.setTextColor(100, 220, 240);
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("Rapport Traçabilité", 14, 18);
+    doc.text("Rapport Traçabilité", 14, 16);
+
+    // ✅ Nom du restaurant
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(restaurantName + (restaurantCity ? ` — ${restaurantCity}` : ""), 14, 27);
+
     doc.setTextColor(180, 220, 240);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text(`Période : ${startDate || "Début"} → ${endDate || "Aujourd'hui"}`, 14, 28);
-    doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 34);
+    doc.text(`Période : ${startDate || "Début"} → ${endDate || "Aujourd'hui"}`, 14, 35);
+    doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 41);
+
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text("Résumé", 14, 50);
+    doc.text("Résumé", 14, 55);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text(`Total produits : ${filteredProducts.length}`, 14, 58);
-    doc.text(`Avec photo : ${filteredProducts.filter((p) => p.image_url).length}`, 14, 64);
-    doc.text(`Périmés : ${expiredCount}  |  Bientôt périmés : ${soonCount}`, 14, 70);
+    doc.text(`Total produits : ${filteredProducts.length}`, 14, 63);
+    doc.text(`Avec photo : ${filteredProducts.filter((p) => p.image_url).length}`, 14, 69);
+    doc.text(`Périmés : ${expiredCount}  |  Bientôt périmés : ${soonCount}`, 14, 75);
 
     autoTable(doc, {
-      startY: 78,
+      startY: 83,
       head: [["Semaine", "Catégorie", "Produit", "Lot", "DLC", "Fournisseur", "Statut"]],
       body: weeks.flatMap(([monday, weekProducts]) =>
         weekProducts.map((item) => {
@@ -518,20 +528,18 @@ export default function TraceabilityPage() {
       },
     });
 
+    // ✅ Pied de page avec nom du restaurant
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Page ${i} / ${pageCount} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
+      doc.text(`Page ${i} / ${pageCount} — ${restaurantName} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
     }
-    doc.save(`Tracabilite_${new Date().toISOString().slice(0, 10)}.pdf`);
+
+    doc.save(`Tracabilite_${restaurantName.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
     setIsExporting(false);
   }
-
-  // ─────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-[#020817] text-white p-3 sm:p-5 overflow-x-hidden">
@@ -545,7 +553,9 @@ export default function TraceabilityPage() {
               <p className="uppercase tracking-[0.2em] text-cyan-400 font-semibold text-xs truncate">TRACEABILITY SYSTEM</p>
             </div>
             <h1 className="text-[32px] sm:text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">Traçabilité</h1>
-            <p className="text-white/40 text-sm sm:text-base mt-2">Suivi produits et conformité sanitaire</p>
+            <p className="text-white/40 text-sm sm:text-base mt-2">
+              Suivi produits et conformité sanitaire{restaurantSettings ? ` — ${restaurantSettings.restaurant_name}` : ""}
+            </p>
           </div>
           <button onClick={handleRefresh} disabled={isRefreshing} className="mt-1 h-10 px-3 sm:px-4 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white hover:border-white/20 transition flex items-center gap-2 text-sm font-bold disabled:opacity-50 shrink-0">
             <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
@@ -633,7 +643,6 @@ export default function TraceabilityPage() {
             </button>
           </div>
 
-          {/* Filtres statut + catégorie */}
           <div className="flex flex-wrap gap-2">
             {(["all", "ok", "soon", "expired"] as const).map((status) => (
               <button key={status} onClick={() => setFilterStatus(status)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition whitespace-nowrap ${filterStatus === status ? status === "expired" ? "bg-red-500/25 border-red-500/50 text-red-300" : status === "soon" ? "bg-orange-500/25 border-orange-500/50 text-orange-300" : status === "ok" ? "bg-green-500/25 border-green-500/50 text-green-300" : "bg-white/10 border-white/20 text-white" : "bg-transparent border-white/10 text-white/35 hover:text-white/60"}`}>
@@ -657,7 +666,6 @@ export default function TraceabilityPage() {
             })}
           </div>
 
-          {/* Recherche */}
           <div className="flex items-center gap-2 h-10 rounded-xl bg-white/[0.05] border border-white/10 px-3">
             <Search size={13} className="text-white/30 shrink-0" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un produit ou fournisseur..." className="bg-transparent outline-none w-full text-xs text-white placeholder:text-white/25" />
@@ -689,12 +697,7 @@ export default function TraceabilityPage() {
           ) : (
             <div className="space-y-4">
               {weeks.map(([monday, weekProducts]) => (
-                <WeekSection
-                  key={monday}
-                  weekKey={monday}
-                  weekLabel={formatWeekLabel(monday)}
-                  products={weekProducts}
-                />
+                <WeekSection key={monday} weekKey={monday} weekLabel={formatWeekLabel(monday)} products={weekProducts} />
               ))}
             </div>
           )}

@@ -61,6 +61,12 @@ interface HourLog {
   note?: string;
 }
 
+// ✅ Ajout du type RestaurantSettings
+interface RestaurantSettings {
+  restaurant_name: string;
+  city: string;
+}
+
 type ToastType = "success" | "error";
 interface Toast { id: number; message: string; type: ToastType; }
 
@@ -259,13 +265,15 @@ function EmployeeModal({
   );
 }
 
+// ✅ restaurantSettings passé en prop à HoursPanel
 function HoursPanel({
-  employee, isAdmin, onClose, addToast,
+  employee, isAdmin, onClose, addToast, restaurantSettings,
 }: {
   employee: Employee;
   isAdmin: boolean;
   onClose: () => void;
   addToast: (msg: string, type: ToastType) => void;
+  restaurantSettings: RestaurantSettings | null;
 }) {
   const [hourLogs, setHourLogs] = useState<HourLog[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -330,11 +338,8 @@ function HoursPanel({
   async function saveHours() {
     if (!date || !arrival || !departure) return;
     const computedTotal = calcHours(arrival, departure);
-
-    // ✅ Récupérer l'utilisateur connecté
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { addToast("Session expirée", "error"); return; }
-
     setIsSaving(true);
     const { error } = await supabase.from("employee_hours").insert({
       employee_id: employee.id,
@@ -343,7 +348,7 @@ function HoursPanel({
       departure,
       total_hours: computedTotal,
       note: note.trim(),
-      restaurant_id: user.id, // ✅ FIX
+      restaurant_id: user.id,
     });
     if (error) { addToast("Erreur lors de l'enregistrement", "error"); }
     else { addToast(`Pointage enregistré : ${formatHours(computedTotal)}`, "success"); }
@@ -358,81 +363,115 @@ function HoursPanel({
     addToast("Pointage supprimé", "success");
   }
 
+  // ✅ FIX — nom du restaurant dans le PDF semaine
   function exportPDF() {
     setIsExporting(true);
+    const restaurantName = restaurantSettings?.restaurant_name || "Clean Kitchen";
+    const restaurantCity = restaurantSettings?.city || "";
+
     const doc = new jsPDF();
     doc.setFillColor(10, 20, 40);
-    doc.rect(0, 0, 210, 40, "F");
+    doc.rect(0, 0, 210, 45, "F");
+
     doc.setTextColor(100, 220, 240);
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text(`Fiche horaire — ${employee.full_name}`, 14, 18);
+    doc.text(`Fiche horaire — ${employee.full_name}`, 14, 16);
+
+    // ✅ Nom du restaurant
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(restaurantName + (restaurantCity ? ` — ${restaurantCity}` : ""), 14, 27);
+
     doc.setTextColor(180, 220, 240);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text(`Poste : ${employee.role}  |  Semaine : ${weekLabel}`, 14, 28);
-    doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 34);
+    doc.text(`Poste : ${employee.role}  |  Semaine : ${weekLabel}`, 14, 35);
+    doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 41);
+
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text("Récapitulatif semaine", 14, 52);
+    doc.text("Récapitulatif semaine", 14, 55);
     doc.setFont("helvetica", "normal");
-    doc.text(`Total heures : ${formatHours(weekTotal)}  |  Jours travaillés : ${weekDays}`, 14, 60);
+    doc.text(`Total heures : ${formatHours(weekTotal)}  |  Jours travaillés : ${weekDays}`, 14, 63);
+
     autoTable(doc, {
-      startY: 68,
+      startY: 71,
       head: [["Date", "Arrivée", "Départ", "Total", "Note"]],
       body: weekLogs.map((log) => [formatDateFR(log.date), log.arrival || "—", log.departure || "—", formatHours(log.total_hours || 0), log.note || "—"]),
       headStyles: { fillColor: [10, 40, 80], textColor: [100, 220, 240], fontStyle: "bold", fontSize: 9 },
       bodyStyles: { fontSize: 9 },
       alternateRowStyles: { fillColor: [245, 248, 255] },
     });
+
+    // ✅ Pied de page avec nom du restaurant
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Page ${i} / ${pageCount} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
+      doc.text(`Page ${i} / ${pageCount} — ${restaurantName} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
     }
+
     doc.save(`Heures_${employee.full_name.replace(/ /g, "_")}_${weekStart}.pdf`);
     setIsExporting(false);
   }
 
+  // ✅ FIX — nom du restaurant dans le PDF mensuel
   function exportMonthPDF() {
     setIsExporting(true);
+    const restaurantName = restaurantSettings?.restaurant_name || "Clean Kitchen";
+    const restaurantCity = restaurantSettings?.city || "";
+
     const doc = new jsPDF();
     doc.setFillColor(10, 20, 40);
-    doc.rect(0, 0, 210, 40, "F");
+    doc.rect(0, 0, 210, 45, "F");
+
     doc.setTextColor(100, 220, 240);
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text(`Fiche mensuelle — ${employee.full_name}`, 14, 18);
+    doc.text(`Fiche mensuelle — ${employee.full_name}`, 14, 16);
+
+    // ✅ Nom du restaurant
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(restaurantName + (restaurantCity ? ` — ${restaurantCity}` : ""), 14, 27);
+
     doc.setTextColor(180, 220, 240);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text(`Poste : ${employee.role}  |  Mois : ${monthLabel}`, 14, 28);
-    doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 34);
+    doc.text(`Poste : ${employee.role}  |  Mois : ${monthLabel}`, 14, 35);
+    doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 41);
+
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text("Récapitulatif mensuel", 14, 52);
+    doc.text("Récapitulatif mensuel", 14, 55);
     doc.setFont("helvetica", "normal");
-    doc.text(`Total heures : ${formatHours(monthTotal)}  |  Jours travaillés : ${monthDays}  |  Base : 151h`, 14, 60);
-    doc.text(`Taux : ${Math.round((monthTotal / 151) * 100)}%`, 14, 66);
+    doc.text(`Total heures : ${formatHours(monthTotal)}  |  Jours travaillés : ${monthDays}  |  Base : 151h`, 14, 63);
+    doc.text(`Taux : ${Math.round((monthTotal / 151) * 100)}%`, 14, 69);
+
     autoTable(doc, {
-      startY: 74,
+      startY: 77,
       head: [["Date", "Arrivée", "Départ", "Total", "Note"]],
       body: monthLogs.map((log) => [formatDateFR(log.date), log.arrival || "—", log.departure || "—", formatHours(log.total_hours || 0), log.note || "—"]),
       headStyles: { fillColor: [10, 40, 80], textColor: [100, 220, 240], fontStyle: "bold", fontSize: 9 },
       bodyStyles: { fontSize: 9 },
       alternateRowStyles: { fillColor: [245, 248, 255] },
     });
+
+    // ✅ Pied de page avec nom du restaurant
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Page ${i} / ${pageCount} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
+      doc.text(`Page ${i} / ${pageCount} — ${restaurantName} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
     }
+
     doc.save(`Heures_${employee.full_name.replace(/ /g, "_")}_${monthLabel.replace(" ", "_")}.pdf`);
     setIsExporting(false);
   }
@@ -666,6 +705,7 @@ export default function EmployeesPage() {
   const [showPinFor, setShowPinFor] = useState<Employee | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [toastCounter, setToastCounter] = useState(0);
+  const [restaurantSettings, setRestaurantSettings] = useState<RestaurantSettings | null>(null); // ✅
 
   const addToast = useCallback((message: string, type: ToastType) => {
     const id = toastCounter + 1;
@@ -689,20 +729,30 @@ export default function EmployeesPage() {
     if (data) setShifts(data);
   }, [weekOffset]);
 
+  // ✅ Récupérer le nom du restaurant
+  const fetchRestaurantSettings = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("settings")
+      .select("restaurant_name, city")
+      .eq("restaurant_id", user.id)
+      .single();
+    if (data) setRestaurantSettings(data);
+  }, []);
+
   useEffect(() => {
     async function init() {
       setIsLoading(true);
-      await Promise.all([fetchEmployees(), fetchShifts()]);
+      await Promise.all([fetchEmployees(), fetchShifts(), fetchRestaurantSettings()]);
       setIsLoading(false);
     }
     init();
-  }, [fetchEmployees, fetchShifts]);
+  }, [fetchEmployees, fetchShifts, fetchRestaurantSettings]);
 
-  // ✅ CORRIGÉ — restaurant_id ajouté dans l'insert employee
   async function handleSave(form: Partial<Employee>) {
     if (!form.full_name || !form.role || !form.pin_code) return;
     setIsSaving(true);
-
     if (form.id) {
       await supabase.from("employees").update({
         full_name: form.full_name, role: form.role, pin_code: form.pin_code,
@@ -710,19 +760,16 @@ export default function EmployeesPage() {
       }).eq("id", form.id);
       addToast(`${form.full_name} modifié`, "success");
     } else {
-      // ✅ Récupérer l'utilisateur connecté
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setIsSaving(false); return; }
-
       await supabase.from("employees").insert({
         full_name: form.full_name, role: form.role, pin_code: form.pin_code,
         is_active: form.is_active ?? true, is_admin: form.is_admin ?? false,
         email: form.email || null,
-        restaurant_id: user.id, // ✅ FIX
+        restaurant_id: user.id,
       });
       addToast(`${form.full_name} ajouté`, "success");
     }
-
     await fetchEmployees();
     setIsSaving(false);
     setShowEmployeeModal(false);
@@ -736,21 +783,17 @@ export default function EmployeesPage() {
     addToast("Employé supprimé", "success");
   }
 
-  // ✅ CORRIGÉ — restaurant_id ajouté dans l'insert shift
   async function saveShift() {
     if (!newShift.employee_id || !newShift.date || !newShift.start_time || !newShift.end_time) return;
-
-    // ✅ Récupérer l'utilisateur connecté
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-
     await supabase.from("employee_shifts").insert({
       employee_id: newShift.employee_id,
       date: newShift.date,
       start_time: newShift.start_time,
       end_time: newShift.end_time,
       note: newShift.note || "",
-      restaurant_id: user.id, // ✅ FIX
+      restaurant_id: user.id,
     });
     await fetchShifts();
     setShowAddShift(false);
@@ -798,7 +841,13 @@ export default function EmployeesPage() {
       )}
 
       {showHoursFor && (
-        <HoursPanel employee={showHoursFor} isAdmin={isAdmin} onClose={() => setShowHoursFor(null)} addToast={addToast} />
+        <HoursPanel
+          employee={showHoursFor}
+          isAdmin={isAdmin}
+          onClose={() => setShowHoursFor(null)}
+          addToast={addToast}
+          restaurantSettings={restaurantSettings} // ✅ passage du nom du restaurant
+        />
       )}
 
       {showEmployeeModal && (
@@ -815,7 +864,9 @@ export default function EmployeesPage() {
                 <p className="uppercase tracking-[0.2em] text-cyan-400 font-semibold text-xs truncate">EMPLOYEE MANAGEMENT</p>
               </div>
               <h1 className="text-[32px] sm:text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">Employés</h1>
-              <p className="text-white/40 text-sm sm:text-base mt-2">Gestion du personnel</p>
+              <p className="text-white/40 text-sm sm:text-base mt-2">
+                Gestion du personnel{restaurantSettings ? ` — ${restaurantSettings.restaurant_name}` : ""}
+              </p>
             </div>
             <div className="flex items-center gap-2 mt-1 shrink-0">
               {isAdmin ? (
@@ -912,9 +963,7 @@ export default function EmployeesPage() {
                             {employee.is_active ? "ACTIF" : "INACTIF"}
                           </span>
                           {employee.is_admin && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300 text-[10px] font-bold">
-                              ADMIN
-                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300 text-[10px] font-bold">ADMIN</span>
                           )}
                         </div>
                       </div>
