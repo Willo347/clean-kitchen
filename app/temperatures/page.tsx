@@ -50,6 +50,11 @@ interface TemperatureLog {
   created_at: string;
 }
 
+interface RestaurantSettings {
+  restaurant_name: string;
+  city: string;
+}
+
 type ToastType = "success" | "error" | "info";
 
 interface Toast {
@@ -203,6 +208,7 @@ export default function TemperaturesPage() {
 
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [logs, setLogs] = useState<TemperatureLog[]>([]);
+  const [restaurantSettings, setRestaurantSettings] = useState<RestaurantSettings | null>(null); // ✅ NOM DU RESTAURANT
   const [selectedEquipment, setSelectedEquipment] = useState("");
   const [temperature, setTemperature] = useState("");
   const [isAdding, setIsAdding] = useState(false);
@@ -245,10 +251,22 @@ export default function TemperaturesPage() {
     setLogs(logsData || []);
   }, [addToast]);
 
+  // ✅ Récupérer le nom du restaurant depuis la table settings
+  const fetchRestaurantSettings = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("settings")
+      .select("restaurant_name, city")
+      .eq("restaurant_id", user.id)
+      .single();
+    if (data) setRestaurantSettings(data);
+  }, []);
+
   useEffect(() => {
     fetchData();
+    fetchRestaurantSettings();
 
-    // ✅ Filtrer le channel Realtime par restaurant_id
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
       const channel = supabase
@@ -257,12 +275,12 @@ export default function TemperaturesPage() {
           event: "*",
           schema: "public",
           table: "temperature_logs",
-          filter: `restaurant_id=eq.${user.id}`, // ✅ uniquement ce restaurant
+          filter: `restaurant_id=eq.${user.id}`,
         }, () => fetchData())
         .subscribe();
       return () => { supabase.removeChannel(channel); };
     });
-  }, [fetchData]);
+  }, [fetchData, fetchRestaurantSettings]);
 
   async function handleRefresh() {
     setIsRefreshing(true);
@@ -295,21 +313,17 @@ export default function TemperaturesPage() {
     addToast("Tous les relevés supprimés", "success");
   }
 
-  // ✅ CORRIGÉ — restaurant_id ajouté
   async function addTemperature() {
     if (!selectedEquipment || !temperature) { addToast("Sélectionnez un équipement et entrez une température", "error"); return; }
     const tempNum = Number(temperature);
     if (isNaN(tempNum)) { addToast("Température invalide", "error"); return; }
-
-    // ✅ Récupérer l'utilisateur connecté
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { addToast("Session expirée, reconnectez-vous", "error"); return; }
-
     setIsAdding(true);
     const { error } = await supabase.from("temperature_logs").insert([{
       equipment: selectedEquipment,
       temperature: tempNum,
-      restaurant_id: user.id, // ✅ FIX
+      restaurant_id: user.id,
     }]);
     setIsAdding(false);
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
@@ -329,21 +343,17 @@ export default function TemperaturesPage() {
     setShowQuickAdd(true);
   }
 
-  // ✅ CORRIGÉ — restaurant_id ajouté
   async function submitQuickAdd() {
     if (!quickAddEquipment || !quickAddTemp) { addToast("Entrez une température", "error"); return; }
     const tempNum = Number(quickAddTemp);
     if (isNaN(tempNum)) { addToast("Température invalide", "error"); return; }
-
-    // ✅ Récupérer l'utilisateur connecté
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { addToast("Session expirée, reconnectez-vous", "error"); return; }
-
     setIsAdding(true);
     const { error } = await supabase.from("temperature_logs").insert([{
       equipment: quickAddEquipment,
       temperature: tempNum,
-      restaurant_id: user.id, // ✅ FIX
+      restaurant_id: user.id,
     }]);
     setIsAdding(false);
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
@@ -370,19 +380,33 @@ export default function TemperaturesPage() {
 
     if (filteredLogs.length === 0) { addToast("Aucun relevé trouvé avec ces filtres", "error"); setIsExporting(false); return; }
 
+    // ✅ Nom et ville du restaurant
+    const restaurantName = restaurantSettings?.restaurant_name || "Clean Kitchen";
+    const restaurantCity = restaurantSettings?.city || "";
+
     const doc = new jsPDF();
+
+    // En-tête
     doc.setFillColor(10, 20, 40);
-    doc.rect(0, 0, 210, 40, "F");
+    doc.rect(0, 0, 210, 45, "F");
+
     doc.setTextColor(100, 220, 240);
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("Rapport de températures", 14, 18);
+    doc.text("Rapport de températures", 14, 16);
+
+    // ✅ Nom du restaurant en blanc
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(restaurantName + (restaurantCity ? ` — ${restaurantCity}` : ""), 14, 27);
+
     doc.setTextColor(180, 220, 240);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     const dateRange = startDate && endDate ? `Du ${startDate} au ${endDate}` : startDate ? `Depuis le ${startDate}` : endDate ? `Jusqu'au ${endDate}` : "Toutes les dates";
-    doc.text(`Période : ${dateRange}`, 14, 28);
-    doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 34);
+    doc.text(`Période : ${dateRange}`, 14, 35);
+    doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 41);
 
     const criticalCount = filteredLogs.filter((log) => {
       const eq = equipments.find((e) => e.name.toLowerCase().trim() === log.equipment?.toLowerCase().trim());
@@ -393,15 +417,15 @@ export default function TemperaturesPage() {
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.text("Résumé", 14, 52);
+    doc.text("Résumé", 14, 57);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text(`Total relevés : ${filteredLogs.length}`, 14, 60);
-    doc.text(`Alertes : ${criticalCount}`, 14, 66);
-    doc.text(`Équipements : ${selectedEquipments.length === 0 ? "Tous" : selectedEquipments.join(", ")}`, 14, 72);
+    doc.text(`Total relevés : ${filteredLogs.length}`, 14, 65);
+    doc.text(`Alertes : ${criticalCount}`, 14, 71);
+    doc.text(`Équipements : ${selectedEquipments.length === 0 ? "Tous" : selectedEquipments.join(", ")}`, 14, 77);
 
     autoTable(doc, {
-      startY: 80,
+      startY: 85,
       head: [["Date", "Équipement", "Température", "Zone", "Statut"]],
       body: filteredLogs.map((log) => {
         const eq = equipments.find((e) => e.name.toLowerCase().trim() === log.equipment?.toLowerCase().trim());
@@ -422,10 +446,10 @@ export default function TemperaturesPage() {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Page ${i} / ${pageCount} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
+      doc.text(`Page ${i} / ${pageCount} — ${restaurantName} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
     }
 
-    doc.save(`Temperatures_${new Date().toISOString().slice(0, 10)}.pdf`);
+    doc.save(`Temperatures_${restaurantName.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
     addToast(`PDF exporté : ${filteredLogs.length} relevés`, "success");
     setIsExporting(false);
   }
@@ -500,7 +524,7 @@ export default function TemperaturesPage() {
                 <p className="uppercase tracking-[0.2em] text-cyan-400 font-semibold text-xs">TEMPERATURE CONTROL</p>
               </div>
               <h1 className="text-4xl md:text-[52px] font-black leading-[0.95] tracking-[-0.04em] text-white">Températures</h1>
-              <p className="text-white/40 text-base mt-2">Relevés manuels</p>
+              <p className="text-white/40 text-base mt-2">Relevés manuels{restaurantSettings ? ` — ${restaurantSettings.restaurant_name}` : ""}</p>
             </div>
 
             <div className="flex items-center gap-2 mt-2 shrink-0">
