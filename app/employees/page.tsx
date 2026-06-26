@@ -977,8 +977,8 @@ export default function EmployeesPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button onClick={() => setShowPinFor(employee)} className="flex-1 h-9 rounded-xl border border-violet-500/20 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 transition text-xs font-bold flex items-center justify-center gap-1.5">
-                          <Eye size={12} /> Mes heures
+                        <button onClick={() => isAdmin ? setShowHoursFor(employee) : setShowPinFor(employee)} className="flex-1 h-9 rounded-xl border border-violet-500/20 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 transition text-xs font-bold flex items-center justify-center gap-1.5">
+                          <Eye size={12} /> {isAdmin ? "Voir les heures" : "Mes heures"}
                         </button>
                         {isAdmin && (
                           <>
