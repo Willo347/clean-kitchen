@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Clean Kitchen</string>
+    <string name="title_activity_main">Clean Kitchen</string>
+    <string name="package_name">fr.cleankitchen.app</string>
+    <string name="custom_url_scheme">fr.cleankitchen.app</string>
+</resources>

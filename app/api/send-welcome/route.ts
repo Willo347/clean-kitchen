@@ -1,9 +1,12 @@
 import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+export const dynamic = 'force-static'
 
 export async function POST(req: Request) {
+  // ✅ Instanciation à l'intérieur de la fonction pour éviter le crash au build
+  const resend = new Resend(process.env.RESEND_API_KEY)
+
   const { email, restaurantName, city } = await req.json()
 
   const { error } = await resend.emails.send({
