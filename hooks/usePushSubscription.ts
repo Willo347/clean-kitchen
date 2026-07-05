@@ -7,43 +7,6 @@ export function usePushSubscription() {
   const [isLoading, setIsLoading] = useState(false)
   const [isNative, setIsNative] = useState(false)
 
-  useEffect(() => {
-    const checkPlatform = async () => {
-      const { Capacitor } = await import('@capacitor/core')
-      const platform = Capacitor.getPlatform()
-      const native = platform === 'android' || platform === 'ios'
-      setIsNative(native)
-
-      if (native) {
-        const { PushNotifications } = await import('@capacitor/push-notifications')
-        const status = await PushNotifications.checkPermissions()
-        setIsSubscribed(status.receive === 'granted')
-      } else {
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
-        navigator.serviceWorker.register('/sw.js').then(async (reg) => {
-          const sub = await reg.pushManager.getSubscription()
-          setIsSubscribed(!!sub)
-        }).catch(console.error)
-      }
-    }
-    checkPlatform()
-  }, [])
-
-  async function subscribe() {
-    setIsLoading(true)
-    try {
-      if (isNative) {
-        await subscribeNative()
-      } else {
-        await subscribeWeb()
-      }
-    } catch (e) {
-      console.error('Erreur subscribe:', e)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   async function subscribeNative() {
     const { PushNotifications } = await import('@capacitor/push-notifications')
     const supabase = createClient()
@@ -72,6 +35,47 @@ export function usePushSubscription() {
     })
 
     await PushNotifications.register()
+  }
+
+  useEffect(() => {
+    const checkPlatform = async () => {
+      const { Capacitor } = await import('@capacitor/core')
+      const platform = Capacitor.getPlatform()
+      const native = platform === 'android' || platform === 'ios'
+      setIsNative(native)
+
+      if (native) {
+        const { PushNotifications } = await import('@capacitor/push-notifications')
+        const status = await PushNotifications.checkPermissions()
+        if (status.receive === 'granted') {
+          await subscribeNative()
+        } else {
+          setIsSubscribed(false)
+        }
+      } else {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+        navigator.serviceWorker.register('/sw.js').then(async (reg) => {
+          const sub = await reg.pushManager.getSubscription()
+          setIsSubscribed(!!sub)
+        }).catch(console.error)
+      }
+    }
+    checkPlatform()
+  }, [])
+
+  async function subscribe() {
+    setIsLoading(true)
+    try {
+      if (isNative) {
+        await subscribeNative()
+      } else {
+        await subscribeWeb()
+      }
+    } catch (e) {
+      console.error('Erreur subscribe:', e)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   async function subscribeWeb() {
