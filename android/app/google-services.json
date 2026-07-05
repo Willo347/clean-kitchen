@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1002865645177",
+    "project_id": "cleankitchen-29abd",
+    "storage_bucket": "cleankitchen-29abd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1002865645177:android:c15630261eee11d8b266a8",
+        "android_client_info": {
+          "package_name": "fr.cleankitchen.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmq5xFT0VePQA0SvVIUuKrxvFGYjf3YC0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
