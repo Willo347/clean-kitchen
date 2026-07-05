@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { usePushSubscription } from '@/hooks/usePushSubscription'
 
 const CATEGORIES = [
@@ -10,10 +11,21 @@ const CATEGORIES = [
 
 export default function NotificationsPage() {
   const { isSubscribed, isLoading, subscribe, unsubscribe } = usePushSubscription()
+  const [platform, setPlatform] = useState('...')
+
+  useEffect(() => {
+    import('@capacitor/core').then(({ Capacitor }) => {
+      setPlatform(Capacitor.getPlatform())
+    })
+  }, [])
 
   return (
     <main className="max-w-xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold">Notifications Push</h1>
+
+      <p className="text-xs text-gray-400 bg-gray-100 p-2 rounded">
+        🔍 Platform détectée : <strong>{platform}</strong>
+      </p>
 
       <div className="flex items-center justify-between p-4 bg-white rounded-xl shadow">
         <div>
