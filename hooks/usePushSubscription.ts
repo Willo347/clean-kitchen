@@ -1,21 +1,20 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { PushNotifications } from '@capacitor/push-notifications'
 import { createClient } from '@/lib/supabase/client'
 
 export function usePushSubscription() {
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const platform = Capacitor.getPlatform() // 'android' | 'ios' | 'web'
+  const platform = Capacitor.getPlatform()
   const isNative = platform === 'android' || platform === 'ios'
 
   useEffect(() => {
-    console.log('[Push] platform:', platform, 'isNative:', isNative)
     if (isNative) {
-      PushNotifications.checkPermissions().then((status) => {
-        console.log('[Push] permission status:', status.receive)
-        setIsSubscribed(status.receive === 'granted')
+      import('@capacitor/push-notifications').then(({ PushNotifications }) => {
+        PushNotifications.checkPermissions().then((status) => {
+          setIsSubscribed(status.receive === 'granted')
+        })
       })
     } else {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
@@ -42,47 +41,33 @@ export function usePushSubscription() {
   }
 
   async function subscribeNative() {
-    console.log('[Push] subscribeNative called')
+    const { PushNotifications } = await import('@capacitor/push-notifications')
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      console.error('[Push] no user found')
-      return
-    }
+    if (!user) return
 
     let permission = await PushNotifications.checkPermissions()
-    console.log('[Push] permission before request:', permission.receive)
     if (permission.receive === 'prompt') {
       permission = await PushNotifications.requestPermissions()
     }
-    if (permission.receive !== 'granted') {
-      console.error('[Push] permission not granted:', permission.receive)
-      return
-    }
+    if (permission.receive !== 'granted') return
 
     await PushNotifications.removeAllListeners()
 
     PushNotifications.addListener('registration', async (token) => {
-      console.log('[Push] FCM token received:', token.value.substring(0, 20) + '...')
       const { error } = await supabase.from('push_subscriptions').upsert({
         user_id: user.id,
         endpoint: token.value,
         platform: 'android',
       }, { onConflict: 'endpoint' })
-      if (error) {
-        console.error('[Push] supabase upsert error:', error)
-      } else {
-        console.log('[Push] token saved to supabase')
-        setIsSubscribed(true)
-      }
+      if (!error) setIsSubscribed(true)
     })
 
     PushNotifications.addListener('registrationError', (err) => {
-      console.error('[Push] FCM registration error:', JSON.stringify(err))
+      console.error('FCM registration error:', JSON.stringify(err))
     })
 
     await PushNotifications.register()
-    console.log('[Push] register() called')
   }
 
   async function subscribeWeb() {
@@ -111,6 +96,7 @@ export function usePushSubscription() {
     try {
       const supabase = createClient()
       if (isNative) {
+        const { PushNotifications } = await import('@capacitor/push-notifications')
         await PushNotifications.removeAllListeners()
         setIsSubscribed(false)
       } else {
