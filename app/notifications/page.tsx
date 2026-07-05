@@ -10,7 +10,7 @@ const CATEGORIES = [
 ]
 
 export default function NotificationsPage() {
-  const { isSubscribed, isLoading, subscribe, unsubscribe } = usePushSubscription()
+  const { isSubscribed, isLoading, subscribe, unsubscribe, debugLog } = usePushSubscription()
   const [platform, setPlatform] = useState('...')
 
   useEffect(() => {
@@ -24,8 +24,16 @@ export default function NotificationsPage() {
       <h1 className="text-2xl font-bold">Notifications Push</h1>
 
       <p className="text-xs text-gray-400 bg-gray-100 p-2 rounded">
-        🔍 Platform détectée : <strong>{platform}</strong>
+        🔍 Platform : <strong>{platform}</strong>
       </p>
+
+      {debugLog.length > 0 && (
+        <div className="bg-black text-green-400 text-xs p-3 rounded-xl space-y-1 font-mono">
+          {debugLog.map((line, i) => (
+            <p key={i}>{line}</p>
+          ))}
+        </div>
+      )}
 
       <div className="flex items-center justify-between p-4 bg-white rounded-xl shadow">
         <div>

@@ -6,35 +6,47 @@ export function usePushSubscription() {
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isNative, setIsNative] = useState(false)
+  const [debugLog, setDebugLog] = useState<string[]>([])
+
+  const log = (msg: string) => {
+    console.log('[Push]', msg)
+    setDebugLog(prev => [...prev, `${new Date().toLocaleTimeString()} ${msg}`])
+  }
 
   async function subscribeNative() {
     const { PushNotifications } = await import('@capacitor/push-notifications')
     const supabase = createClient()
+    log('subscribeNative start')
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) { log('❌ no user'); return }
+    log(`user: ${user.id.substring(0, 8)}...`)
 
     let permission = await PushNotifications.checkPermissions()
+    log(`permission: ${permission.receive}`)
     if (permission.receive === 'prompt') {
       permission = await PushNotifications.requestPermissions()
     }
-    if (permission.receive !== 'granted') return
+    if (permission.receive !== 'granted') { log('❌ permission denied'); return }
 
     await PushNotifications.removeAllListeners()
 
     PushNotifications.addListener('registration', async (token) => {
+      log(`✅ token: ${token.value.substring(0, 15)}...`)
       const { error } = await supabase.from('push_subscriptions').upsert({
         user_id: user.id,
         endpoint: token.value,
         platform: 'android',
       }, { onConflict: 'endpoint' })
-      if (!error) setIsSubscribed(true)
+      if (error) { log(`❌ supabase: ${error.message}`) }
+      else { log('✅ saved to supabase'); setIsSubscribed(true) }
     })
 
     PushNotifications.addListener('registrationError', (err) => {
-      console.error('FCM registration error:', JSON.stringify(err))
+      log(`❌ FCM error: ${JSON.stringify(err)}`)
     })
 
     await PushNotifications.register()
+    log('register() called')
   }
 
   useEffect(() => {
@@ -43,6 +55,7 @@ export function usePushSubscription() {
       const platform = Capacitor.getPlatform()
       const native = platform === 'android' || platform === 'ios'
       setIsNative(native)
+      log(`platform: ${platform}`)
 
       if (native) {
         const { PushNotifications } = await import('@capacitor/push-notifications')
@@ -66,13 +79,10 @@ export function usePushSubscription() {
   async function subscribe() {
     setIsLoading(true)
     try {
-      if (isNative) {
-        await subscribeNative()
-      } else {
-        await subscribeWeb()
-      }
-    } catch (e) {
-      console.error('Erreur subscribe:', e)
+      if (isNative) await subscribeNative()
+      else await subscribeWeb()
+    } catch (e: any) {
+      log(`❌ error: ${e.message}`)
     } finally {
       setIsLoading(false)
     }
@@ -82,7 +92,6 @@ export function usePushSubscription() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-
     const reg = await navigator.serviceWorker.ready
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -117,11 +126,11 @@ export function usePushSubscription() {
         setIsSubscribed(false)
       }
     } catch (e) {
-      console.error('Erreur unsubscribe:', e)
+      console.error(e)
     } finally {
       setIsLoading(false)
     }
   }
 
-  return { isSubscribed, isLoading, subscribe, unsubscribe }
+  return { isSubscribed, isLoading, subscribe, unsubscribe, debugLog }
 }
