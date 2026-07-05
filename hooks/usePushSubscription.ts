@@ -1,28 +1,32 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Capacitor } from '@capacitor/core'
 import { createClient } from '@/lib/supabase/client'
 
 export function usePushSubscription() {
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const platform = Capacitor.getPlatform()
-  const isNative = platform === 'android' || platform === 'ios'
+  const [isNative, setIsNative] = useState(false)
 
   useEffect(() => {
-    if (isNative) {
-      import('@capacitor/push-notifications').then(({ PushNotifications }) => {
-        PushNotifications.checkPermissions().then((status) => {
-          setIsSubscribed(status.receive === 'granted')
-        })
-      })
-    } else {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
-      navigator.serviceWorker.register('/sw.js').then(async (reg) => {
-        const sub = await reg.pushManager.getSubscription()
-        setIsSubscribed(!!sub)
-      }).catch(console.error)
+    const checkPlatform = async () => {
+      const { Capacitor } = await import('@capacitor/core')
+      const platform = Capacitor.getPlatform()
+      const native = platform === 'android' || platform === 'ios'
+      setIsNative(native)
+
+      if (native) {
+        const { PushNotifications } = await import('@capacitor/push-notifications')
+        const status = await PushNotifications.checkPermissions()
+        setIsSubscribed(status.receive === 'granted')
+      } else {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+        navigator.serviceWorker.register('/sw.js').then(async (reg) => {
+          const sub = await reg.pushManager.getSubscription()
+          setIsSubscribed(!!sub)
+        }).catch(console.error)
+      }
     }
+    checkPlatform()
   }, [])
 
   async function subscribe() {
