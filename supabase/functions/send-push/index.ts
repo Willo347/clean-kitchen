@@ -2,12 +2,32 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // @ts-ignore
 import webpush from 'npm:web-push@3.6.7'
+// @ts-ignore
+import { initializeApp, cert, getApps } from 'npm:firebase-admin/app'
+// @ts-ignore
+import { getMessaging } from 'npm:firebase-admin/messaging'
 
 const VAPID_PUBLIC  = Deno.env.get('VAPID_PUBLIC_KEY')!
 const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY')!
 const VAPID_EMAIL   = 'mailto:admin@cleankitchen.app'
 
 webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE)
+
+const serviceAccountStr = Deno.env.get('FIREBASE_SERVICE_ACCOUNT')
+const serviceAccount = serviceAccountStr ? JSON.parse(serviceAccountStr) : null
+
+if (serviceAccount && getApps().length === 0) {
+  initializeApp({ credential: cert(serviceAccount) })
+}
+
+async function sendFCM(token: string, title: string, body: string): Promise<void> {
+  const messaging = getMessaging()
+  await messaging.send({
+    token,
+    notification: { title, body },
+    android: { priority: 'high' },
+  })
+}
 
 serve(async (req) => {
   const authHeader = req.headers.get('Authorization') ?? ''
@@ -27,15 +47,10 @@ serve(async (req) => {
     user_ids?: string[]
   }
 
-  // ── Filtre uniquement par user_id (restaurant) ──
-  let query = supabase
-    .from('push_subscriptions')
-    .select('*')
-
+  let query = supabase.from('push_subscriptions').select('*')
   if (body.user_ids?.length) {
     query = query.in('user_id', body.user_ids)
   }
-
   const { data: subs } = await query
 
   const payload = JSON.stringify({
@@ -46,13 +61,16 @@ serve(async (req) => {
   })
 
   const results = await Promise.allSettled(
-    (subs ?? []).map((s) =>
-      webpush.sendNotification(
+    (subs ?? []).map((s) => {
+      if (s.platform === 'android' && serviceAccount) {
+        return sendFCM(s.endpoint, body.title, body.message)
+      }
+      return webpush.sendNotification(
         { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
         payload,
         { TTL: 86400, urgency: 'normal' }
       )
-    )
+    })
   )
 
   const sent = results.filter(r => r.status === 'fulfilled').length

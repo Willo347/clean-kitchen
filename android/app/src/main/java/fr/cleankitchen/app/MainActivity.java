@@ -4,6 +4,9 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.os.Build;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {

@@ -15,6 +15,7 @@ export function usePushSubscription() {
 
   async function subscribeNative() {
     const { PushNotifications } = await import('@capacitor/push-notifications')
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
     const supabase = createClient()
     log('subscribeNative start')
     const { data: { user } } = await supabase.auth.getUser()
@@ -23,10 +24,22 @@ export function usePushSubscription() {
 
     let permission = await PushNotifications.checkPermissions()
     log(`permission: ${permission.receive}`)
-    if (permission.receive === 'prompt') {
+    if (permission.receive === 'prompt' || permission.receive === 'prompt-with-rationale') {
       permission = await PushNotifications.requestPermissions()
     }
     if (permission.receive !== 'granted') { log('❌ permission denied'); return }
+
+    const localPerm = await LocalNotifications.requestPermissions()
+    log(`local permission: ${localPerm.display}`)
+
+    await LocalNotifications.createChannel({
+      id: 'push-channel',
+      name: 'Notifications',
+      importance: 5,
+      visibility: 1,
+      sound: 'default',
+      vibration: true,
+    })
 
     await PushNotifications.removeAllListeners()
 
@@ -45,6 +58,26 @@ export function usePushSubscription() {
       log(`❌ FCM error: ${JSON.stringify(err)}`)
     })
 
+    PushNotifications.addListener('pushNotificationReceived', async (notification) => {
+      log(`📩 reçue foreground: ${notification.title}`)
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(notification.title ?? '', {
+          body: notification.body ?? '',
+          icon: '/icon-192.png',
+        })
+      } else {
+        await LocalNotifications.schedule({
+          notifications: [{
+            title: notification.title ?? '',
+            body: notification.body ?? '',
+            id: Math.floor(Math.random() * 10000),
+            channelId: 'push-channel',
+            schedule: { at: new Date(Date.now() + 500) },
+          }]
+        })
+      }
+    })
+
     await PushNotifications.register()
     log('register() called')
   }
@@ -58,13 +91,7 @@ export function usePushSubscription() {
       log(`platform: ${platform}`)
 
       if (native) {
-        const { PushNotifications } = await import('@capacitor/push-notifications')
-        const status = await PushNotifications.checkPermissions()
-        if (status.receive === 'granted') {
-          await subscribeNative()
-        } else {
-          setIsSubscribed(false)
-        }
+        await subscribeNative()
       } else {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
         navigator.serviceWorker.register('/sw.js').then(async (reg) => {

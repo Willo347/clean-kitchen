@@ -1,0 +1,162 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// @ts-ignore
+import webpush from 'npm:web-push@3.6.7'
+
+const VAPID_PUBLIC  = Deno.env.get('VAPID_PUBLIC_KEY')!
+const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY')!
+const VAPID_EMAIL   = 'mailto:admin@cleankitchen.app'
+
+webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE)
+
+async function getFCMAccessToken(serviceAccount: any): Promise<string> {
+  const now = Math.floor(Date.now() / 1000)
+
+  const header = { alg: 'RS256', typ: 'JWT' }
+  const payload = {
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+  }
+
+  const encode = (obj: any) =>
+    btoa(JSON.stringify(obj))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+
+  const signingInput = `${encode(header)}.${encode(payload)}`
+
+  const pemBody = serviceAccount.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/\s/g, '')
+
+  const binaryKey = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0))
+
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    binaryKey,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    key,
+    new TextEncoder().encode(signingInput)
+  )
+
+  const sig = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+
+  const jwt = `${signingInput}.${sig}`
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth2:grant-type:jwt-bearer',
+      assertion: jwt,
+    }),
+  })
+
+  const data = await res.json()
+  if (!data.access_token) throw new Error(`FCM auth failed: ${JSON.stringify(data)}`)
+  return data.access_token
+}
+
+async function sendFCM(token: string, title: string, body: string, serviceAccount: any): Promise<void> {
+  const accessToken = await getFCMAccessToken(serviceAccount)
+  const res = await fetch(
+    `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: {
+          token,
+          notification: { title, body },
+          android: { priority: 'high' },
+        },
+      }),
+    }
+  )
+  const result = await res.json()
+  console.log('FCM response:', JSON.stringify(result))
+  if (!res.ok) throw new Error(JSON.stringify(result))
+}
+
+serve(async (req) => {
+  const authHeader = req.headers.get('Authorization') ?? ''
+  if (!authHeader.startsWith('Bearer ')) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  )
+
+  const body = await req.json() as {
+    title: string
+    message: string
+    url?: string
+    user_ids?: string[]
+  }
+
+  let query = supabase.from('push_subscriptions').select('*')
+  if (body.user_ids?.length) {
+    query = query.in('user_id', body.user_ids)
+  }
+  const { data: subs } = await query
+
+  const payload = JSON.stringify({
+    title: body.title,
+    body: body.message,
+    icon: '/icon-192.png',
+    url: body.url ? `https://cleankitchen.fr${body.url}` : 'https://cleankitchen.fr',
+  })
+
+  const serviceAccountStr = Deno.env.get('FIREBASE_SERVICE_ACCOUNT')
+  const serviceAccount = serviceAccountStr ? JSON.parse(serviceAccountStr) : null
+
+  const results = await Promise.allSettled(
+    (subs ?? []).map((s) => {
+      if (s.platform === 'android' && serviceAccount) {
+        return sendFCM(s.endpoint, body.title, body.message, serviceAccount)
+      }
+      return webpush.sendNotification(
+        { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+        payload,
+        { TTL: 86400, urgency: 'normal' }
+      )
+    })
+  )
+
+  const sent = results.filter(r => r.status === 'fulfilled').length
+  const errors = results
+    .filter(r => r.status === 'rejected')
+    .map(r => (r as PromiseRejectedResult).reason?.message ?? 'unknown')
+
+  if (errors.length) console.error('Push errors:', errors)
+
+  const expired = (subs ?? []).filter((_, i) => {
+    const r = results[i]
+    return r.status === 'rejected' && (r as PromiseRejectedResult).reason?.statusCode === 410
+  })
+  if (expired.length) {
+    await supabase.from('push_subscriptions')
+      .delete()
+      .in('endpoint', expired.map(s => s.endpoint))
+  }
+
+  return new Response(JSON.stringify({ sent, expired: expired.length, errors }), {
+    headers: { 'Content-Type': 'application/json' },
+  })
+})
