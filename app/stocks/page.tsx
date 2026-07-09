@@ -23,13 +23,11 @@ import {
   Hash,
   Building2,
   Package,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
-
-// ─────────────────────────────────────────────
-// CATEGORIES
-// ─────────────────────────────────────────────
 
 type Category = {
   id: string;
@@ -59,10 +57,6 @@ function getCategoryInfo(categoryId: string): Category {
   return CATEGORIES.find((c) => c.id === categoryId) || CATEGORIES[4];
 }
 
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
-
 type Product = {
   id: string;
   product: string;
@@ -73,14 +67,11 @@ type Product = {
   dlc?: string;
   category?: string;
   created_at?: string;
+  archived?: boolean;
 };
 
 type ToastType = "success" | "error";
 interface Toast { id: number; message: string; type: ToastType; }
-
-// ─────────────────────────────────────────────
-// TOAST
-// ─────────────────────────────────────────────
 
 function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: number) => void }) {
   return (
@@ -96,10 +87,6 @@ function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: 
   );
 }
 
-// ─────────────────────────────────────────────
-// IMAGE MODAL
-// ─────────────────────────────────────────────
-
 function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4" onClick={onClose}>
@@ -113,24 +100,26 @@ function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// CATEGORY SECTION
-// ─────────────────────────────────────────────
-
 function CategorySection({
   category,
   products,
   updatingId,
   onUpdateQty,
   onDelete,
+  onArchive,
   onShowImage,
+  showArchived,
+  onUnarchive,
 }: {
   category: Category;
   products: Product[];
   updatingId: string | null;
   onUpdateQty: (id: string, qty: number, action: "plus" | "minus") => void;
   onDelete: (id: string) => void;
+  onArchive: (id: string) => void;
+  onUnarchive: (id: string) => void;
   onShowImage: (id: string) => void;
+  showArchived: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const lowCount = products.filter((p) => (p.quantity || 0) <= 2).length;
@@ -151,7 +140,7 @@ function CategorySection({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {lowCount > 0 && (
+          {!showArchived && lowCount > 0 && (
             <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-bold">
               <AlertTriangle size={10} /> {lowCount} faible
             </span>
@@ -163,11 +152,11 @@ function CategorySection({
       {!collapsed && (
         <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-2 border-t border-white/[0.06]">
           {products.map((item) => {
-            const isLow = (item.quantity || 0) <= 2;
+            const isLow = !showArchived && (item.quantity || 0) <= 2;
             const isUpdating = updatingId === item.id;
 
             return (
-              <div key={item.id} className={`rounded-[18px] border p-2.5 sm:p-3 transition-all mt-2 ${isLow ? "border-red-500/25 bg-red-500/[0.08]" : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]"}`}>
+              <div key={item.id} className={`rounded-[18px] border p-2.5 sm:p-3 transition-all mt-2 ${showArchived ? "border-white/[0.06] bg-white/[0.01] opacity-70" : isLow ? "border-red-500/25 bg-red-500/[0.08]" : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]"}`}>
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                     {item.image_url ? (
@@ -183,6 +172,11 @@ function CategorySection({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <h4 className="text-white font-black text-xs sm:text-sm">{item.product || "—"}</h4>
+                        {showArchived && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/20 text-orange-300 text-[10px] font-bold">
+                            <Archive size={7} /> Archivé
+                          </span>
+                        )}
                         {item.image_url && (
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/20 text-violet-300 text-[10px] font-bold">
                             <ImageIcon size={7} /> Photo
@@ -207,15 +201,27 @@ function CategorySection({
                         <Eye size={11} />
                       </button>
                     )}
-                    <button onClick={() => onUpdateQty(item.id, item.quantity || 0, "minus")} disabled={isUpdating || (item.quantity || 0) === 0} className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/20 flex items-center justify-center transition disabled:opacity-30 active:scale-95">
-                      <Minus size={11} className="text-red-300" />
-                    </button>
-                    <div className={`w-10 sm:w-12 h-7 sm:h-8 rounded-xl flex items-center justify-center font-black text-xs sm:text-sm border ${isLow ? "bg-red-500/15 border-red-500/25 text-red-300" : "bg-white/[0.05] border-white/10 text-white"}`}>
-                      {isUpdating ? <Loader2 size={11} className="animate-spin" /> : (item.quantity || 0)}
-                    </div>
-                    <button onClick={() => onUpdateQty(item.id, item.quantity || 0, "plus")} disabled={isUpdating} className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-green-500/15 hover:bg-green-500/25 border border-green-500/20 flex items-center justify-center transition disabled:opacity-30 active:scale-95">
-                      <Plus size={11} className="text-green-300" />
-                    </button>
+                    {!showArchived && (
+                      <>
+                        <button onClick={() => onUpdateQty(item.id, item.quantity || 0, "minus")} disabled={isUpdating || (item.quantity || 0) === 0} className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/20 flex items-center justify-center transition disabled:opacity-30 active:scale-95">
+                          <Minus size={11} className="text-red-300" />
+                        </button>
+                        <div className={`w-10 sm:w-12 h-7 sm:h-8 rounded-xl flex items-center justify-center font-black text-xs sm:text-sm border ${isLow ? "bg-red-500/15 border-red-500/25 text-red-300" : "bg-white/[0.05] border-white/10 text-white"}`}>
+                          {isUpdating ? <Loader2 size={11} className="animate-spin" /> : (item.quantity || 0)}
+                        </div>
+                        <button onClick={() => onUpdateQty(item.id, item.quantity || 0, "plus")} disabled={isUpdating} className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-green-500/15 hover:bg-green-500/25 border border-green-500/20 flex items-center justify-center transition disabled:opacity-30 active:scale-95">
+                          <Plus size={11} className="text-green-300" />
+                        </button>
+                        <button onClick={() => onArchive(item.id)} className="h-7 w-7 sm:h-8 sm:w-8 rounded-xl border border-orange-500/20 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 flex items-center justify-center transition" title="Archiver">
+                          <Archive size={11} />
+                        </button>
+                      </>
+                    )}
+                    {showArchived && (
+                      <button onClick={() => onUnarchive(item.id)} className="h-7 w-7 sm:h-8 sm:w-8 rounded-xl border border-green-500/20 bg-green-500/10 hover:bg-green-500/20 text-green-400 flex items-center justify-center transition" title="Désarchiver">
+                        <ArchiveRestore size={11} />
+                      </button>
+                    )}
                     <button onClick={() => onDelete(item.id)} className="h-7 w-7 sm:h-8 sm:w-8 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition">
                       <Trash2 size={11} />
                     </button>
@@ -230,12 +236,7 @@ function CategorySection({
   );
 }
 
-// ─────────────────────────────────────────────
-// MAIN PAGE
-// ─────────────────────────────────────────────
-
 export default function StocksPage() {
-
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -243,6 +244,7 @@ export default function StocksPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStock, setFilterStock] = useState<"all" | "low" | "ok" | "photo">("all");
+  const [showArchived, setShowArchived] = useState(false);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"scan" | "manual">("scan");
@@ -262,7 +264,6 @@ export default function StocksPage() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const [showImageFor, setShowImageFor] = useState<string | null>(null);
-
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [toastCounter, setToastCounter] = useState(0);
 
@@ -277,9 +278,10 @@ export default function StocksPage() {
     const { data } = await supabase
       .from("traceability_products")
       .select("*")
+      .eq("archived", showArchived)
       .order("created_at", { ascending: false });
     if (data) setProducts(data);
-  }, []);
+  }, [showArchived]);
 
   useEffect(() => {
     async function init() {
@@ -305,8 +307,20 @@ export default function StocksPage() {
     setUpdatingId(null);
   }
 
+  async function archiveProduct(id: string) {
+    await supabase.from("traceability_products").update({ archived: true }).eq("id", id);
+    await fetchProducts();
+    addToast("Produit archivé", "success");
+  }
+
+  async function unarchiveProduct(id: string) {
+    await supabase.from("traceability_products").update({ archived: false }).eq("id", id);
+    await fetchProducts();
+    addToast("Produit remis en stock", "success");
+  }
+
   async function deleteProduct(id: string) {
-    if (!confirm("Supprimer ce produit ?")) return;
+    if (!confirm("Supprimer définitivement ce produit ?")) return;
     await supabase.from("traceability_products").delete().eq("id", id);
     await fetchProducts();
     addToast("Produit supprimé", "success");
@@ -398,12 +412,10 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
     e.target.value = "";
   }
 
-  // ✅ FONCTION CORRIGÉE — restaurant_id ajouté
   async function handleSave() {
     if (!newProduct.trim()) { addToast("Veuillez saisir un nom de produit", "error"); return; }
     setIsSaving(true);
 
-    // ✅ Récupérer l'utilisateur connecté pour le restaurant_id
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       addToast("Session expirée, reconnectez-vous", "error");
@@ -425,7 +437,8 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
       dlc: newDlc || null,
       category: newCategory,
       image_url: imageUrl || null,
-      restaurant_id: user.id, // ✅ FIX : restaurant_id ajouté
+      restaurant_id: user.id,
+      archived: false,
     });
 
     setIsSaving(false);
@@ -497,8 +510,16 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
               <p className="text-white/40 text-sm sm:text-base mt-2">Contrôle rapide des marchandises</p>
             </div>
             <div className="flex items-center gap-2 mt-1 shrink-0">
-              <button onClick={() => setShowAddForm(!showAddForm)} className="h-10 px-3 sm:px-4 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2">
-                <Plus size={15} /> <span className="hidden sm:inline">Ajouter</span>
+              {!showArchived && (
+                <button onClick={() => setShowAddForm(!showAddForm)} className="h-10 px-3 sm:px-4 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2">
+                  <Plus size={15} /> <span className="hidden sm:inline">Ajouter</span>
+                </button>
+              )}
+              <button
+                onClick={() => { setShowArchived(!showArchived); setFilterStock("all"); setFilterCategory("all"); setSearch(""); }}
+                className={`h-10 px-3 sm:px-4 rounded-2xl border text-sm font-black flex items-center gap-2 transition ${showArchived ? "bg-orange-500/20 border-orange-500/40 text-orange-300" : "border-white/10 bg-white/[0.03] text-white/50 hover:text-white"}`}
+              >
+                <Archive size={14} /> <span className="hidden sm:inline">{showArchived ? "Stocks actifs" : "Archives"}</span>
               </button>
               <button onClick={handleRefresh} disabled={isRefreshing} className="h-10 w-10 rounded-2xl border border-white/10 bg-white/[0.03] text-white/50 hover:text-white transition flex items-center justify-center text-sm font-bold disabled:opacity-50">
                 <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
@@ -506,63 +527,76 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
             </div>
           </div>
 
-          {/* KPI CARDS */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            <button onClick={() => setFilterStock("all")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "all" ? "border-cyan-400/50 ring-2 ring-cyan-400/20 bg-gradient-to-br from-cyan-500/20 to-blue-900/15" : "border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10"}`}>
-              <div className="flex items-start justify-between gap-2 sm:gap-3">
-                <div>
-                  <p className="text-cyan-300 text-xs font-semibold">Produits</p>
-                  <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{products.length}</h2>
-                  <p className="text-cyan-400/50 text-xs mt-1">{totalItems} unités</p>
-                </div>
-                <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "all" ? "border-cyan-400/40 bg-cyan-400/30" : "border-cyan-400/20 bg-cyan-500/20"}`}>
-                  <Boxes size={16} className="text-cyan-300" />
-                </div>
+          {/* BANNER ARCHIVES */}
+          {showArchived && (
+            <div className="rounded-[20px] border border-orange-500/20 bg-orange-500/[0.05] p-4 flex items-center gap-3">
+              <Archive size={18} className="text-orange-300 shrink-0" />
+              <div>
+                <p className="text-orange-300 font-black text-sm">Mode archives</p>
+                <p className="text-white/30 text-xs">Ces produits sont archivés et ne comptent plus dans les stocks actifs. Ils restent visibles dans la traçabilité.</p>
               </div>
-            </button>
+            </div>
+          )}
 
-            <button onClick={() => setFilterStock(filterStock === "photo" ? "all" : "photo")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "photo" ? "border-violet-400/50 ring-2 ring-violet-400/20 bg-gradient-to-br from-violet-500/20 to-violet-900/15" : "border-violet-500/20 bg-gradient-to-br from-violet-500/15 to-violet-900/10"}`}>
-              <div className="flex items-start justify-between gap-2 sm:gap-3">
-                <div>
-                  <p className="text-violet-300 text-xs font-semibold">Avec photo</p>
-                  <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{withPhotoCount}</h2>
-                  <p className="text-violet-400/50 text-xs mt-1">scannés IA</p>
+          {/* KPI CARDS — masquées en mode archives */}
+          {!showArchived && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              <button onClick={() => setFilterStock("all")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "all" ? "border-cyan-400/50 ring-2 ring-cyan-400/20 bg-gradient-to-br from-cyan-500/20 to-blue-900/15" : "border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-900/10"}`}>
+                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                  <div>
+                    <p className="text-cyan-300 text-xs font-semibold">Produits</p>
+                    <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{products.length}</h2>
+                    <p className="text-cyan-400/50 text-xs mt-1">{totalItems} unités</p>
+                  </div>
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "all" ? "border-cyan-400/40 bg-cyan-400/30" : "border-cyan-400/20 bg-cyan-500/20"}`}>
+                    <Boxes size={16} className="text-cyan-300" />
+                  </div>
                 </div>
-                <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "photo" ? "border-violet-400/40 bg-violet-400/30" : "border-violet-400/20 bg-violet-500/20"}`}>
-                  <ImageIcon size={16} className="text-violet-300" />
-                </div>
-              </div>
-            </button>
+              </button>
 
-            <button onClick={() => setFilterStock(filterStock === "low" ? "all" : "low")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "low" ? "border-red-400/50 ring-2 ring-red-400/20 bg-gradient-to-br from-red-500/25 to-red-900/15" : lowStockCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
-              <div className="flex items-start justify-between gap-2 sm:gap-3">
-                <div>
-                  <p className="text-red-300 text-xs font-semibold">Stock faible</p>
-                  <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{lowStockCount}</h2>
-                  {lowStockCount > 0 && <p className="text-red-400/70 text-xs mt-1 font-bold">Réapprovisionner</p>}
+              <button onClick={() => setFilterStock(filterStock === "photo" ? "all" : "photo")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "photo" ? "border-violet-400/50 ring-2 ring-violet-400/20 bg-gradient-to-br from-violet-500/20 to-violet-900/15" : "border-violet-500/20 bg-gradient-to-br from-violet-500/15 to-violet-900/10"}`}>
+                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                  <div>
+                    <p className="text-violet-300 text-xs font-semibold">Avec photo</p>
+                    <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{withPhotoCount}</h2>
+                    <p className="text-violet-400/50 text-xs mt-1">scannés IA</p>
+                  </div>
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "photo" ? "border-violet-400/40 bg-violet-400/30" : "border-violet-400/20 bg-violet-500/20"}`}>
+                    <ImageIcon size={16} className="text-violet-300" />
+                  </div>
                 </div>
-                <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "low" ? "border-red-400/40 bg-red-400/30" : "border-red-400/20 bg-red-500/20"}`}>
-                  <TrendingDown size={16} className={`text-red-300 ${lowStockCount > 0 && filterStock !== "low" ? "animate-pulse" : ""}`} />
-                </div>
-              </div>
-            </button>
+              </button>
 
-            <button onClick={() => setFilterStock(filterStock === "ok" ? "all" : "ok")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "ok" ? "border-green-400/50 ring-2 ring-green-400/20 bg-gradient-to-br from-green-500/20 to-green-900/15" : "border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10"}`}>
-              <div className="flex items-start justify-between gap-2 sm:gap-3">
-                <div>
-                  <p className="text-green-300 text-xs font-semibold">Stock OK</p>
-                  <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{products.length - lowStockCount}</h2>
-                  <p className="text-green-400/50 text-xs mt-1">niveaux corrects</p>
+              <button onClick={() => setFilterStock(filterStock === "low" ? "all" : "low")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "low" ? "border-red-400/50 ring-2 ring-red-400/20 bg-gradient-to-br from-red-500/25 to-red-900/15" : lowStockCount > 0 ? "border-red-500/40 bg-gradient-to-br from-red-500/20 to-red-900/10" : "border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-900/5"}`}>
+                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                  <div>
+                    <p className="text-red-300 text-xs font-semibold">Stock faible</p>
+                    <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{lowStockCount}</h2>
+                    {lowStockCount > 0 && <p className="text-red-400/70 text-xs mt-1 font-bold">Réapprovisionner</p>}
+                  </div>
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "low" ? "border-red-400/40 bg-red-400/30" : "border-red-400/20 bg-red-500/20"}`}>
+                    <TrendingDown size={16} className={`text-red-300 ${lowStockCount > 0 && filterStock !== "low" ? "animate-pulse" : ""}`} />
+                  </div>
                 </div>
-                <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "ok" ? "border-green-400/40 bg-green-400/30" : "border-green-400/20 bg-green-500/20"}`}>
-                  <CheckCircle2 size={16} className="text-green-300" />
+              </button>
+
+              <button onClick={() => setFilterStock(filterStock === "ok" ? "all" : "ok")} className={`rounded-[24px] border p-4 sm:p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${filterStock === "ok" ? "border-green-400/50 ring-2 ring-green-400/20 bg-gradient-to-br from-green-500/20 to-green-900/15" : "border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10"}`}>
+                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                  <div>
+                    <p className="text-green-300 text-xs font-semibold">Stock OK</p>
+                    <h2 className="text-[32px] sm:text-[42px] font-black text-white leading-none mt-2">{products.length - lowStockCount}</h2>
+                    <p className="text-green-400/50 text-xs mt-1">niveaux corrects</p>
+                  </div>
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0 ${filterStock === "ok" ? "border-green-400/40 bg-green-400/30" : "border-green-400/20 bg-green-500/20"}`}>
+                    <CheckCircle2 size={16} className="text-green-300" />
+                  </div>
                 </div>
-              </div>
-            </button>
-          </div>
+              </button>
+            </div>
+          )}
 
           {/* ADD FORM */}
-          {showAddForm && (
+          {showAddForm && !showArchived && (
             <div className="rounded-[24px] sm:rounded-[28px] border border-white/10 bg-white/[0.02] p-4 sm:p-5 md:p-6">
               <div className="flex items-center justify-between mb-4 sm:mb-5">
                 <h2 className="text-base sm:text-lg font-black text-white">Ajouter un produit</h2>
@@ -578,7 +612,6 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                 </button>
               </div>
 
-              {/* SCAN TAB */}
               {activeTab === "scan" && (
                 <div className="rounded-[20px] border border-violet-500/20 bg-violet-500/[0.05] p-4 sm:p-5 space-y-4">
                   <div className="flex items-center gap-3">
@@ -636,7 +669,6 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                 </div>
               )}
 
-              {/* MANUAL TAB */}
               {activeTab === "manual" && (
                 <div className="space-y-4">
                   {scanPreview && capturedFile && (
@@ -708,7 +740,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
           <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-3 sm:p-4 space-y-3">
             <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 h-11">
               <Search size={15} className="text-white/30 shrink-0" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un produit..." className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/25" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={showArchived ? "Rechercher dans les archives..." : "Rechercher un produit..."} className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/25" />
               {search && <button onClick={() => setSearch("")} className="text-white/30 hover:text-white transition"><X size={14} /></button>}
             </div>
 
@@ -728,16 +760,18 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
             </div>
           </div>
 
-          {/* PRODUCTS BY CATEGORY */}
+          {/* PRODUCTS */}
           {isLoading ? (
             <div className="flex items-center justify-center py-16"><Loader2 size={32} className="animate-spin text-cyan-400" /></div>
           ) : filteredProducts.length === 0 ? (
             <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-12 text-center">
               <Package size={36} className="mx-auto mb-3 text-white/20" />
-              <p className="text-white/30 text-sm mb-4">Aucun produit trouvé</p>
-              <button onClick={() => setShowAddForm(true)} className="px-5 py-2.5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2 mx-auto">
-                <Plus size={14} /> Ajouter un produit
-              </button>
+              <p className="text-white/30 text-sm mb-4">{showArchived ? "Aucun produit archivé" : "Aucun produit trouvé"}</p>
+              {!showArchived && (
+                <button onClick={() => setShowAddForm(true)} className="px-5 py-2.5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2 mx-auto">
+                  <Plus size={14} /> Ajouter un produit
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-3 sm:space-y-4">
@@ -749,7 +783,10 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                   updatingId={updatingId}
                   onUpdateQty={updateQuantity}
                   onDelete={deleteProduct}
+                  onArchive={archiveProduct}
+                  onUnarchive={unarchiveProduct}
                   onShowImage={(id) => setShowImageFor(id)}
+                  showArchived={showArchived}
                 />
               ))}
               {uncategorized.length > 0 && (
@@ -759,7 +796,10 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
                   updatingId={updatingId}
                   onUpdateQty={updateQuantity}
                   onDelete={deleteProduct}
+                  onArchive={archiveProduct}
+                  onUnarchive={unarchiveProduct}
                   onShowImage={(id) => setShowImageFor(id)}
+                  showArchived={showArchived}
                 />
               )}
             </div>
@@ -768,7 +808,7 @@ Choisis la catégorie la plus appropriée. Si non visible mets "". Réponds UNIQ
           {!isLoading && filteredProducts.length > 0 && (
             <div className="flex items-center justify-between text-white/25 text-xs pt-2 border-t border-white/[0.04] flex-wrap gap-2">
               <span>{filteredProducts.length} produit(s) · {withPhotoCount} avec photo 📷</span>
-              {lowStockCount > 0 && (
+              {!showArchived && lowStockCount > 0 && (
                 <span className="flex items-center gap-1 text-red-400/60">
                   <AlertTriangle size={10} /> {lowStockCount} à réapprovisionner
                 </span>
