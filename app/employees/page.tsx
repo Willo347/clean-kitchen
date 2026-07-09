@@ -1,31 +1,12 @@
 "use client";
 
 import { useAdminPin } from "../hooks/useAdminPin";
-
 import { useEffect, useState, useCallback } from "react";
-
 import {
-  Users,
-  ShieldCheck,
-  Clock3,
-  UserPlus,
-  Trash2,
-  BadgeCheck,
-  X,
-  Loader2,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Pencil,
-  CheckCircle2,
-  Calendar,
-  Save,
-  FileDown,
-  LogOut,
-  KeyRound,
-  Eye,
+  Users, ShieldCheck, Clock3, UserPlus, Trash2, BadgeCheck, X, Loader2,
+  ChevronLeft, ChevronRight, Plus, Pencil, CheckCircle2, Calendar, Save,
+  FileDown, LogOut, KeyRound, Eye, Send, CheckCheck, RotateCcw, AlertCircle,
 } from "lucide-react";
-
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/lib/supabase";
@@ -59,9 +40,14 @@ interface HourLog {
   departure: string;
   total_hours: number;
   note?: string;
+  status?: string;
+  submitted_at?: string;
+  validated_at?: string;
+  validated_by?: string;
+  reopened_at?: string;
+  reopen_reason?: string;
 }
 
-// ✅ Ajout du type RestaurantSettings
 interface RestaurantSettings {
   restaurant_name: string;
   city: string;
@@ -96,9 +82,7 @@ function formatDateShort(date: Date): string {
 
 function formatDateFR(dateStr: string): string {
   if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("fr-FR", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-  });
+  return new Date(dateStr).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function calcHours(arrival: string, departure: string): number {
@@ -121,6 +105,22 @@ function formatHours(h: number): string {
   return `${hours}h${String(mins).padStart(2, "0")}`;
 }
 
+function getStatusLabel(status?: string) {
+  switch (status) {
+    case "submitted": return { label: "En attente", color: "bg-orange-500/15 border-orange-500/25 text-orange-300" };
+    case "validated": return { label: "Validé", color: "bg-green-500/15 border-green-500/25 text-green-300" };
+    default: return { label: "Brouillon", color: "bg-white/[0.05] border-white/10 text-white/40" };
+  }
+}
+
+function getStatusPDF(status?: string): string {
+  switch (status) {
+    case "submitted": return "En attente";
+    case "validated": return "Validé";
+    default: return "Brouillon";
+  }
+}
+
 function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: number) => void }) {
   return (
     <div className="fixed top-6 right-6 z-[70] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
@@ -135,15 +135,9 @@ function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: 
   );
 }
 
-function PinModal({
-  title, subtitle, onSuccess, onClose, validatePin, errorMessage = "PIN incorrect",
-}: {
-  title: string;
-  subtitle?: string;
-  onSuccess: () => void;
-  onClose: () => void;
-  validatePin: (pin: string) => boolean;
-  errorMessage?: string;
+function PinModal({ title, subtitle, onSuccess, onClose, validatePin, errorMessage = "PIN incorrect" }: {
+  title: string; subtitle?: string; onSuccess: () => void; onClose: () => void;
+  validatePin: (pin: string) => boolean; errorMessage?: string;
 }) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
@@ -154,12 +148,8 @@ function PinModal({
     setPin(newPin);
     if (newPin.length === 4) {
       setTimeout(() => {
-        if (validatePin(newPin)) {
-          onSuccess();
-        } else {
-          setError(true);
-          setTimeout(() => { setPin(""); setError(false); }, 700);
-        }
+        if (validatePin(newPin)) { onSuccess(); }
+        else { setError(true); setTimeout(() => { setPin(""); setError(false); }, 700); }
       }, 100);
     }
   }
@@ -199,17 +189,43 @@ function PinModal({
   );
 }
 
-function EmployeeModal({
-  employee, onClose, onSave, isSaving,
-}: {
-  employee: Partial<Employee> | null;
-  onClose: () => void;
-  onSave: (data: Partial<Employee>) => void;
-  isSaving: boolean;
-}) {
-  const [form, setForm] = useState<Partial<Employee>>(
-    employee || { full_name: "", role: "", pin_code: "", is_active: true }
+function ReopenModal({ onConfirm, onClose }: { onConfirm: (reason: string) => void; onClose: () => void }) {
+  const [reason, setReason] = useState("");
+  return (
+    <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-[28px] border border-white/10 bg-[#030b1d] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-500/20">
+            <RotateCcw size={18} className="text-orange-300" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-white">Rouvrir le pointage</h3>
+            <p className="text-white/30 text-xs">Un motif obligatoire sera enregistré</p>
+          </div>
+        </div>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Motif de réouverture (ex: erreur de saisie, oubli...)"
+          rows={3}
+          className="w-full rounded-2xl bg-white/[0.05] border border-white/10 px-4 py-3 text-white text-sm outline-none resize-none mb-4"
+        />
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 h-11 rounded-2xl border border-white/10 bg-white/[0.03] text-white/60 hover:text-white text-sm font-bold transition">Annuler</button>
+          <button onClick={() => reason.trim() && onConfirm(reason.trim())} disabled={!reason.trim()} className="flex-1 h-11 rounded-2xl bg-orange-400 hover:bg-orange-300 disabled:opacity-50 transition text-black font-black text-sm flex items-center justify-center gap-2">
+            <RotateCcw size={14} /> Rouvrir
+          </button>
+        </div>
+      </div>
+    </div>
   );
+}
+
+function EmployeeModal({ employee, onClose, onSave, isSaving }: {
+  employee: Partial<Employee> | null; onClose: () => void;
+  onSave: (data: Partial<Employee>) => void; isSaving: boolean;
+}) {
+  const [form, setForm] = useState<Partial<Employee>>(employee || { full_name: "", role: "", pin_code: "", is_active: true });
   const isEdit = !!employee?.id;
 
   return (
@@ -265,13 +281,8 @@ function EmployeeModal({
   );
 }
 
-// ✅ restaurantSettings passé en prop à HoursPanel
-function HoursPanel({
-  employee, isAdmin, onClose, addToast, restaurantSettings,
-}: {
-  employee: Employee;
-  isAdmin: boolean;
-  onClose: () => void;
+function HoursPanel({ employee, isAdmin, onClose, addToast, restaurantSettings }: {
+  employee: Employee; isAdmin: boolean; onClose: () => void;
   addToast: (msg: string, type: ToastType) => void;
   restaurantSettings: RestaurantSettings | null;
 }) {
@@ -285,6 +296,7 @@ function HoursPanel({
   const [note, setNote] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [reopenLog, setReopenLog] = useState<HourLog | null>(null);
 
   const weekDates = getWeekDates(weekOffset);
   const weekStart = toISO(weekDates[0]);
@@ -343,12 +355,11 @@ function HoursPanel({
     setIsSaving(true);
     const { error } = await supabase.from("employee_hours").insert({
       employee_id: employee.id,
-      date,
-      arrival,
-      departure,
+      date, arrival, departure,
       total_hours: computedTotal,
       note: note.trim(),
       restaurant_id: user.id,
+      status: "draft",
     });
     if (error) { addToast("Erreur lors de l'enregistrement", "error"); }
     else { addToast(`Pointage enregistré : ${formatHours(computedTotal)}`, "success"); }
@@ -357,95 +368,117 @@ function HoursPanel({
     setArrival(""); setDeparture(""); setNote("");
   }
 
+  async function submitLog(log: HourLog) {
+    await supabase.from("employee_hours").update({
+      status: "submitted",
+      submitted_at: new Date().toISOString(),
+    }).eq("id", log.id!);
+    await fetchHourLogs();
+    addToast("Pointage soumis pour validation", "success");
+  }
+
+  async function validateLog(log: HourLog) {
+    await supabase.from("employee_hours").update({
+      status: "validated",
+      validated_at: new Date().toISOString(),
+      validated_by: "admin",
+    }).eq("id", log.id!);
+    await fetchHourLogs();
+    addToast("Pointage validé ✅", "success");
+  }
+
+  async function reopenLog_fn(log: HourLog, reason: string) {
+    await supabase.from("employee_hours").update({
+      status: "draft",
+      reopened_at: new Date().toISOString(),
+      reopen_reason: reason,
+    }).eq("id", log.id!);
+    await fetchHourLogs();
+    setReopenLog(null);
+    addToast("Pointage rouvert", "success");
+  }
+
   async function deleteLog(id: number) {
     await supabase.from("employee_hours").delete().eq("id", id);
     fetchHourLogs();
     addToast("Pointage supprimé", "success");
   }
 
-  // ✅ FIX — nom du restaurant dans le PDF semaine
   function exportPDF() {
     setIsExporting(true);
     const restaurantName = restaurantSettings?.restaurant_name || "Clean Kitchen";
     const restaurantCity = restaurantSettings?.city || "";
-
     const doc = new jsPDF();
     doc.setFillColor(10, 20, 40);
     doc.rect(0, 0, 210, 45, "F");
-
     doc.setTextColor(100, 220, 240);
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
     doc.text(`Fiche horaire — ${employee.full_name}`, 14, 16);
-
-    // ✅ Nom du restaurant
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text(restaurantName + (restaurantCity ? ` — ${restaurantCity}` : ""), 14, 27);
-
     doc.setTextColor(180, 220, 240);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.text(`Poste : ${employee.role}  |  Semaine : ${weekLabel}`, 14, 35);
     doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 41);
-
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.text("Récapitulatif semaine", 14, 55);
     doc.setFont("helvetica", "normal");
     doc.text(`Total heures : ${formatHours(weekTotal)}  |  Jours travaillés : ${weekDays}`, 14, 63);
-
     autoTable(doc, {
       startY: 71,
-      head: [["Date", "Arrivée", "Départ", "Total", "Note"]],
-      body: weekLogs.map((log) => [formatDateFR(log.date), log.arrival || "—", log.departure || "—", formatHours(log.total_hours || 0), log.note || "—"]),
+      head: [["Date", "Arrivée", "Départ", "Total", "Statut", "Note"]],
+      body: weekLogs.map((log) => [
+        formatDateFR(log.date), log.arrival || "—", log.departure || "—",
+        formatHours(log.total_hours || 0), getStatusPDF(log.status), log.note || "—",
+      ]),
       headStyles: { fillColor: [10, 40, 80], textColor: [100, 220, 240], fontStyle: "bold", fontSize: 9 },
       bodyStyles: { fontSize: 9 },
       alternateRowStyles: { fillColor: [245, 248, 255] },
+      didParseCell: (data) => {
+        if (data.column.index === 4) {
+          if (data.cell.raw === "Validé") { data.cell.styles.textColor = [30, 150, 80]; data.cell.styles.fontStyle = "bold"; }
+          if (data.cell.raw === "En attente") { data.cell.styles.textColor = [200, 120, 30]; }
+          if (data.cell.raw === "Brouillon") { data.cell.styles.textColor = [150, 150, 150]; }
+        }
+      },
     });
-
-    // ✅ Pied de page avec nom du restaurant
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Page ${i} / ${pageCount} — ${restaurantName} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
+      doc.text(`Page ${i} / ${pageCount} — ${restaurantName}`, 14, doc.internal.pageSize.height - 8);
     }
-
-    doc.save(`Heures_${employee.full_name.replace(/ /g, "_")}_${weekStart}.pdf`);
+    doc.save(`Heures_${employee.full_name.replace(/ /g, "_")}_semaine_${weekStart}.pdf`);
     setIsExporting(false);
   }
 
-  // ✅ FIX — nom du restaurant dans le PDF mensuel
   function exportMonthPDF() {
     setIsExporting(true);
     const restaurantName = restaurantSettings?.restaurant_name || "Clean Kitchen";
     const restaurantCity = restaurantSettings?.city || "";
-
     const doc = new jsPDF();
     doc.setFillColor(10, 20, 40);
     doc.rect(0, 0, 210, 45, "F");
-
     doc.setTextColor(100, 220, 240);
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
     doc.text(`Fiche mensuelle — ${employee.full_name}`, 14, 16);
-
-    // ✅ Nom du restaurant
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text(restaurantName + (restaurantCity ? ` — ${restaurantCity}` : ""), 14, 27);
-
     doc.setTextColor(180, 220, 240);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.text(`Poste : ${employee.role}  |  Mois : ${monthLabel}`, 14, 35);
     doc.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, 14, 41);
-
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
@@ -453,25 +486,31 @@ function HoursPanel({
     doc.setFont("helvetica", "normal");
     doc.text(`Total heures : ${formatHours(monthTotal)}  |  Jours travaillés : ${monthDays}  |  Base : 151h`, 14, 63);
     doc.text(`Taux : ${Math.round((monthTotal / 151) * 100)}%`, 14, 69);
-
     autoTable(doc, {
       startY: 77,
-      head: [["Date", "Arrivée", "Départ", "Total", "Note"]],
-      body: monthLogs.map((log) => [formatDateFR(log.date), log.arrival || "—", log.departure || "—", formatHours(log.total_hours || 0), log.note || "—"]),
+      head: [["Date", "Arrivée", "Départ", "Total", "Statut", "Note"]],
+      body: monthLogs.map((log) => [
+        formatDateFR(log.date), log.arrival || "—", log.departure || "—",
+        formatHours(log.total_hours || 0), getStatusPDF(log.status), log.note || "—",
+      ]),
       headStyles: { fillColor: [10, 40, 80], textColor: [100, 220, 240], fontStyle: "bold", fontSize: 9 },
       bodyStyles: { fontSize: 9 },
       alternateRowStyles: { fillColor: [245, 248, 255] },
+      didParseCell: (data) => {
+        if (data.column.index === 4) {
+          if (data.cell.raw === "Validé") { data.cell.styles.textColor = [30, 150, 80]; data.cell.styles.fontStyle = "bold"; }
+          if (data.cell.raw === "En attente") { data.cell.styles.textColor = [200, 120, 30]; }
+          if (data.cell.raw === "Brouillon") { data.cell.styles.textColor = [150, 150, 150]; }
+        }
+      },
     });
-
-    // ✅ Pied de page avec nom du restaurant
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Page ${i} / ${pageCount} — ${restaurantName} — Clean Kitchen`, 14, doc.internal.pageSize.height - 8);
+      doc.text(`Page ${i} / ${pageCount} — ${restaurantName}`, 14, doc.internal.pageSize.height - 8);
     }
-
     doc.save(`Heures_${employee.full_name.replace(/ /g, "_")}_${monthLabel.replace(" ", "_")}.pdf`);
     setIsExporting(false);
   }
@@ -480,6 +519,13 @@ function HoursPanel({
     <div className="fixed inset-0 z-[50] bg-black/70 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
       <div className="min-h-full flex items-start justify-center p-4 pt-6 pb-10">
         <div className="w-full max-w-3xl rounded-[28px] sm:rounded-[32px] border border-white/10 bg-[#030b1d] p-4 sm:p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+
+          {reopenLog && (
+            <ReopenModal
+              onConfirm={(reason) => reopenLog_fn(reopenLog, reason)}
+              onClose={() => setReopenLog(null)}
+            />
+          )}
 
           <div className="flex items-center justify-between gap-4 mb-5">
             <div className="flex items-center gap-3 sm:gap-4">
@@ -491,9 +537,7 @@ function HoursPanel({
                 <p className="text-white/40 text-xs">{employee.role} {isAdmin && <span className="text-orange-400">· Vue Admin</span>}</p>
               </div>
             </div>
-            <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition shrink-0">
-              <X size={18} />
-            </button>
+            <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition shrink-0"><X size={18} /></button>
           </div>
 
           <div className="flex gap-2 mb-4">
@@ -540,6 +584,9 @@ function HoursPanel({
                         <p className={`text-xs sm:text-sm font-black mt-1 ${dayLog ? "text-violet-300" : "text-white/15"}`}>
                           {dayLog ? formatHours(dayLog.total_hours || 0) : "—"}
                         </p>
+                        {dayLog && (
+                          <div className={`mt-1 w-1.5 h-1.5 rounded-full mx-auto ${dayLog.status === "validated" ? "bg-green-400" : dayLog.status === "submitted" ? "bg-orange-400" : "bg-white/20"}`} />
+                        )}
                       </div>
                     );
                   })}
@@ -600,6 +647,7 @@ function HoursPanel({
             </div>
           )}
 
+          {/* FORMULAIRE AJOUT */}
           <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4 mb-4 space-y-3">
             <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Ajouter un pointage</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -648,31 +696,67 @@ function HoursPanel({
             </div>
           </div>
 
+          {/* TABLEAU DES POINTAGES */}
           <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <div className="min-w-[480px] px-4 sm:px-0">
+            <div className="min-w-[600px] px-4 sm:px-0">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.06]">
-                    {["Date","Arrivée","Départ","Total","Note",""].map((h) => (
+                    {["Date","Arrivée","Départ","Total","Statut","Note","Actions"].map((h) => (
                       <th key={h} className="text-left text-white/25 font-bold text-[10px] uppercase tracking-widest pb-3 pr-3">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {hourLogs.map((log) => (
-                    <tr key={log.id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition">
-                      <td className="py-2.5 pr-3 text-white/50 text-xs">{formatDateFR(log.date)}</td>
-                      <td className="py-2.5 pr-3"><span className="inline-flex items-center px-2 py-1 rounded-lg bg-green-500/10 border border-green-500/20 text-green-300 text-xs font-bold">↑ {log.arrival || "—"}</span></td>
-                      <td className="py-2.5 pr-3"><span className="inline-flex items-center px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-xs font-bold">↓ {log.departure || "—"}</span></td>
-                      <td className="py-2.5 pr-3"><span className="text-violet-300 font-black text-base">{formatHours(log.total_hours || 0)}</span></td>
-                      <td className="py-2.5 pr-3 text-white/35 text-xs">{log.note || "—"}</td>
-                      <td className="py-2.5">
-                        {isAdmin && (
-                          <button onClick={() => deleteLog(log.id!)} className="w-8 h-8 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition"><Trash2 size={12} /></button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {hourLogs.map((log) => {
+                    const statusInfo = getStatusLabel(log.status);
+                    const isLocked = log.status === "submitted" || log.status === "validated";
+                    return (
+                      <tr key={log.id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition">
+                        <td className="py-2.5 pr-3 text-white/50 text-xs">{formatDateFR(log.date)}</td>
+                        <td className="py-2.5 pr-3"><span className="inline-flex items-center px-2 py-1 rounded-lg bg-green-500/10 border border-green-500/20 text-green-300 text-xs font-bold">↑ {log.arrival || "—"}</span></td>
+                        <td className="py-2.5 pr-3"><span className="inline-flex items-center px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-xs font-bold">↓ {log.departure || "—"}</span></td>
+                        <td className="py-2.5 pr-3"><span className="text-violet-300 font-black text-base">{formatHours(log.total_hours || 0)}</span></td>
+                        <td className="py-2.5 pr-3">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-bold ${statusInfo.color}`}>
+                            {log.status === "validated" && <CheckCheck size={9} />}
+                            {log.status === "submitted" && <AlertCircle size={9} />}
+                            {statusInfo.label}
+                          </span>
+                          {log.reopen_reason && (
+                            <p className="text-orange-300/60 text-[9px] mt-0.5">Modifié : {log.reopen_reason}</p>
+                          )}
+                        </td>
+                        <td className="py-2.5 pr-3 text-white/35 text-xs">{log.note || "—"}</td>
+                        <td className="py-2.5">
+                          <div className="flex items-center gap-1">
+                            {/* Employé : soumettre si brouillon */}
+                            {!isAdmin && log.status === "draft" && (
+                              <button onClick={() => submitLog(log)} className="h-7 px-2 rounded-lg bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/25 text-orange-300 text-[10px] font-bold flex items-center gap-1 transition" title="Soumettre">
+                                <Send size={10} /> Soumettre
+                              </button>
+                            )}
+                            {/* Admin : valider si soumis */}
+                            {isAdmin && log.status === "submitted" && (
+                              <button onClick={() => validateLog(log)} className="h-7 px-2 rounded-lg bg-green-500/15 hover:bg-green-500/25 border border-green-500/25 text-green-300 text-[10px] font-bold flex items-center gap-1 transition" title="Valider">
+                                <CheckCheck size={10} /> Valider
+                              </button>
+                            )}
+                            {/* Admin : rouvrir si soumis ou validé */}
+                            {isAdmin && isLocked && (
+                              <button onClick={() => setReopenLog(log)} className="h-7 px-2 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 text-orange-300 text-[10px] font-bold flex items-center gap-1 transition" title="Rouvrir">
+                                <RotateCcw size={10} /> Rouvrir
+                              </button>
+                            )}
+                            {/* Admin : supprimer si brouillon */}
+                            {isAdmin && log.status === "draft" && (
+                              <button onClick={() => deleteLog(log.id!)} className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition"><Trash2 size={11} /></button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
               {hourLogs.length === 0 && (
@@ -691,6 +775,7 @@ export default function EmployeesPage() {
   const adminPin = useAdminPin();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
+  const [pendingByEmployee, setPendingByEmployee] = useState<Record<number, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -705,7 +790,7 @@ export default function EmployeesPage() {
   const [showPinFor, setShowPinFor] = useState<Employee | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [toastCounter, setToastCounter] = useState(0);
-  const [restaurantSettings, setRestaurantSettings] = useState<RestaurantSettings | null>(null); // ✅
+  const [restaurantSettings, setRestaurantSettings] = useState<RestaurantSettings | null>(null);
 
   const addToast = useCallback((message: string, type: ToastType) => {
     const id = toastCounter + 1;
@@ -729,26 +814,32 @@ export default function EmployeesPage() {
     if (data) setShifts(data);
   }, [weekOffset]);
 
-  // ✅ Récupérer le nom du restaurant
+  const fetchPending = useCallback(async () => {
+    const { data } = await supabase.from("employee_hours").select("employee_id").eq("status", "submitted");
+    if (data) {
+      const counts: Record<number, number> = {};
+      data.forEach((row: { employee_id: number }) => {
+        counts[row.employee_id] = (counts[row.employee_id] || 0) + 1;
+      });
+      setPendingByEmployee(counts);
+    }
+  }, []);
+
   const fetchRestaurantSettings = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase
-      .from("settings")
-      .select("restaurant_name, city")
-      .eq("restaurant_id", user.id)
-      .single();
+    const { data } = await supabase.from("settings").select("restaurant_name, city").eq("restaurant_id", user.id).single();
     if (data) setRestaurantSettings(data);
   }, []);
 
   useEffect(() => {
     async function init() {
       setIsLoading(true);
-      await Promise.all([fetchEmployees(), fetchShifts(), fetchRestaurantSettings()]);
+      await Promise.all([fetchEmployees(), fetchShifts(), fetchRestaurantSettings(), fetchPending()]);
       setIsLoading(false);
     }
     init();
-  }, [fetchEmployees, fetchShifts, fetchRestaurantSettings]);
+  }, [fetchEmployees, fetchShifts, fetchRestaurantSettings, fetchPending]);
 
   async function handleSave(form: Partial<Employee>) {
     if (!form.full_name || !form.role || !form.pin_code) return;
@@ -765,8 +856,7 @@ export default function EmployeesPage() {
       await supabase.from("employees").insert({
         full_name: form.full_name, role: form.role, pin_code: form.pin_code,
         is_active: form.is_active ?? true, is_admin: form.is_admin ?? false,
-        email: form.email || null,
-        restaurant_id: user.id,
+        email: form.email || null, restaurant_id: user.id,
       });
       addToast(`${form.full_name} ajouté`, "success");
     }
@@ -788,12 +878,9 @@ export default function EmployeesPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("employee_shifts").insert({
-      employee_id: newShift.employee_id,
-      date: newShift.date,
-      start_time: newShift.start_time,
-      end_time: newShift.end_time,
-      note: newShift.note || "",
-      restaurant_id: user.id,
+      employee_id: newShift.employee_id, date: newShift.date,
+      start_time: newShift.start_time, end_time: newShift.end_time,
+      note: newShift.note || "", restaurant_id: user.id,
     });
     await fetchShifts();
     setShowAddShift(false);
@@ -810,7 +897,9 @@ export default function EmployeesPage() {
     return shifts.filter((s) => s.employee_id === employeeId && s.date === toISO(date));
   }
 
+  const totalPending = Object.values(pendingByEmployee).reduce((a, b) => a + b, 0);
   const activeEmployees = employees.filter((e) => e.is_active === true);
+
   const tabs = [
     { id: "team" as const, label: "Équipe", icon: Users },
     { id: "planning" as const, label: "Planning semaine", icon: Calendar },
@@ -844,9 +933,9 @@ export default function EmployeesPage() {
         <HoursPanel
           employee={showHoursFor}
           isAdmin={isAdmin}
-          onClose={() => setShowHoursFor(null)}
+          onClose={() => { setShowHoursFor(null); fetchPending(); }}
           addToast={addToast}
-          restaurantSettings={restaurantSettings} // ✅ passage du nom du restaurant
+          restaurantSettings={restaurantSettings}
         />
       )}
 
@@ -869,6 +958,12 @@ export default function EmployeesPage() {
               </p>
             </div>
             <div className="flex items-center gap-2 mt-1 shrink-0">
+              {isAdmin && totalPending > 0 && (
+                <div className="flex items-center gap-2 px-3 h-10 rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-300 text-sm font-bold">
+                  <AlertCircle size={14} />
+                  <span>{totalPending} en attente</span>
+                </div>
+              )}
               {isAdmin ? (
                 <>
                   <button onClick={() => { setEditingEmployee(null); setShowEmployeeModal(true); }} className="h-10 px-3 sm:px-4 rounded-2xl bg-cyan-400 hover:bg-cyan-300 transition text-black text-sm font-black flex items-center gap-2">
@@ -894,9 +989,7 @@ export default function EmployeesPage() {
                   <h2 className="text-[40px] sm:text-[48px] font-black text-white leading-none mt-2 sm:mt-3">{employees.length}</h2>
                   <p className="text-cyan-400/50 text-xs mt-1">dans l'équipe</p>
                 </div>
-                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20 shrink-0">
-                  <Users size={18} className="text-cyan-300" />
-                </div>
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20 shrink-0"><Users size={18} className="text-cyan-300" /></div>
               </div>
             </div>
             <div className="rounded-[24px] border border-green-500/20 bg-gradient-to-br from-green-500/15 to-green-900/10 p-4 sm:p-5">
@@ -906,9 +999,7 @@ export default function EmployeesPage() {
                   <h2 className="text-[40px] sm:text-[48px] font-black text-white leading-none mt-2 sm:mt-3">{activeEmployees.length}</h2>
                   <p className="text-green-400/50 text-xs mt-1">en service</p>
                 </div>
-                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-green-400/20 bg-green-500/20 shrink-0">
-                  <BadgeCheck size={18} className="text-green-300" />
-                </div>
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-green-400/20 bg-green-500/20 shrink-0"><BadgeCheck size={18} className="text-green-300" /></div>
               </div>
             </div>
             <div className="rounded-[24px] border border-blue-500/20 bg-gradient-to-br from-blue-500/15 to-blue-900/10 p-4 sm:p-5">
@@ -918,9 +1009,7 @@ export default function EmployeesPage() {
                   <h2 className="text-[32px] sm:text-[36px] font-black text-white leading-none mt-2 sm:mt-3">ONLINE</h2>
                   <p className="text-blue-400/50 text-xs mt-1">{isAdmin ? "Mode admin actif" : "Accès public"}</p>
                 </div>
-                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-blue-400/20 bg-blue-500/20 shrink-0">
-                  <ShieldCheck size={18} className="text-blue-300" />
-                </div>
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-blue-400/20 bg-blue-500/20 shrink-0"><ShieldCheck size={18} className="text-blue-300" /></div>
               </div>
             </div>
           </div>
@@ -946,53 +1035,68 @@ export default function EmployeesPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {employees.map((employee) => (
-                    <div key={employee.id} className={`rounded-[24px] border p-4 sm:p-5 transition-all ${employee.is_active ? "border-green-500/20 bg-gradient-to-br from-green-500/[0.06] to-green-900/5" : "border-white/[0.08] bg-white/[0.02]"}`}>
-                      <div className="flex items-start justify-between gap-3 mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border border-cyan-500/20 flex items-center justify-center shrink-0">
-                            <Users size={18} className="text-cyan-300" />
+                  {employees.map((employee) => {
+                    const pending = pendingByEmployee[employee.id] || 0;
+                    return (
+                      <div key={employee.id} className={`rounded-[24px] border p-4 sm:p-5 transition-all relative ${employee.is_active ? "border-green-500/20 bg-gradient-to-br from-green-500/[0.06] to-green-900/5" : "border-white/[0.08] bg-white/[0.02]"}`}>
+                        {/* Pastille rouge admin */}
+                        {isAdmin && pending > 0 && (
+                          <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 border-2 border-[#030b1d] flex items-center justify-center">
+                            <span className="text-white text-[10px] font-black">{pending}</span>
                           </div>
-                          <div>
-                            <h3 className="text-white font-black text-base">{employee.full_name}</h3>
-                            <p className="text-white/40 text-xs">{employee.role}</p>
+                        )}
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border border-cyan-500/20 flex items-center justify-center shrink-0">
+                              <Users size={18} className="text-cyan-300" />
+                            </div>
+                            <div>
+                              <h3 className="text-white font-black text-base">{employee.full_name}</h3>
+                              <p className="text-white/40 text-xs">{employee.role}</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${employee.is_active ? "bg-green-500/15 border-green-500/30 text-green-300" : "bg-white/[0.05] border-white/10 text-white/30"}`}>
+                              {employee.is_active ? "ACTIF" : "INACTIF"}
+                            </span>
+                            {employee.is_admin && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300 text-[10px] font-bold">ADMIN</span>
+                            )}
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${employee.is_active ? "bg-green-500/15 border-green-500/30 text-green-300" : "bg-white/[0.05] border-white/10 text-white/30"}`}>
-                            {employee.is_active ? "ACTIF" : "INACTIF"}
-                          </span>
-                          {employee.is_admin && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300 text-[10px] font-bold">ADMIN</span>
+
+                        <div className="space-y-1.5 mb-4">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck size={12} className="text-cyan-400 shrink-0" />
+                            <span className="text-white/40 text-xs">PIN : <span className="text-cyan-400 font-bold">••••</span></span>
+                          </div>
+                          {employee.email && <div className="flex items-center gap-2"><span className="text-white/40 text-xs truncate">{employee.email}</span></div>}
+                          {isAdmin && pending > 0 && (
+                            <div className="flex items-center gap-2">
+                              <AlertCircle size={12} className="text-orange-400 shrink-0" />
+                              <span className="text-orange-300 text-xs font-bold">{pending} pointage(s) en attente</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => isAdmin ? setShowHoursFor(employee) : setShowPinFor(employee)} className="flex-1 h-9 rounded-xl border border-violet-500/20 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 transition text-xs font-bold flex items-center justify-center gap-1.5">
+                            <Eye size={12} /> {isAdmin ? "Voir les heures" : "Mes heures"}
+                          </button>
+                          {isAdmin && (
+                            <>
+                              <button onClick={() => { setEditingEmployee(employee); setShowEmployeeModal(true); }} className="h-9 w-9 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/60 hover:text-white transition flex items-center justify-center">
+                                <Pencil size={13} />
+                              </button>
+                              <button onClick={() => deleteEmployee(employee.id)} className="h-9 w-9 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition">
+                                <Trash2 size={13} />
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
-
-                      <div className="space-y-1.5 mb-4">
-                        <div className="flex items-center gap-2">
-                          <ShieldCheck size={12} className="text-cyan-400 shrink-0" />
-                          <span className="text-white/40 text-xs">PIN : <span className="text-cyan-400 font-bold">••••</span></span>
-                        </div>
-                        {employee.email && <div className="flex items-center gap-2"><span className="text-white/40 text-xs truncate">{employee.email}</span></div>}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => isAdmin ? setShowHoursFor(employee) : setShowPinFor(employee)} className="flex-1 h-9 rounded-xl border border-violet-500/20 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 transition text-xs font-bold flex items-center justify-center gap-1.5">
-                          <Eye size={12} /> {isAdmin ? "Voir les heures" : "Mes heures"}
-                        </button>
-                        {isAdmin && (
-                          <>
-                            <button onClick={() => { setEditingEmployee(employee); setShowEmployeeModal(true); }} className="h-9 w-9 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/60 hover:text-white transition flex items-center justify-center">
-                              <Pencil size={13} />
-                            </button>
-                            <button onClick={() => deleteEmployee(employee.id)} className="h-9 w-9 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition">
-                              <Trash2 size={13} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {isAdmin && (
                     <button onClick={() => { setEditingEmployee(null); setShowEmployeeModal(true); }} className="rounded-[24px] border-2 border-dashed border-white/10 bg-transparent hover:bg-white/[0.02] hover:border-white/20 p-5 transition-all flex flex-col items-center justify-center gap-3 min-h-[180px] text-white/25 hover:text-white/50">
