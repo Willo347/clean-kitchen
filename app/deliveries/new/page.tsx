@@ -13,10 +13,6 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/lib/supabase";
 
-// ─────────────────────────────────────────────
-// CATEGORIES
-// ─────────────────────────────────────────────
-
 type Category = { id: string; emoji: string; color: string; text: string; };
 
 const CATEGORIES: Category[] = [
@@ -31,10 +27,6 @@ const CATEGORIES: Category[] = [
 function getCategoryInfo(categoryId: string): Category {
   return CATEGORIES.find((c) => c.id === categoryId) || CATEGORIES[4];
 }
-
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
 
 type Delivery = {
   id: string;
@@ -51,10 +43,6 @@ type Delivery = {
 
 type ToastType = "success" | "error";
 interface Toast { id: number; message: string; type: ToastType; }
-
-// ─────────────────────────────────────────────
-// UTILS
-// ─────────────────────────────────────────────
 
 function formatDateFR(dateStr: string): string {
   if (!dateStr) return "—";
@@ -91,10 +79,6 @@ function formatWeekLabel(mondayStr: string): string {
   return `${d1} — ${d2}`;
 }
 
-// ─────────────────────────────────────────────
-// TOAST
-// ─────────────────────────────────────────────
-
 function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: number) => void }) {
   return (
     <div className="fixed top-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
@@ -108,10 +92,6 @@ function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: 
     </div>
   );
 }
-
-// ─────────────────────────────────────────────
-// CATEGORY PICKER
-// ─────────────────────────────────────────────
 
 function CategoryPickerModal({ currentCategory, onSelect, onClose }: {
   currentCategory: string; onSelect: (cat: string) => void; onClose: () => void;
@@ -141,10 +121,6 @@ function CategoryPickerModal({ currentCategory, onSelect, onClose }: {
   );
 }
 
-// ─────────────────────────────────────────────
-// IMAGE MODAL
-// ─────────────────────────────────────────────
-
 function ImageModal({ url, title, onClose }: { url: string; title?: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4" onClick={onClose}>
@@ -161,10 +137,6 @@ function ImageModal({ url, title, onClose }: { url: string; title?: string; onCl
     </div>
   );
 }
-
-// ─────────────────────────────────────────────
-// DELIVERY ROW
-// ─────────────────────────────────────────────
 
 function DeliveryRow({ delivery, onDelete }: { delivery: Delivery; onDelete: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false);
@@ -276,10 +248,6 @@ function DeliveryRow({ delivery, onDelete }: { delivery: Delivery; onDelete: (id
     </>
   );
 }
-
-// ─────────────────────────────────────────────
-// WEEK SECTION
-// ─────────────────────────────────────────────
 
 function WeekSection({ weekKey, weekLabel, deliveries, onDelete, restaurantName }: {
   weekKey: string; weekLabel: string; deliveries: Delivery[];
@@ -405,10 +373,6 @@ function WeekSection({ weekKey, weekLabel, deliveries, onDelete, restaurantName 
   );
 }
 
-// ─────────────────────────────────────────────
-// MAIN PAGE
-// ─────────────────────────────────────────────
-
 export default function DeliveriesPage() {
   const [product, setProduct] = useState("");
   const [supplier, setSupplier] = useState("");
@@ -431,6 +395,12 @@ export default function DeliveriesPage() {
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<"scan" | "manual">("scan");
 
+  // Photo étiquette manuelle
+  const [manualPhotoFile, setManualPhotoFile] = useState<File | null>(null);
+  const [manualPhotoPreview, setManualPhotoPreview] = useState<string | null>(null);
+  const [isUploadingManualPhoto, setIsUploadingManualPhoto] = useState(false);
+
+  // Bon de livraison
   const [deliveryNoteFile, setDeliveryNoteFile] = useState<File | null>(null);
   const [deliveryNotePreview, setDeliveryNotePreview] = useState<string | null>(null);
   const [isUploadingNote, setIsUploadingNote] = useState(false);
@@ -442,6 +412,8 @@ export default function DeliveriesPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const manualPhotoInputRef = useRef<HTMLInputElement>(null);
+  const manualPhotoCameraRef = useRef<HTMLInputElement>(null);
   const noteInputRef = useRef<HTMLInputElement>(null);
   const noteCameraRef = useRef<HTMLInputElement>(null);
 
@@ -528,6 +500,16 @@ export default function DeliveriesPage() {
     e.target.value = "";
   }
 
+  function handleManualPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setManualPhotoFile(file);
+      setManualPhotoPreview(URL.createObjectURL(file));
+      addToast("Photo étiquette jointe", "success");
+    }
+    e.target.value = "";
+  }
+
   function handleNoteFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
@@ -538,7 +520,6 @@ export default function DeliveriesPage() {
     e.target.value = "";
   }
 
-  // ✅ FONCTION CORRIGÉE — restaurant_id ajouté
   async function handleSave() {
     if (!product.trim()) { addToast("Veuillez saisir un produit", "error"); return; }
     if (!supplier.trim()) { addToast("Veuillez saisir un fournisseur", "error"); return; }
@@ -548,7 +529,6 @@ export default function DeliveriesPage() {
     let imageUrl = "";
     let deliveryNoteUrl = "";
 
-    // ✅ Récupérer l'utilisateur connecté pour le restaurant_id
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       addToast("Session expirée, reconnectez-vous", "error");
@@ -556,9 +536,14 @@ export default function DeliveriesPage() {
       return;
     }
 
-    if (capturedFile) {
-      try { imageUrl = await uploadPhoto(capturedFile, "traceability-images", "livraison"); }
-      catch { addToast("Erreur upload photo étiquette", "error"); }
+    // Photo étiquette : priorité au scan IA, sinon photo manuelle
+    const photoFile = capturedFile || manualPhotoFile;
+    if (photoFile) {
+      try {
+        setIsUploadingManualPhoto(true);
+        imageUrl = await uploadPhoto(photoFile, "traceability-images", "livraison");
+        setIsUploadingManualPhoto(false);
+      } catch { addToast("Erreur upload photo étiquette", "error"); }
     }
 
     if (deliveryNoteFile) {
@@ -578,7 +563,7 @@ export default function DeliveriesPage() {
       category: category || null,
       image_url: imageUrl || null,
       delivery_note_url: deliveryNoteUrl || null,
-      restaurant_id: user.id, // ✅ FIX : restaurant_id ajouté
+      restaurant_id: user.id,
     });
 
     setIsSaving(false);
@@ -587,6 +572,7 @@ export default function DeliveriesPage() {
 
     setProduct(""); setSupplier(""); setLot(""); setQuantity(""); setDlc(""); setCategory("");
     setScanPreview(null); setCapturedFile(null);
+    setManualPhotoFile(null); setManualPhotoPreview(null);
     setDeliveryNoteFile(null); setDeliveryNotePreview(null);
     await fetchDeliveries();
   }
@@ -619,12 +605,15 @@ export default function DeliveriesPage() {
 
   const formComplete = product && supplier && quantity;
   const selectedCatInfo = category ? getCategoryInfo(category) : null;
+  const isAnyUploading = isUploading || isUploadingManualPhoto || isUploadingNote;
 
   return (
     <>
       <ToastContainer toasts={toasts} onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
       <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileChange} />
+      <input ref={manualPhotoCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleManualPhotoChange} />
+      <input ref={manualPhotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleManualPhotoChange} />
       <input ref={noteCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleNoteFileChange} />
       <input ref={noteInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleNoteFileChange} />
 
@@ -678,8 +667,8 @@ export default function DeliveriesPage() {
           </div>
 
           {/* FORM */}
-          <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-4 sm:p-5 md:p-6">
-            <div className="flex gap-2 mb-5 flex-wrap">
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.02] p-4 sm:p-5 md:p-6 space-y-4">
+            <div className="flex gap-2 mb-1 flex-wrap">
               <button onClick={() => setActiveTab("scan")} className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-2xl text-sm font-bold transition border ${activeTab === "scan" ? "bg-violet-500/20 border-violet-500/40 text-violet-300" : "border-white/10 bg-white/[0.03] text-white/40 hover:text-white/70"}`}>
                 <Sparkles size={15} /> Scan IA
               </button>
@@ -749,50 +738,27 @@ export default function DeliveriesPage() {
             {/* MANUAL TAB */}
             {activeTab === "manual" && (
               <div className="space-y-3">
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-2">
                   <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20">
                     <Plus size={16} className="text-cyan-300" />
                   </div>
                   <div>
                     <h3 className="text-base font-black text-white">{capturedFile ? "Vérifier et enregistrer" : "Enregistrer une livraison"}</h3>
-                    <p className="text-white/30 text-xs">{capturedFile ? "✅ Photo jointe — vérifiez les champs" : "Saisie de réception marchandise"}</p>
+                    <p className="text-white/30 text-xs">{capturedFile ? "✅ Photo IA jointe — vérifiez les champs" : "Saisie manuelle de réception marchandise"}</p>
                   </div>
                 </div>
 
+                {/* Photo depuis scan IA */}
                 {scanPreview && capturedFile && (
                   <div className="flex items-center gap-3 p-3 rounded-2xl bg-violet-500/10 border border-violet-500/20">
                     <img src={scanPreview} alt="Photo" className="w-12 h-12 rounded-xl object-cover shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-violet-300 text-xs font-bold">Photo étiquette jointe</p>
+                      <p className="text-violet-300 text-xs font-bold">Photo étiquette (scan IA)</p>
                       <p className="text-white/30 text-xs truncate">{capturedFile.name}</p>
                     </div>
                     <button onClick={() => { setScanPreview(null); setCapturedFile(null); }} className="text-white/30 hover:text-white transition shrink-0"><X size={14} /></button>
                   </div>
                 )}
-
-                {/* BON DE LIVRAISON */}
-                <div className="rounded-[20px] border border-cyan-500/20 bg-cyan-500/[0.04] p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <FileText size={14} className="text-cyan-300 shrink-0" />
-                    <p className="text-cyan-300 text-xs font-bold uppercase tracking-widest">Bon de livraison (optionnel)</p>
-                  </div>
-
-                  {deliveryNotePreview ? (
-                    <div className="relative rounded-2xl overflow-hidden border border-white/10">
-                      <img src={deliveryNotePreview} alt="Bon de livraison" className="w-full max-h-40 object-contain bg-black/40" />
-                      <button onClick={() => { setDeliveryNoteFile(null); setDeliveryNotePreview(null); }} className="absolute top-2 right-2 w-7 h-7 rounded-xl bg-black/60 text-white/70 hover:text-white flex items-center justify-center transition"><X size={14} /></button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <button onClick={() => noteCameraRef.current?.click()} className="h-12 rounded-2xl border border-cyan-500/25 bg-cyan-500/10 hover:bg-cyan-500/20 transition text-cyan-300 font-bold text-sm flex items-center justify-center gap-2">
-                        <Camera size={16} /> Photo du bon
-                      </button>
-                      <button onClick={() => noteInputRef.current?.click()} className="h-12 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition text-white/50 hover:text-white font-bold text-sm flex items-center justify-center gap-2">
-                        <FileText size={16} /> Importer le bon
-                      </button>
-                    </div>
-                  )}
-                </div>
 
                 {/* Catégorie */}
                 <div>
@@ -857,14 +823,71 @@ export default function DeliveriesPage() {
                   </div>
                 </div>
 
-                {(isUploading || isUploadingNote) && (
+                {/* PHOTO ÉTIQUETTE MANUELLE */}
+                {!capturedFile && (
+                  <div className="rounded-[20px] border border-violet-500/20 bg-violet-500/[0.04] p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <ImageIcon size={14} className="text-violet-300 shrink-0" />
+                      <p className="text-violet-300 text-xs font-bold uppercase tracking-widest">Photo étiquette (optionnel)</p>
+                    </div>
+                    {manualPhotoPreview ? (
+                      <div className="relative rounded-2xl overflow-hidden border border-white/10">
+                        <img src={manualPhotoPreview} alt="Photo étiquette" className="w-full max-h-40 object-contain bg-black/40" />
+                        <button onClick={() => { setManualPhotoFile(null); setManualPhotoPreview(null); }} className="absolute top-2 right-2 w-7 h-7 rounded-xl bg-black/60 text-white/70 hover:text-white flex items-center justify-center transition"><X size={14} /></button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button onClick={() => manualPhotoCameraRef.current?.click()} className="h-12 rounded-2xl border border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/20 transition text-violet-300 font-bold text-sm flex items-center justify-center gap-2">
+                          <Camera size={16} /> 📷 Photo étiquette
+                        </button>
+                        <button onClick={() => manualPhotoInputRef.current?.click()} className="h-12 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition text-white/50 hover:text-white font-bold text-sm flex items-center justify-center gap-2">
+                          <ImageIcon size={16} /> Importer une photo
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {isAnyUploading && (
                   <div className="flex items-center gap-2 text-violet-300 text-xs">
                     <Loader2 size={14} className="animate-spin" /> Upload en cours...
                   </div>
                 )}
 
-                <button onClick={handleSave} disabled={isSaving || isUploading || isUploadingNote || !formComplete} className="w-full h-12 rounded-2xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black font-black text-sm flex items-center justify-center gap-2">
-                  {isSaving || isUploading || isUploadingNote ? <><Loader2 size={16} className="animate-spin" /> Enregistrement...</> : <><Save size={16} /> Enregistrer{deliveryNoteFile ? " avec bon" : ""}{selectedCatInfo ? ` · ${selectedCatInfo.emoji}` : ""}</>}
+                <button onClick={handleSave} disabled={isSaving || isAnyUploading || !formComplete} className="w-full h-12 rounded-2xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black font-black text-sm flex items-center justify-center gap-2">
+                  {isSaving || isAnyUploading ? <><Loader2 size={16} className="animate-spin" /> Enregistrement...</> : <><Save size={16} /> Enregistrer{selectedCatInfo ? ` · ${selectedCatInfo.emoji}` : ""}</>}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* BON DE LIVRAISON — section séparée */}
+          <div className="rounded-[28px] border border-cyan-500/20 bg-cyan-500/[0.03] p-4 sm:p-5 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/20 shrink-0">
+                <FileText size={16} className="text-cyan-300" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white">Bon de livraison</h3>
+                <p className="text-white/30 text-xs">Joindre le bon de livraison à la réception en cours</p>
+              </div>
+            </div>
+
+            {deliveryNotePreview ? (
+              <div className="relative rounded-2xl overflow-hidden border border-white/10">
+                <img src={deliveryNotePreview} alt="Bon de livraison" className="w-full max-h-48 object-contain bg-black/40" />
+                <div className="p-2 flex items-center justify-between bg-white/[0.02]">
+                  <span className="text-white/30 text-xs flex items-center gap-1"><FileText size={10} /> Bon de livraison joint</span>
+                  <button onClick={() => { setDeliveryNoteFile(null); setDeliveryNotePreview(null); }} className="text-red-400/60 hover:text-red-400 text-xs font-bold flex items-center gap-1 transition"><X size={10} /> Retirer</button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button onClick={() => noteCameraRef.current?.click()} className="h-12 rounded-2xl border border-cyan-500/25 bg-cyan-500/10 hover:bg-cyan-500/20 transition text-cyan-300 font-bold text-sm flex items-center justify-center gap-2">
+                  <Camera size={16} /> 📷 Photo du bon
+                </button>
+                <button onClick={() => noteInputRef.current?.click()} className="h-12 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition text-white/50 hover:text-white font-bold text-sm flex items-center justify-center gap-2">
+                  <FileText size={16} /> Importer le bon
                 </button>
               </div>
             )}
