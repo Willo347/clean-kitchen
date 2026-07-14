@@ -18,6 +18,27 @@ type Task = {
 const DAYS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
 const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 
+// ─────────────────────────────────────────────
+// HELPERS — réinitialisation des tâches récurrentes
+// ─────────────────────────────────────────────
+
+function getMondayOfWeek(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay(); // 0 = dimanche
+  const diff = day === 0 ? -6 : 1 - day; // recule jusqu'au lundi
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.toDateString() === b.toDateString();
+}
+
+function isSameMonth(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
 export default function PMSEntretienPage() {
   const adminPin = useAdminPin();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -88,12 +109,36 @@ export default function PMSEntretienPage() {
     }
   }
 
+  // ✅ CORRIGÉ — recalcule le statut effectif de chaque tâche récurrente
+  // en fonction de sa fréquence, pour qu'une tâche validée réapparaisse
+  // automatiquement au jour / à la semaine / au mois suivant.
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
-      if (task.frequency === "Quotidien") return true;
-      if (task.frequency === "Hebdomadaire" && task.day_of_week === selectedDay) return true;
-      return false;
-    });
+    const today = new Date();
+    const currentMonday = getMondayOfWeek(today);
+
+    return tasks
+      .filter((task) => {
+        if (task.frequency === "Quotidien") return true;
+        if (task.frequency === "Hebdomadaire" && task.day_of_week === selectedDay) return true;
+        if (task.frequency === "Mensuel") return true;
+        return false;
+      })
+      .map((task) => {
+        if (task.status !== "validated" || !task.validated_at) return task;
+
+        const validatedDate = new Date(task.validated_at);
+        let expired = false;
+
+        if (task.frequency === "Quotidien") {
+          expired = !isSameDay(validatedDate, today);
+        } else if (task.frequency === "Hebdomadaire") {
+          expired = validatedDate < currentMonday;
+        } else if (task.frequency === "Mensuel") {
+          expired = !isSameMonth(validatedDate, today);
+        }
+
+        return expired ? { ...task, status: "pending" } : task;
+      });
   }, [tasks, selectedDay]);
 
   const validatedTasks = filteredTasks.filter((t) => t.status === "validated");
