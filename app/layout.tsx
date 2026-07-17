@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 
-import Sidebar from "./components/Sidebar";
+import AppShell from "./components/AppShell";
 
 import { Toaster } from "sonner";
 
@@ -58,29 +58,7 @@ export default function RootLayout({
 
         {/* APP */}
         <div className="relative z-10 h-screen">
-
-          {/* SIDEBAR */}
-          <Sidebar />
-
-          {/* CONTENT */}
-          <main
-            className="
-              lg:ml-[270px]
-              h-screen
-              overflow-y-auto
-              px-4
-              md:px-6
-              lg:px-10
-              pt-[100px]
-              lg:pt-10
-              pb-10
-            "
-          >
-            <div className="animate-in fade-in duration-500 slide-in-from-bottom-4">
-              {children}
-            </div>
-          </main>
-
+          <AppShell>{children}</AppShell>
         </div>
 
         <Toaster position="top-right" richColors theme="dark" />
