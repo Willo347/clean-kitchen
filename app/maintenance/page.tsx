@@ -49,7 +49,7 @@ function isExpiringSoon(dateStr: string): boolean {
   return diff >= 0 && diff <= 30;
 }
 
-async function notifyMaintenanceReport(equipmentName: string, priority: Priority, description: string) {
+async function notifyMaintenanceReport(equipmentName: string, priority: Priority, description: string, restaurantId: string) {
   try {
     await fetch("/api/send-notification", {
       method: "POST",
@@ -58,6 +58,7 @@ async function notifyMaintenanceReport(equipmentName: string, priority: Priority
         title: priority === "Critique" ? "🚨 Panne critique signalée" : "🔧 Nouvelle panne signalée",
         body: `${equipmentName} — ${priority} : ${description}`,
         url: "/maintenance",
+        user_ids: [restaurantId],
       }),
     });
   } catch {
@@ -256,7 +257,7 @@ export default function MaintenancePage() {
     setIsSavingReport(false);
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
     addToast(`Panne déclarée : ${equipmentName}`, "success");
-    notifyMaintenanceReport(equipmentName, priority, description);
+    notifyMaintenanceReport(equipmentName, priority, description, user.id);
     setEquipmentName(""); setDescription(""); setPriority("Normal"); setReportedBy("");
     setShowReportForm(false); await fetchData();
   }
