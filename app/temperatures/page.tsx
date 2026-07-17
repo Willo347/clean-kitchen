@@ -73,6 +73,22 @@ function formatDateFR(dateStr: string): string {
   });
 }
 
+async function notifyTemperatureAlert(equipmentName: string, temperature: number, equipment: Equipment) {
+  try {
+    await fetch("/api/send-notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "⚠️ Dépassement de température",
+        body: `${equipmentName} hors zone : ${temperature}°C (limite ${equipment.temp_min}°C → ${equipment.temp_max}°C)`,
+        url: "/temperatures",
+      }),
+    });
+  } catch {
+    // Échec silencieux : la notification push n'est pas critique pour l'enregistrement du relevé
+  }
+}
+
 function getTempStatus(temperature: number, equipment: Equipment): "ok" | "warning" | "critical" {
   const range = equipment.temp_max - equipment.temp_min;
   const margin = range * 0.1;
@@ -330,6 +346,7 @@ export default function TemperaturesPage() {
     const eq = equipments.find((e) => e.name === selectedEquipment);
     if (eq && (tempNum < eq.temp_min || tempNum > eq.temp_max)) {
       addToast(`⚠️ Alerte — ${selectedEquipment} hors zone (${tempNum}°C)`, "error");
+      notifyTemperatureAlert(selectedEquipment, tempNum, eq);
     } else {
       addToast(`Relevé ajouté : ${selectedEquipment} ${tempNum}°C`, "success");
     }
@@ -360,6 +377,7 @@ export default function TemperaturesPage() {
     const eq = equipments.find((e) => e.name === quickAddEquipment);
     if (eq && (tempNum < eq.temp_min || tempNum > eq.temp_max)) {
       addToast(`⚠️ Alerte — ${quickAddEquipment} hors zone (${tempNum}°C)`, "error");
+      notifyTemperatureAlert(quickAddEquipment, tempNum, eq);
     } else {
       addToast(`Relevé ajouté : ${quickAddEquipment} ${tempNum}°C`, "success");
     }

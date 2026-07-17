@@ -49,6 +49,22 @@ function isExpiringSoon(dateStr: string): boolean {
   return diff >= 0 && diff <= 30;
 }
 
+async function notifyMaintenanceReport(equipmentName: string, priority: Priority, description: string) {
+  try {
+    await fetch("/api/send-notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: priority === "Critique" ? "🚨 Panne critique signalée" : "🔧 Nouvelle panne signalée",
+        body: `${equipmentName} — ${priority} : ${description}`,
+        url: "/maintenance",
+      }),
+    });
+  } catch {
+    // Échec silencieux : la notification push n'est pas critique pour l'enregistrement de la panne
+  }
+}
+
 function getPriorityColor(priority: Priority) {
   switch (priority) {
     case "Critique": return "border-red-500/40 bg-red-500/10 text-red-300";
@@ -240,6 +256,7 @@ export default function MaintenancePage() {
     setIsSavingReport(false);
     if (error) { addToast(`Erreur : ${error.message}`, "error"); return; }
     addToast(`Panne déclarée : ${equipmentName}`, "success");
+    notifyMaintenanceReport(equipmentName, priority, description);
     setEquipmentName(""); setDescription(""); setPriority("Normal"); setReportedBy("");
     setShowReportForm(false); await fetchData();
   }
