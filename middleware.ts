@@ -5,7 +5,9 @@ export async function middleware(request: NextRequest) {
   // Routes publiques — pas d'auth requise
   if (
     request.nextUrl.pathname.startsWith('/api/send-notification') ||
-    request.nextUrl.pathname.startsWith('/auth')
+    request.nextUrl.pathname.startsWith('/auth') ||
+    request.nextUrl.pathname.startsWith('/delete-account') ||
+    request.nextUrl.pathname.startsWith('/privacy')
   ) {
     return NextResponse.next()
   }

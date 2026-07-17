@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Settings,
   GripVertical,
@@ -14,6 +15,10 @@ import {
   EyeOff,
   ShieldCheck,
   Lock,
+  AlertTriangle,
+  Trash2,
+  Loader2,
+  X,
 } from "lucide-react";
 
 import {
@@ -28,9 +33,18 @@ import { supabase } from "@/lib/supabase";
 type MenuItem = typeof DEFAULT_MENU_ITEMS[number];
 
 export default function SettingsPage() {
+  const router = useRouter();
+
   // ── Menu order ──────────────────────────────
   const [items, setItems] = useState<MenuItem[]>([]);
   const [menuSaved, setMenuSaved] = useState(false);
+
+  // ── Suppression de compte ────────────────────
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePin, setDeletePin] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   // ── PIN admin ────────────────────────────────
   const [currentPin, setCurrentPin] = useState("");
@@ -139,6 +153,57 @@ export default function SettingsPage() {
     setNewPin("");
     setConfirmPin("");
     setTimeout(() => { setPinStatus("idle"); setPinMessage(""); }, 4000);
+  }
+
+  // ── Suppression de compte ────────────────────
+  async function handleDeleteAccount() {
+    setDeleteError("");
+
+    if (hasExistingPin && deletePin.length !== 4) {
+      setDeleteError("Entrez votre PIN administrateur.");
+      return;
+    }
+    if (deleteConfirmText !== "SUPPRIMER") {
+      setDeleteError('Tapez "SUPPRIMER" pour confirmer.');
+      return;
+    }
+
+    setIsDeleting(true);
+
+    if (hasExistingPin) {
+      const { data } = await supabase.from("settings").select("admin_pin").single();
+      if (data?.admin_pin !== deletePin) {
+        setDeleteError("PIN incorrect.");
+        setIsDeleting(false);
+        return;
+      }
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setDeleteError("Session expirée, reconnectez-vous.");
+      setIsDeleting(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/delete-account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Erreur lors de la suppression");
+
+      await supabase.auth.signOut();
+      router.push("/login");
+      router.refresh();
+    } catch (e: any) {
+      setDeleteError(e.message || "Erreur lors de la suppression");
+      setIsDeleting(false);
+    }
   }
 
   return (
@@ -345,7 +410,111 @@ export default function SettingsPage() {
           </p>
         </div>
 
+        {/* ── SECTION ZONE DANGEREUSE ─────────────── */}
+        <div className="rounded-[24px] border border-red-500/20 bg-gradient-to-br from-red-500/[0.06] to-red-900/5 p-4 sm:p-5 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/20 shrink-0">
+              <AlertTriangle size={16} className="text-red-300" />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-white">Zone dangereuse</h2>
+              <p className="text-white/30 text-xs mt-0.5">Suppression définitive du compte</p>
+            </div>
+          </div>
+
+          <p className="text-white/40 text-xs leading-relaxed">
+            La suppression du compte efface définitivement toutes les données du restaurant : relevés de température, équipements, pannes, certificats, traçabilité, employés, heures, production, PMS et abonnements aux notifications. Cette action est irréversible.
+          </p>
+
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="h-11 px-6 rounded-2xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition text-red-300 font-black text-sm flex items-center gap-2"
+          >
+            <Trash2 size={15} /> Supprimer mon compte
+          </button>
+        </div>
+
+        {/* ── LIEN POLITIQUE DE CONFIDENTIALITÉ ───── */}
+        <div className="text-center pt-2">
+          <a
+            href="/privacy"
+            className="text-white/30 hover:text-white/60 text-xs underline underline-offset-2 transition"
+          >
+            Politique de confidentialité
+          </a>
+        </div>
+
       </div>
+
+      {/* ── MODALE SUPPRESSION ────────────────────── */}
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+          onClick={() => !isDeleting && setShowDeleteModal(false)}
+        >
+          <div
+            className="bg-[#030b1d] border border-red-500/20 rounded-[28px] p-6 w-full max-w-sm shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-black text-lg flex items-center gap-2">
+                <AlertTriangle size={18} className="text-red-400" /> Supprimer le compte
+              </h3>
+              {!isDeleting && (
+                <button onClick={() => setShowDeleteModal(false)} className="text-white/40 hover:text-white transition">
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+
+            <p className="text-white/50 text-xs leading-relaxed">
+              Cette action supprime définitivement toutes les données du restaurant et le compte de connexion. Elle ne peut pas être annulée.
+            </p>
+
+            {hasExistingPin && (
+              <div>
+                <label className="text-white/40 text-xs mb-1.5 block">PIN administrateur *</label>
+                <input
+                  type="password"
+                  maxLength={4}
+                  value={deletePin}
+                  onChange={(e) => setDeletePin(e.target.value.replace(/\D/g, ""))}
+                  placeholder="••••"
+                  className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none tracking-[0.3em]"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="text-white/40 text-xs mb-1.5 block">
+                Tapez <span className="text-red-400 font-bold">SUPPRIMER</span> pour confirmer *
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="SUPPRIMER"
+                className="w-full h-11 rounded-2xl bg-white/[0.05] border border-white/10 px-4 text-white text-sm outline-none"
+              />
+            </div>
+
+            {deleteError && (
+              <div className="flex items-center gap-2 p-3 rounded-2xl border border-red-500/30 bg-red-500/15 text-red-300 text-xs font-medium">
+                <AlertTriangle size={13} className="shrink-0" /> {deleteError}
+              </div>
+            )}
+
+            <button
+              onClick={handleDeleteAccount}
+              disabled={isDeleting || deleteConfirmText !== "SUPPRIMER" || (hasExistingPin && deletePin.length !== 4)}
+              className="w-full h-11 rounded-2xl bg-red-500 hover:bg-red-400 disabled:opacity-40 disabled:cursor-not-allowed transition text-white font-black text-sm flex items-center justify-center gap-2"
+            >
+              {isDeleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+              {isDeleting ? "Suppression..." : "Supprimer définitivement"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
