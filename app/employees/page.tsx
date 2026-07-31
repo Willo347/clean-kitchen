@@ -73,7 +73,32 @@ function getWeekDates(weekOffset: number): Date[] {
 }
 
 function toISO(date: Date): string {
-  return date.toISOString().split("T")[0];
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+// L'export PDF via doc.save() (téléchargement navigateur classique) ne fonctionne pas
+// de façon fiable dans la WebView Android de l'app (pas de gestionnaire de téléchargement
+// natif branché), alors qu'il fonctionne sur iOS/web. Sur Android natif, on écrit le PDF
+// dans le cache de l'app via Capacitor Filesystem puis on l'ouvre avec la feuille de partage
+// native (Share), ce qui permet à l'utilisateur de l'enregistrer ou de l'envoyer directement.
+async function savePDF(doc: jsPDF, filename: string) {
+  const { Capacitor } = await import("@capacitor/core");
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
+    const { Filesystem, Directory } = await import("@capacitor/filesystem");
+    const { Share } = await import("@capacitor/share");
+    const base64 = doc.output("datauristring").split(",")[1];
+    const result = await Filesystem.writeFile({
+      path: filename,
+      data: base64,
+      directory: Directory.Cache,
+    });
+    await Share.share({ title: filename, url: result.uri });
+  } else {
+    doc.save(filename);
+  }
 }
 
 function formatDateShort(date: Date): string {
@@ -404,8 +429,10 @@ function HoursPanel({ employee, isAdmin, onClose, addToast, restaurantSettings }
     addToast("Pointage supprimé", "success");
   }
 
-  function exportPDF() {
+  async function exportPDF() {
+    if (weekLogs.length === 0) { addToast("Aucune heure enregistrée cette semaine", "error"); return; }
     setIsExporting(true);
+    try {
     const restaurantName = restaurantSettings?.restaurant_name || "Clean Kitchen";
     const restaurantCity = restaurantSettings?.city || "";
     const doc = new jsPDF();
@@ -455,12 +482,19 @@ function HoursPanel({ employee, isAdmin, onClose, addToast, restaurantSettings }
       doc.setTextColor(150, 150, 150);
       doc.text(`Page ${i} / ${pageCount} — ${restaurantName}`, 14, doc.internal.pageSize.height - 8);
     }
-    doc.save(`Heures_${employee.full_name.replace(/ /g, "_")}_semaine_${weekStart}.pdf`);
-    setIsExporting(false);
+    await savePDF(doc, `Heures_${employee.full_name.replace(/ /g, "_")}_semaine_${weekStart}.pdf`);
+    } catch (err) {
+      console.error("Erreur export PDF semaine", err);
+      addToast("Échec de l'export PDF", "error");
+    } finally {
+      setIsExporting(false);
+    }
   }
 
-  function exportMonthPDF() {
+  async function exportMonthPDF() {
+    if (monthLogs.length === 0) { addToast("Aucune heure enregistrée pour ce mois", "error"); return; }
     setIsExporting(true);
+    try {
     const restaurantName = restaurantSettings?.restaurant_name || "Clean Kitchen";
     const restaurantCity = restaurantSettings?.city || "";
     const doc = new jsPDF();
@@ -511,8 +545,13 @@ function HoursPanel({ employee, isAdmin, onClose, addToast, restaurantSettings }
       doc.setTextColor(150, 150, 150);
       doc.text(`Page ${i} / ${pageCount} — ${restaurantName}`, 14, doc.internal.pageSize.height - 8);
     }
-    doc.save(`Heures_${employee.full_name.replace(/ /g, "_")}_${monthLabel.replace(" ", "_")}.pdf`);
-    setIsExporting(false);
+    await savePDF(doc, `Heures_${employee.full_name.replace(/ /g, "_")}_${monthLabel.replace(" ", "_")}.pdf`);
+    } catch (err) {
+      console.error("Erreur export PDF mois", err);
+      addToast("Échec de l'export PDF", "error");
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   return (
@@ -562,7 +601,7 @@ function HoursPanel({ employee, isAdmin, onClose, addToast, restaurantSettings }
                     <p className="text-violet-300 font-black text-2xl">{formatHours(weekTotal)}</p>
                     <p className="text-white/25 text-[10px]">{weekDays} jour(s) · {Math.round((weekTotal / 35) * 100)}% de 35h</p>
                   </div>
-                  <button onClick={exportPDF} disabled={isExporting || weekLogs.length === 0} className="h-9 px-4 rounded-xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black text-xs font-black flex items-center gap-1.5">
+                  <button onClick={exportPDF} disabled={isExporting} className="h-9 px-4 rounded-xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black text-xs font-black flex items-center gap-1.5">
                     {isExporting ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />} PDF
                   </button>
                 </div>
@@ -609,7 +648,7 @@ function HoursPanel({ employee, isAdmin, onClose, addToast, restaurantSettings }
                     <p className="text-cyan-300 font-black text-2xl">{formatHours(monthTotal)}</p>
                     <p className="text-white/25 text-[10px]">{monthDays} jour(s) travaillé(s)</p>
                   </div>
-                  <button onClick={exportMonthPDF} disabled={isExporting || monthLogs.length === 0} className="h-9 px-4 rounded-xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black text-xs font-black flex items-center gap-1.5">
+                  <button onClick={exportMonthPDF} disabled={isExporting} className="h-9 px-4 rounded-xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 transition text-black text-xs font-black flex items-center gap-1.5">
                     {isExporting ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />} PDF
                   </button>
                 </div>

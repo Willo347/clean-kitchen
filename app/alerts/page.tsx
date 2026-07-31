@@ -208,7 +208,8 @@ export default function AlertesPage() {
     // ── DLC ───────────────────────────────────
     const { data: products } = await supabase
       .from("traceability_products")
-      .select("*");
+      .select("*")
+      .eq("archived", false);
 
     const dlcAlertesFound: Alerte[] = [];
     if (products) {

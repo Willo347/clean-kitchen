@@ -409,6 +409,8 @@ export default function DeliveriesPage() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [toastCounter, setToastCounter] = useState(0);
   const [filterStatus, setFilterStatus] = useState<"all" | "expired" | "ok">("all");
+  const [showNotesOnly, setShowNotesOnly] = useState(false);
+  const [noteGalleryUrl, setNoteGalleryUrl] = useState<{ url: string; label: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -602,6 +604,8 @@ export default function DeliveriesPage() {
     weekMap.get(monday)!.push(d);
   });
   const weeks = Array.from(weekMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+
+  const deliveriesWithNotes = deliveries.filter((d) => d.delivery_note_url);
 
   const formComplete = product && supplier && quantity;
   const selectedCatInfo = category ? getCategoryInfo(category) : null;
@@ -901,12 +905,19 @@ export default function DeliveriesPage() {
                   <FileText size={15} className="text-white/40" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-white">Historique des livraisons</h2>
-                  <p className="text-white/30 text-xs">{filteredDeliveries.length} livraison(s) · {weeks.length} semaine(s)</p>
+                  <h2 className="text-lg font-black text-white">{showNotesOnly ? "Bons de livraison" : "Historique des livraisons"}</h2>
+                  <p className="text-white/30 text-xs">
+                    {showNotesOnly
+                      ? `${deliveriesWithNotes.length} bon(s) de livraison`
+                      : `${filteredDeliveries.length} livraison(s) · ${weeks.length} semaine(s)`}
+                  </p>
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap">
-                {(["all", "ok", "expired"] as const).map((status) => (
+                <button onClick={() => setShowNotesOnly(!showNotesOnly)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${showNotesOnly ? "bg-cyan-500/25 border-cyan-500/50 text-cyan-300" : "bg-transparent border-white/10 text-white/35 hover:text-white/60"}`}>
+                  <FileText size={12} /> {showNotesOnly ? "Retour à l'historique" : "Bons de livraison"}
+                </button>
+                {!showNotesOnly && (["all", "ok", "expired"] as const).map((status) => (
                   <button key={status} onClick={() => setFilterStatus(status)} className={`px-3 py-2 rounded-xl border text-xs font-bold transition whitespace-nowrap ${filterStatus === status ? status === "expired" ? "bg-red-500/25 border-red-500/50 text-red-300" : status === "ok" ? "bg-green-500/25 border-green-500/50 text-green-300" : "bg-white/10 border-white/20 text-white" : "bg-transparent border-white/10 text-white/35 hover:text-white/60"}`}>
                     {status === "all" ? "Toutes" : status === "ok" ? "✓ Valides" : "⚠ Expirées"}
                   </button>
@@ -916,6 +927,26 @@ export default function DeliveriesPage() {
 
             {isLoading ? (
               <div className="flex items-center justify-center py-12"><Loader2 size={28} className="animate-spin text-cyan-400" /></div>
+            ) : showNotesOnly ? (
+              deliveriesWithNotes.length === 0 ? (
+                <div className="text-center py-12 text-white/25"><FileText size={32} className="mx-auto mb-3 opacity-40" /><p className="text-sm">Aucun bon de livraison enregistré</p></div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {deliveriesWithNotes.map((d) => (
+                    <button
+                      key={d.id}
+                      onClick={() => setNoteGalleryUrl({ url: d.delivery_note_url!, label: `${d.product || "Bon de livraison"} — ${formatDateFR(d.created_at)}` })}
+                      className="rounded-[20px] overflow-hidden border border-white/10 bg-white/[0.02] hover:border-cyan-500/40 transition text-left"
+                    >
+                      <img src={d.delivery_note_url} alt={d.product} className="w-full h-32 object-cover bg-black/40" />
+                      <div className="p-3">
+                        <p className="text-white font-bold text-xs truncate">{d.product || "—"}</p>
+                        <p className="text-white/30 text-[10px] mt-0.5">{d.supplier || "—"} · {formatDateFR(d.created_at)}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )
             ) : weeks.length === 0 ? (
               <div className="text-center py-12 text-white/25"><Truck size={32} className="mx-auto mb-3 opacity-40" /><p className="text-sm">Aucune livraison trouvée</p></div>
             ) : (
@@ -936,6 +967,10 @@ export default function DeliveriesPage() {
 
         </div>
       </div>
+
+      {noteGalleryUrl && (
+        <ImageModal url={noteGalleryUrl.url} title={noteGalleryUrl.label} onClose={() => setNoteGalleryUrl(null)} />
+      )}
     </>
   );
 }
